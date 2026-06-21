@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Sprite Editor</title>
+<style>
+  :root { --bg:#0b0b0d; --panel:#16161a; --line:#2a2a30; --txt:#e6e6df; --dim:#9aa0a6; --cyan:#67e8f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#070708; color:var(--txt);
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:20px; }
+  h1 { font-size:18px; font-weight:500; margin:0 0 4px; }
+  .sub { color:var(--dim); font-size:13px; margin:0 0 16px; }
+  .mono { font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; }
+  .row { display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:11px; }
+  .lbl { color:var(--dim); font-size:12px; }
+  .panel { background:var(--bg); border:1px solid var(--line); border-radius:12px;
+           padding:18px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+  .stage { position:relative; }
+  .grid { display:inline-block; background:#000; cursor:crosshair; white-space:pre;
+          font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; }
+  .grid.show-grid { background-image:
+        linear-gradient(to right, rgba(160,168,184,.38) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(160,168,184,.38) 1px, transparent 1px);
+        background-size: var(--cw) var(--ch); }
+  .cell { background:transparent; }
+  .cell:hover { background:rgba(103,232,249,.30); }
+  .prev-wrap { text-align:center; }
+  .prev { background:#000; border:1px solid #222; border-radius:8px; padding:14px;
+          font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; line-height:1; white-space:pre; }
+  .glyphs { display:flex; flex-wrap:wrap; gap:4px; margin:12px 0 6px; }
+  .gbtn { width:30px; height:30px; font-family:"SF Mono",Menlo,monospace; font-size:17px;
+          background:var(--panel); color:#cfd2c4; border:1px solid var(--line);
+          border-radius:6px; cursor:pointer; padding:0; }
+  .gbtn.sel { border-color:var(--cyan); color:var(--cyan); }
+  .gbtn.erase { font-size:10px; color:var(--dim); }
+  .sep { width:1px; height:24px; background:var(--line); margin:0 3px; }
+  .btn { font-size:13px; padding:7px 11px; background:var(--panel); color:var(--txt);
+         border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+  .btn.on { border-color:var(--cyan); color:var(--cyan); }
+  .btn.go { border-color:#3a7d52; color:#9be0b4; }
+  input[type=color] { width:34px; height:30px; border:1px solid var(--line);
+                      border-radius:6px; background:var(--panel); cursor:pointer; padding:2px; }
+  input[type=text] { width:110px; height:30px; background:var(--panel); color:var(--txt);
+                     border:1px solid var(--line); border-radius:6px; padding:0 8px;
+                     font-family:"SF Mono",Menlo,monospace; }
+  textarea { width:100%; height:120px; background:var(--bg); color:var(--dim);
+             border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:8px;
+             font-family:"SF Mono",Menlo,monospace; font-size:11px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .seg button { background:var(--panel); color:var(--dim); border:0; padding:7px 11px;
+                font-size:13px; cursor:pointer; }
+  .seg button.act { background:#23232a; color:var(--txt); }
+  .swatch { width:13px; height:13px; border-radius:3px; display:inline-block; vertical-align:-1px; margin-right:5px; }
+  .hint { color:var(--dim); font-size:11px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Block Sprite Editor</h1>
+  <p class="sub">Draw block-ASCII sprites in two colors (body + accent). Glyphs sit edge-to-edge so block and box lines connect. Left-click paints, right-click erases, mirror keeps it symmetric. Export or Load JSON to reuse sprites in any project.</p>
+
+  <div class="row">
+    <span class="lbl">name</span>
+    <input type="text" id="sid" value="pip">
+    <span class="lbl">presets</span>
+    <button class="btn" data-preset="pip">Pip</button>
+    <button class="btn" data-preset="nox">Nox</button>
+    <button class="btn" data-preset="moss">Moss</button>
+    <button class="btn" data-preset="byte">Byte</button>
+    <span class="sep"></span>
+    <button class="btn" id="undo">Undo</button>
+    <button class="btn" id="clear">Clear</button>
+  </div>
+
+  <div class="row">
+    <span class="lbl">paint</span>
+    <span class="seg" id="layer">
+      <button data-l="b" class="act"><span class="swatch" id="sw-b"></span>body</button>
+      <button data-l="a"><span class="swatch" id="sw-a"></span>accent</button>
+    </span>
+    <input type="color" id="col-b" value="#6f74c0" title="body color">
+    <input type="color" id="col-a" value="#b9a5f0" title="accent color">
+    <span class="sep"></span>
+    <button class="btn on" id="mirror">Mirror</button>
+    <button class="btn on" id="gridtog">Grid</button>
+    <span class="sep"></span>
+    <span class="lbl">zoom</span>
+    <button class="btn" data-zoom="-1">&minus;</button>
+    <button class="btn" data-zoom="1">+</button>
+    <span class="lbl">size</span>
+    <button class="btn" data-size="w-1">W&minus;</button>
+    <button class="btn" data-size="w+1">W+</button>
+    <button class="btn" data-size="h-1">H&minus;</button>
+    <button class="btn" data-size="h+1">H+</button>
+    <span class="lbl mono" id="dim">8x6</span>
+  </div>
+
+  <div class="panel">
+    <div class="stage"><div id="grid" class="grid show-grid"></div></div>
+  </div>
+
+  <div class="glyphs" id="glyphs"></div>
+  <div class="hint">Tip: pick a glyph, choose body/accent, draw. Box-drawing (─ │ ┌ ┐ ├ ┬ ═ ╔) connects across cells. Turn Grid off to see the clean result.</div>
+
+  <div class="row" style="margin-top:14px">
+    <button class="btn go" id="export">Export JSON</button>
+    <button class="btn" id="copy">Copy</button>
+    <button class="btn" id="load">Load JSON</button>
+    <button class="btn" id="download">Download .json</button>
+    <button class="btn go" id="send" style="display:none">Send to Claude &#8599;</button>
+  </div>
+  <textarea id="out" placeholder="Export writes the sprite JSON here. To edit an existing sprite: paste its JSON and click Load JSON."></textarea>
+</div>
+
+<script>
+(function(){
+  var MIRROR={'▖':'▗','▗':'▖','▘':'▝','▝':'▘','▙':'▟','▟':'▙','▛':'▜','▜':'▛',
+    '▚':'▞','▞':'▚','▌':'▐','▐':'▌','▏':'▕','▕':'▏',
+    '┌':'┐','┐':'┌','└':'┘','┘':'└','├':'┤','┤':'├','╭':'╮','╮':'╭','╯':'╰','╰':'╯',
+    '╔':'╗','╗':'╔','╚':'╝','╝':'╚','╠':'╣','╣':'╠'};
+  function mir(g){return MIRROR[g]||g;}
+
+  var GLYPHS=[' ',
+    '█','▀','▄','▌','▐','▁','▂','▃','▅','▆','▇','▉','▊','▋','▍','▎','▏','▔','▕',
+    '░','▒','▓',
+    '▖','▗','▘','▝','▙','▟','▛','▜','▚','▞',
+    '─','│','┌','┐','└','┘','├','┤','┬','┴','┼','╭','╮','╰','╯',
+    '═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬',
+    'o','O','#','~',':','.','-','*','+'];
+
+  var PRESETS={
+    pip:{body:'#c9d2da',accent:'#6fc3df',
+      g:[' ▄████▄ ',' ██████ ',' █o  o█ ',' █ ╰╯ █ ',' ██████ ','  ▀██▀  '],
+      m:['        ','        ','  X  X  ','   XX   ','        ','        ']},
+    nox:{body:'#6f74c0',accent:'#b9a5f0',
+      g:[' ▟▖  ▗▙ ',' ▟████▙ ',' █▘  ▝█ ',' █ ▀▀ █ ',' ▜████▛ ','  ▀▀▀▀  '],
+      m:['        ','        ','  X  X  ','   XX   ','        ','        ']},
+    moss:{body:'#6db33f',accent:'#b6e08a',
+      g:['   ╲╱   ',' ▄████▄ ',' █▔  ▔█ ',' █ oo █ ',' ▜████▛ ','  ▀▀▀▀  '],
+      m:['   XX   ','        ','  X  X  ','   XX   ','        ','        ']},
+    byte:{body:'#a64fd0',accent:'#ff6ec7',
+      g:[' ▄▀▄▄▀▄ ',' ██████ ',' █▞  ▚█ ',' █ ▚▞ █ ',' ██████ ',' ▀▄▄▄▄▀ '],
+      m:['        ','        ','  X  X  ','   XX   ','        ','        ']}
+  };
+
+  var W=8,H=6,curGlyph='█',curLayer='b',mirror=true,fs=32,drawing=false,erasing=false;
+  var grid=[], hist=[];
+  function colB(){return document.getElementById('col-b').value;}
+  function colA(){return document.getElementById('col-a').value;}
+
+  function measure(){
+    var s=document.createElement('span');
+    s.style.cssText='font-family:"SF Mono",Menlo,"JetBrains Mono",monospace;font-size:'+fs+'px;line-height:1;position:absolute;visibility:hidden;white-space:pre';
+    s.textContent='█████';document.body.appendChild(s);
+    var r=s.getBoundingClientRect();s.remove();
+    return {w:r.width/5,h:r.height};
+  }
+  function blank(){grid=[];for(var y=0;y<H;y++){var r=[];for(var x=0;x<W;x++)r.push({g:' ',l:'b'});grid.push(r);}}
+  function snapshot(){hist.push(JSON.stringify(grid));if(hist.length>50)hist.shift();}
+  function undo(){if(!hist.length)return;grid=JSON.parse(hist.pop());build();}
+  function setCell(x,y,g,l){if(x<0||x>=W||y<0||y>=H)return;grid[y][x]={g:g,l:l};}
+  function paint(x,y,erase){
+    var g=erase?' ':curGlyph,l=curLayer;
+    setCell(x,y,g,l);
+    if(mirror)setCell(W-1-x,y,g===' '?' ':mir(g),l);
+    render();
+  }
+
+  function build(){
+    var m=measure();
+    var el=document.getElementById('grid');
+    el.style.setProperty('--cw',m.w+'px');
+    el.style.setProperty('--ch',m.h+'px');
+    el.style.fontSize=fs+'px';
+    el.style.lineHeight=m.h+'px';
+    el.innerHTML='';
+    for(var y=0;y<H;y++){
+      for(var x=0;x<W;x++){
+        var c=document.createElement('span');c.className='cell';
+        c.dataset.x=x;c.dataset.y=y;el.appendChild(c);
+      }
+      if(y<H-1)el.appendChild(document.createTextNode('\n'));
+    }
+    document.getElementById('dim').textContent=W+'x'+H;
+    render();
+  }
+  function render(){
+    var kids=document.getElementById('grid').querySelectorAll('.cell');
+    for(var i=0;i<kids.length;i++){
+      var c=kids[i],x=+c.dataset.x,y=+c.dataset.y,cell=grid[y][x];
+      c.textContent=cell.g;
+      c.style.color=cell.l==='a'?colA():colB();
+    }
+    document.getElementById('sw-b').style.background=colB();
+    document.getElementById('sw-a').style.background=colA();
+  }
+  function resize(nw,nh){
+    var ng=[];for(var y=0;y<nh;y++){var r=[];for(var x=0;x<nw;x++)r.push((grid[y]&&grid[y][x])?grid[y][x]:{g:' ',l:'b'});ng.push(r);}
+    W=nw;H=nh;grid=ng;build();
+  }
+  function loadPreset(name){
+    var p=PRESETS[name];if(!p)return;snapshot();
+    document.getElementById('col-b').value=p.body;
+    document.getElementById('col-a').value=p.accent;
+    document.getElementById('sid').value=name;
+    H=p.g.length;W=p.g[0].length;blank();
+    for(var y=0;y<H;y++)for(var x=0;x<W;x++)grid[y][x]={g:p.g[y][x],l:p.m[y][x]==='X'?'a':'b'};
+    build();
+  }
+  function exportJSON(){
+    var glyphs=[],mask=[];
+    for(var y=0;y<H;y++){var gr='',mr='';for(var x=0;x<W;x++){var c=grid[y][x];gr+=c.g;mr+=(c.l==='a'&&c.g!==' ')?'X':' ';}glyphs.push(gr);mask.push(mr);}
+    return JSON.stringify({id:document.getElementById('sid').value||'creature',width:W,height:H,
+      body_color:colB(),accent_color:colA(),glyphs:glyphs,accent_mask:mask},null,2);
+  }
+
+  // palette
+  var gw=document.getElementById('glyphs');
+  GLYPHS.forEach(function(g){
+    var b=document.createElement('button');
+    b.className='gbtn'+(g===curGlyph?' sel':'')+(g===' '?' erase':'');
+    b.textContent=g===' '?'erase':g;b.dataset.g=g;
+    b.onclick=function(){curGlyph=g;[].forEach.call(gw.children,function(x){x.classList.remove('sel');});b.classList.add('sel');};
+    gw.appendChild(b);
+  });
+
+  // painting
+  var gridEl=document.getElementById('grid');
+  gridEl.addEventListener('mousedown',function(e){
+    if(!e.target.classList.contains('cell'))return;
+    e.preventDefault();snapshot();
+    drawing=true;erasing=(e.button===2);
+    paint(+e.target.dataset.x,+e.target.dataset.y,erasing);
+  });
+  gridEl.addEventListener('mouseover',function(e){
+    if(drawing&&e.target.classList.contains('cell'))paint(+e.target.dataset.x,+e.target.dataset.y,erasing);
+  });
+  gridEl.addEventListener('contextmenu',function(e){e.preventDefault();});
+  document.addEventListener('mouseup',function(){drawing=false;erasing=false;});
+  document.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='z'){e.preventDefault();undo();}});
+
+  // controls
+  document.querySelectorAll('[data-preset]').forEach(function(b){b.onclick=function(){loadPreset(b.dataset.preset);};});
+  document.getElementById('clear').onclick=function(){snapshot();blank();build();};
+  document.getElementById('undo').onclick=undo;
+  document.querySelectorAll('#layer button').forEach(function(b){b.onclick=function(){
+    curLayer=b.dataset.l;document.querySelectorAll('#layer button').forEach(function(x){x.classList.remove('act');});b.classList.add('act');};});
+  document.getElementById('col-b').oninput=render;
+  document.getElementById('col-a').oninput=render;
+  var mb=document.getElementById('mirror');
+  mb.onclick=function(){mirror=!mirror;mb.classList.toggle('on',mirror);};
+  var gt=document.getElementById('gridtog');
+  gt.onclick=function(){gt.classList.toggle('on');gridEl.classList.toggle('show-grid');};
+  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
+    fs=Math.max(14,Math.min(46,fs+(+b.dataset.zoom)*4));build();};});
+  document.querySelectorAll('[data-size]').forEach(function(b){b.onclick=function(){
+    var d=b.dataset.size;
+    if(d==='w-1'&&W>3)resize(W-1,H);if(d==='w+1'&&W<28)resize(W+1,H);
+    if(d==='h-1'&&H>3)resize(W,H-1);if(d==='h+1'&&H<20)resize(W,H+1);};});
+  document.getElementById('export').onclick=function(){document.getElementById('out').value=exportJSON();};
+  document.getElementById('copy').onclick=function(){var t=exportJSON();document.getElementById('out').value=t;if(navigator.clipboard)navigator.clipboard.writeText(t);};
+  document.getElementById('load').onclick=function(){
+    var t=document.getElementById('out').value.trim();if(!t)return;
+    try{
+      var o=JSON.parse(t);
+      if(!o.glyphs||!o.glyphs.length)throw 0;
+      snapshot();
+      document.getElementById('sid').value=o.id||'sprite';
+      if(o.body_color)document.getElementById('col-b').value=o.body_color;
+      if(o.accent_color)document.getElementById('col-a').value=o.accent_color;
+      H=o.glyphs.length;W=o.glyphs[0].length;blank();
+      for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+        var g=(o.glyphs[y]&&o.glyphs[y][x])||' ';
+        var acc=!!(o.accent_mask&&o.accent_mask[y]&&o.accent_mask[y][x]==='X');
+        grid[y][x]={g:g,l:acc?'a':'b'};
+      }
+      build();
+    }catch(e){alert('Invalid sprite JSON');}
+  };
+  document.getElementById('download').onclick=function(){var t=exportJSON();document.getElementById('out').value=t;
+    var blob=new Blob([t],{type:'application/json'});var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download=(document.getElementById('sid').value||'creature')+'.json';a.click();};
+  var sendBtn=document.getElementById('send');
+  if(typeof sendPrompt==='function'){sendBtn.style.display='';
+    sendBtn.onclick=function(){sendPrompt('Sprite from the editor — wire it into the game:\n```json\n'+exportJSON()+'\n```');};}
+
+  loadPreset('pip');
+})();
+</script>
+</body>
+</html>
