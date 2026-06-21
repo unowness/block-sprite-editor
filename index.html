@@ -187,12 +187,13 @@
   <!-- Export area -->
   <div class="actionbar">
     <button class="btn" id="copy">Copy</button>
-    <button class="btn" id="load">Load JSON</button>
+    <button class="btn" id="load">Import JSON</button>
+    <input type="file" id="loadfile" accept="application/json,.json" style="display:none">
     <button class="btn" id="download">Download JSON</button>
     <span class="sep"></span>
     <span class="glabel">Scale</span>
     <span class="seg" id="scale">
-      <button data-s="1">1&times;</button><button data-s="2" class="act">2&times;</button><button data-s="3">3&times;</button><button data-s="4">4&times;</button><button data-s="8">8&times;</button>
+      <button data-s="1">1&times;</button><button data-s="4" class="act">4&times;</button><button data-s="8">8&times;</button><button data-s="16">16&times;</button>
     </span>
     <button class="btn" id="png">PNG</button>
     <button class="btn" id="mp4">MP4</button>
@@ -250,7 +251,7 @@
 
   /* ---------------- state ---------------- */
   var S={ name:'pip', w:8, h:6, body:'#6f74c0', accent:'#b9a5f0', bg:null, frames:[], active:0, fps:8 };
-  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:2,
+  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
            drawing:false, erasing:false, playing:false, playIdx:0, animOpen:false, playTimer:null };
   var undoStack=[], redoStack=[], HISTORY_LIMIT=200;
 
@@ -477,7 +478,21 @@
 
   $('export').onclick=function(){ $('out').value=exportJSON(); };
   $('copy').onclick=function(){ var t=exportJSON(); $('out').value=t; if(navigator.clipboard)navigator.clipboard.writeText(t); };
-  $('load').onclick=function(){ var t=$('out').value.trim(); if(!t)return; try{ loadJSON(t); }catch(e){ alert('Invalid sprite JSON'); } };
+  // Import JSON (empty textarea -> file picker) / Load JSON (textarea has content -> parse it)
+  function refreshLoadBtn(){ $('load').textContent = $('out').value.trim() ? 'Load JSON' : 'Import JSON'; }
+  $('out').addEventListener('input', refreshLoadBtn);
+  $('load').onclick=function(){
+    var t=$('out').value.trim();
+    if(t){ try{ loadJSON(t); }catch(e){ alert('Invalid sprite JSON'); } }
+    else { $('loadfile').click(); }
+  };
+  $('loadfile').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0]; if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){ $('out').value=r.result; refreshLoadBtn(); try{ loadJSON(r.result); }catch(err){ alert('Invalid sprite JSON'); } };
+    r.readAsText(f); e.target.value='';
+  });
+  refreshLoadBtn();
   $('download').onclick=function(){ var t=exportJSON(); $('out').value=t;
     var blob=new Blob([t],{type:'application/json'}); var a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download=($('sid').value||'sprite')+'.json'; a.click(); };
@@ -491,22 +506,24 @@
   $('bgcol').addEventListener('change',function(){ if($('bgtog').classList.contains('on')){ var v=S.bg; S.bg=(ui._bgHas?ui._bgStart:v); pushUndo(); S.bg=v; ui._bgHas=false; render(); } });
 
   /* ---------------- raster (PNG) + video (MP4/webm) export ---------------- */
-  var IMG_PX=22;
-  function imgMetrics(){
+  var IMG_PX=22;   // base cell font px (= 1x)
+  function imgMetrics(px){
     var c=document.createElement('canvas'), ctx=c.getContext('2d');
-    ctx.font=IMG_PX+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
+    ctx.font=px+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
     var m=ctx.measureText('█');
     var cw=Math.max(1,Math.round(m.width));
-    var asc=m.actualBoundingBoxAscent||IMG_PX*0.8, desc=m.actualBoundingBoxDescent||IMG_PX*0.2;
+    var asc=m.actualBoundingBoxAscent||px*0.8, desc=m.actualBoundingBoxDescent||px*0.2;
     return {cw:cw, ch:Math.max(1,Math.round(asc+desc)), asc:asc};
   }
-  function renderBase(g,opaque){
-    var M=imgMetrics(), c=document.createElement('canvas');
+  // Render the sprite DIRECTLY at the target font size (px). Glyphs are rasterised
+  // at full resolution, so 8x/16x come out sharp — not an upscaled, blurry 1x.
+  function renderSprite(g,opaque,px){
+    var M=imgMetrics(px), c=document.createElement('canvas');
     c.width=S.w*M.cw; c.height=S.h*M.ch;
-    var ctx=c.getContext('2d'); ctx.imageSmoothingEnabled=false;
+    var ctx=c.getContext('2d');
     if(S.bg){ ctx.fillStyle=S.bg; ctx.fillRect(0,0,c.width,c.height); }
     else if(opaque){ ctx.fillStyle='#000'; ctx.fillRect(0,0,c.width,c.height); }
-    ctx.font=IMG_PX+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
+    ctx.font=px+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
     ctx.textBaseline='alphabetic'; ctx.textAlign='left';
     for(var y=0;y<S.h;y++)for(var x=0;x<S.w;x++){ var cell=g[y][x]; if(cell.g===' ')continue;
       ctx.fillStyle=cell.l==='a'?S.accent:S.body; ctx.fillText(cell.g, x*M.cw, y*M.ch+M.asc); }
@@ -515,10 +532,8 @@
   function downloadBlob(blob,fname){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},1500); }
   function spriteName(){ return $('sid').value||'sprite'; }
   function exportPNG(){
-    var base=renderBase(curGrid(),false), s=ui.scale;
-    var out=document.createElement('canvas'); out.width=base.width*s; out.height=base.height*s;
-    var ctx=out.getContext('2d'); ctx.imageSmoothingEnabled=false; ctx.drawImage(base,0,0,out.width,out.height);
-    out.toBlob(function(b){ downloadBlob(b, spriteName()+'@'+s+'x.png'); },'image/png');
+    var c=renderSprite(curGrid(),false, IMG_PX*ui.scale);
+    c.toBlob(function(b){ downloadBlob(b, spriteName()+'@'+ui.scale+'x.png'); },'image/png');
   }
   function pickMime(){ var o=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
     for(var i=0;i<o.length;i++){ if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(o[i]))return o[i]; } return ''; }
@@ -526,10 +541,10 @@
     if(S.frames.length<2){ alert('Add more than one frame (Animate) to export a video.'); return; }
     if(!window.MediaRecorder){ alert('This browser cannot record video.'); return; }
     var mime=pickMime(); if(!mime){ alert('No supported video codec in this browser.'); return; }
-    var s=ui.scale, bases=S.frames.map(function(g){return renderBase(g,true);});
-    var w=bases[0].width*s, h=bases[0].height*s;
+    var px=IMG_PX*ui.scale, bases=S.frames.map(function(g){return renderSprite(g,true,px);});
+    var w=bases[0].width, h=bases[0].height;
     var cv=document.createElement('canvas'); cv.width=w; cv.height=h; var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
-    function draw(i){ ctx.clearRect(0,0,w,h); ctx.drawImage(bases[i],0,0,w,h); }
+    function draw(i){ ctx.clearRect(0,0,w,h); ctx.drawImage(bases[i],0,0); }
     draw(0);
     var stream=cv.captureStream(Math.max(8,S.fps)); var rec=new MediaRecorder(stream,{mimeType:mime}); var chunks=[];
     rec.ondataavailable=function(e){ if(e.data&&e.data.size)chunks.push(e.data); };
