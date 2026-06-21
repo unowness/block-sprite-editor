@@ -104,7 +104,7 @@
     </div>
     <div class="group">
       <span class="glabel">Presets</span>
-      <button class="btn" data-preset="pip">Pip</button>
+      <button class="btn" data-preset="pip">Pips</button>
       <button class="btn" data-preset="nox">Nox</button>
       <button class="btn" data-preset="moss">Moss</button>
       <button class="btn" data-preset="byte">Byte</button>
@@ -235,16 +235,16 @@
 
   /* ---------------- presets ---------------- */
   var PRESETS={
-    pip:{body:'#c9d2da',accent:'#6fc3df',bg:null,
-      g:[' ▅ ▃▃ ▅ ',' ▚█▝▘█▞ ',' █▖▖▗▗█ ',' ╰*▝▘*╯ ','  ▟▖▗▙  ','        '],
+    pip:{name:'Pips',body:'#c9d2da',accent:'#6fc3df',bg:null,
+      g:[' ▅ ▃▃ ▅ ',' ▚█▝▘█▞ ','▕█▖▖▗▗█▏',' ╰*▝▘*╯ ',' ▗▟▖▗▙▖ ','        '],
       m:[' X    X ','        ','   XX   ','   XX   ','        ','        ']},
-    nox:{body:'#6f74c0',accent:'#b9a5f0',bg:null,
-      g:[' ▟▖  ▗▙ ',' ▟████▙ ',' █╮▔▔╭█ ',' ● ▘▝ ● ',' ▘█▀▀█▝ ','  ▝  ▘  '],
+    nox:{name:'Nox',body:'#6f74c0',accent:'#b9a5f0',bg:null,
+      g:[' ▟▖  ▗▙ ',' ▟████▙ ',' █╮▔▔╭█ ',' @ ▘▝ @ ',' ▘█▀▀█▝ ','  ▝  ▘  '],
       m:['        ','        ','  XXXX  ',' X XX X ',' X    X ','  X  X  ']},
-    moss:{body:'#6db33f',accent:'#b6e08a',bg:'#000000',
+    moss:{name:'Moss',body:'#6db33f',accent:'#b6e08a',bg:null,
       g:['  ▚  ▞  ',' ▄████▄ ',' █▂~~▂█ ',' ▛.OO.▜ ',' ▟████▙ ','  ▀  ▀  '],
       m:['  X  X  ','        ','  XXXX  ',' XXXXXX ',' X    X ','        ']},
-    byte:{body:'#a64fd0',accent:'#ff6ec7',bg:null,
+    byte:{name:'Byte',body:'#a64fd0',accent:'#ff6ec7',bg:null,
       g:[' ▗    ▖ ',' ▙▟▒▒▙▟ ',' ▛▀  ▀▜ ','▝▚▔▚▞▔▞▘','[▜█▀▀█▛]',' ▀▘  ▝▀ '],
       m:[' X    X ',' X    X ','        ','  XXXX  ','        ','        ']}
   };
@@ -360,7 +360,7 @@
 
   /* ---------------- presets / JSON ---------------- */
   function loadPreset(name){ var p=PRESETS[name]; if(!p)return; pushUndo();
-    S.name=name; S.body=p.body; S.accent=p.accent; S.bg=p.bg||null; S.h=p.g.length; S.w=p.g[0].length;
+    S.name=p.name||name; S.body=p.body; S.accent=p.accent; S.bg=p.bg||null; S.h=p.g.length; S.w=p.g[0].length;
     S.frames=[ stringsToGrid(p.g, p.m, S.w, S.h, true) ]; S.active=0;
     syncInputs(); build(); renderFrames();
   }
