@@ -67,13 +67,8 @@
   .grid.show-grid { background-image:
         linear-gradient(to right, rgba(160,168,184,.30) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(160,168,184,.30) 1px, transparent 1px);
-        background-size: var(--cw) var(--ch); }
-  .grid.show-grid.axis { background-image:
-        linear-gradient(to right, var(--axiscol) 0 var(--axisw), transparent var(--axisw)),
-        linear-gradient(to right, rgba(160,168,184,.30) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(160,168,184,.30) 1px, transparent 1px);
-        background-size: 100% 100%, var(--cw) var(--ch), var(--cw) var(--ch);
-        background-repeat: no-repeat, repeat, repeat; }
+        background-size: var(--cw) var(--ch);
+        background-position:-1px -1px; }  /* shift the outer top/left line off-canvas */
   .cell { background:transparent; }
   .cell:hover { background:rgba(103,232,249,.28); }
 
@@ -136,6 +131,11 @@
       <input type="color" id="col-a" value="#b9a5f0" title="Accent color">
     </div>
     <div class="group">
+      <span class="glabel">Background</span>
+      <button class="btn" id="bgtog">Fill</button>
+      <input type="color" id="bgcol" value="#101018" title="Background color">
+    </div>
+    <div class="group">
       <span class="glabel">Canvas</span>
       <button class="btn" data-size="w-1">W&minus;</button>
       <button class="btn" data-size="w+1">W+</button>
@@ -189,6 +189,13 @@
     <button class="btn" id="copy">Copy</button>
     <button class="btn" id="load">Load JSON</button>
     <button class="btn" id="download">Download JSON</button>
+    <span class="sep"></span>
+    <span class="glabel">Scale</span>
+    <span class="seg" id="scale">
+      <button data-s="1">1&times;</button><button data-s="2" class="act">2&times;</button><button data-s="3">3&times;</button><button data-s="4">4&times;</button><button data-s="8">8&times;</button>
+    </span>
+    <button class="btn" id="png">PNG</button>
+    <button class="btn" id="mp4">MP4</button>
     <button class="btn go" id="send" style="display:none">Send to Claude &#8599;</button>
     <span class="spacer"></span>
     <button class="btn primary" id="export">Export JSON</button>
@@ -242,8 +249,8 @@
   };
 
   /* ---------------- state ---------------- */
-  var S={ name:'pip', w:8, h:6, body:'#6f74c0', accent:'#b9a5f0', frames:[], active:0, fps:8 };
-  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32,
+  var S={ name:'pip', w:8, h:6, body:'#6f74c0', accent:'#b9a5f0', bg:null, frames:[], active:0, fps:8 };
+  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:2,
            drawing:false, erasing:false, playing:false, playIdx:0, animOpen:false, playTimer:null };
   var undoStack=[], redoStack=[], HISTORY_LIMIT=200;
 
@@ -253,10 +260,10 @@
   function blankGrid(w,h){var g=[];for(var y=0;y<h;y++){var r=[];for(var x=0;x<w;x++)r.push({g:' ',l:'b'});g.push(r);}return g;}
 
   /* ---------------- history (snapshot full sprite) ---------------- */
-  function snap(){return JSON.stringify({name:S.name,w:S.w,h:S.h,body:S.body,accent:S.accent,active:S.active,fps:S.fps,frames:S.frames});}
+  function snap(){return JSON.stringify({name:S.name,w:S.w,h:S.h,body:S.body,accent:S.accent,bg:S.bg,active:S.active,fps:S.fps,frames:S.frames});}
   function restore(str){
     var o=JSON.parse(str);
-    S.name=o.name;S.w=o.w;S.h=o.h;S.body=o.body;S.accent=o.accent;S.active=o.active;S.fps=o.fps;S.frames=o.frames;
+    S.name=o.name;S.w=o.w;S.h=o.h;S.body=o.body;S.accent=o.accent;S.bg=o.bg;S.active=o.active;S.fps=o.fps;S.frames=o.frames;
     syncInputs(); build(); renderFrames();
   }
   function pushUndo(){ undoStack.push(snap()); if(undoStack.length>HISTORY_LIMIT)undoStack.shift(); redoStack.length=0; updateHist(); }
@@ -265,6 +272,7 @@
   function updateHist(){ $('undo').disabled=!undoStack.length; $('redo').disabled=!redoStack.length; }
 
   function syncInputs(){ $('sid').value=S.name; $('col-b').value=S.body; $('col-a').value=S.accent;
+    if(S.bg){ $('bgcol').value=S.bg; $('bgtog').classList.add('on'); } else { $('bgtog').classList.remove('on'); }
     [].forEach.call(document.querySelectorAll('#fps button'),function(b){b.classList.toggle('act',+b.dataset.fps===S.fps);}); }
 
   /* ---------------- measure + build + render ---------------- */
@@ -281,11 +289,6 @@
     gridEl.style.setProperty('--ch',m.h+'px');
     gridEl.style.fontSize=ui.fs+'px';
     gridEl.style.lineHeight=m.h+'px';
-    // central mirror axis hint (odd width only)
-    var odd=(S.w%2===1);
-    gridEl.classList.toggle('axis', ui.showGrid && ui.mirror && odd);
-    if(odd){ gridEl.style.setProperty('--axisw',((S.w-1)/2*m.w)+'px'); }
-    gridEl.style.setProperty('--axiscol','rgba(103,232,249,.10)');
     gridEl.innerHTML='';
     for(var y=0;y<S.h;y++){
       for(var x=0;x<S.w;x++){ var c=document.createElement('span'); c.className='cell'; c.dataset.x=x; c.dataset.y=y; gridEl.appendChild(c); }
@@ -301,6 +304,7 @@
   }
   function render(){
     paintCells(ui.playing?S.frames[ui.playIdx]:curGrid());
+    gridEl.style.backgroundColor = S.bg || '#000';
     $('sw-b').style.background=S.body; $('sw-a').style.background=S.accent;
   }
 
@@ -378,7 +382,7 @@
     var top=frames[S.active]||frames[0];
     return JSON.stringify({
       version:2, id:$('sid').value||'sprite', width:S.w, height:S.h,
-      body_color:S.body, accent_color:S.accent, fps:S.fps, active:S.active,
+      body_color:S.body, accent_color:S.accent, background_color:S.bg||null, fps:S.fps, active:S.active,
       frames:frames,
       glyphs:top.glyphs, accent_mask:top.accent_mask   /* legacy single-frame consumers */
     },null,2);
@@ -389,6 +393,7 @@
     S.name=o.id||o.name||'sprite';
     if(o.body_color)S.body=o.body_color;
     if(o.accent_color)S.accent=o.accent_color;
+    S.bg=o.background_color||null;
     if(o.fps)S.fps=o.fps;
     if(o.frames&&o.frames.length){
       var w=o.width||((o.frames[0].glyphs[0]||'').length), h=o.height||o.frames[0].glyphs.length;
@@ -478,6 +483,64 @@
     a.href=URL.createObjectURL(blob); a.download=($('sid').value||'sprite')+'.json'; a.click(); };
   var sendBtn=$('send');
   if(typeof sendPrompt==='function'){ sendBtn.style.display=''; sendBtn.onclick=function(){ sendPrompt('Sprite from the editor — wire it into the game:\n```json\n'+exportJSON()+'\n```'); }; }
+
+  /* ---------------- background fill (layer below the drawing) ---------------- */
+  $('bgtog').onclick=function(){ var on=!$('bgtog').classList.contains('on'); pushUndo(); S.bg = on? $('bgcol').value : null; $('bgtog').classList.toggle('on',on); render(); };
+  $('bgcol').addEventListener('focus',function(){ ui._bgStart=S.bg; ui._bgHas=true; });
+  $('bgcol').addEventListener('input',function(){ if($('bgtog').classList.contains('on')){ S.bg=$('bgcol').value; render(); } });
+  $('bgcol').addEventListener('change',function(){ if($('bgtog').classList.contains('on')){ var v=S.bg; S.bg=(ui._bgHas?ui._bgStart:v); pushUndo(); S.bg=v; ui._bgHas=false; render(); } });
+
+  /* ---------------- raster (PNG) + video (MP4/webm) export ---------------- */
+  var IMG_PX=22;
+  function imgMetrics(){
+    var c=document.createElement('canvas'), ctx=c.getContext('2d');
+    ctx.font=IMG_PX+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
+    var m=ctx.measureText('█');
+    var cw=Math.max(1,Math.round(m.width));
+    var asc=m.actualBoundingBoxAscent||IMG_PX*0.8, desc=m.actualBoundingBoxDescent||IMG_PX*0.2;
+    return {cw:cw, ch:Math.max(1,Math.round(asc+desc)), asc:asc};
+  }
+  function renderBase(g,opaque){
+    var M=imgMetrics(), c=document.createElement('canvas');
+    c.width=S.w*M.cw; c.height=S.h*M.ch;
+    var ctx=c.getContext('2d'); ctx.imageSmoothingEnabled=false;
+    if(S.bg){ ctx.fillStyle=S.bg; ctx.fillRect(0,0,c.width,c.height); }
+    else if(opaque){ ctx.fillStyle='#000'; ctx.fillRect(0,0,c.width,c.height); }
+    ctx.font=IMG_PX+'px "SF Mono", Menlo, "JetBrains Mono", monospace';
+    ctx.textBaseline='alphabetic'; ctx.textAlign='left';
+    for(var y=0;y<S.h;y++)for(var x=0;x<S.w;x++){ var cell=g[y][x]; if(cell.g===' ')continue;
+      ctx.fillStyle=cell.l==='a'?S.accent:S.body; ctx.fillText(cell.g, x*M.cw, y*M.ch+M.asc); }
+    return c;
+  }
+  function downloadBlob(blob,fname){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname; a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},1500); }
+  function spriteName(){ return $('sid').value||'sprite'; }
+  function exportPNG(){
+    var base=renderBase(curGrid(),false), s=ui.scale;
+    var out=document.createElement('canvas'); out.width=base.width*s; out.height=base.height*s;
+    var ctx=out.getContext('2d'); ctx.imageSmoothingEnabled=false; ctx.drawImage(base,0,0,out.width,out.height);
+    out.toBlob(function(b){ downloadBlob(b, spriteName()+'@'+s+'x.png'); },'image/png');
+  }
+  function pickMime(){ var o=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+    for(var i=0;i<o.length;i++){ if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(o[i]))return o[i]; } return ''; }
+  function exportVideo(){
+    if(S.frames.length<2){ alert('Add more than one frame (Animate) to export a video.'); return; }
+    if(!window.MediaRecorder){ alert('This browser cannot record video.'); return; }
+    var mime=pickMime(); if(!mime){ alert('No supported video codec in this browser.'); return; }
+    var s=ui.scale, bases=S.frames.map(function(g){return renderBase(g,true);});
+    var w=bases[0].width*s, h=bases[0].height*s;
+    var cv=document.createElement('canvas'); cv.width=w; cv.height=h; var ctx=cv.getContext('2d'); ctx.imageSmoothingEnabled=false;
+    function draw(i){ ctx.clearRect(0,0,w,h); ctx.drawImage(bases[i],0,0,w,h); }
+    draw(0);
+    var stream=cv.captureStream(Math.max(8,S.fps)); var rec=new MediaRecorder(stream,{mimeType:mime}); var chunks=[];
+    rec.ondataavailable=function(e){ if(e.data&&e.data.size)chunks.push(e.data); };
+    rec.onstop=function(){ var blob=new Blob(chunks,{type:mime}); downloadBlob(blob, spriteName()+'.'+(mime.indexOf('mp4')>=0?'mp4':'webm')); };
+    rec.start();
+    var i=0, total=S.frames.length*3, step=Math.round(1000/S.fps);
+    var iv=setInterval(function(){ draw(i%S.frames.length); i++; if(i>=total){ clearInterval(iv); setTimeout(function(){ rec.stop(); }, step); } }, step);
+  }
+  document.querySelectorAll('#scale button').forEach(function(b){ b.onclick=function(){ ui.scale=+b.dataset.s;
+    document.querySelectorAll('#scale button').forEach(function(x){x.classList.remove('act');}); b.classList.add('act'); }; });
+  $('png').onclick=exportPNG; $('mp4').onclick=exportVideo;
 
   /* ---------------- init ---------------- */
   buildPalette();
