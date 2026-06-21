@@ -5,131 +5,226 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Block Sprite Editor</title>
 <style>
-  :root { --bg:#0b0b0d; --panel:#16161a; --line:#2a2a30; --txt:#e6e6df; --dim:#9aa0a6; --cyan:#67e8f9; }
+  :root { --bg:#0b0b0d; --panel:#16161a; --line:#2a2a30; --txt:#e6e6df; --dim:#9aa0a6;
+          --cyan:#67e8f9; --mint:#9be0b4; --danger:#e0989a; --danger-line:#6e3a3c; }
   * { box-sizing:border-box; }
   body { margin:0; background:#070708; color:var(--txt);
          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif; }
-  .wrap { max-width:820px; margin:0 auto; padding:20px; }
-  h1 { font-size:18px; font-weight:500; margin:0 0 4px; }
-  .sub { color:var(--dim); font-size:13px; margin:0 0 16px; }
+  .wrap { max-width:960px; margin:0 auto; padding:22px; }
+  h1 { font-size:18px; font-weight:500; margin:0 0 3px; }
+  .sub { color:var(--dim); font-size:12px; margin:0 0 18px; max-width:680px; line-height:1.5; }
   .mono { font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; }
-  .row { display:flex; flex-wrap:wrap; gap:9px; align-items:center; margin-bottom:11px; }
+
+  /* bars + groups */
+  .bar { display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-bottom:12px; }
+  .group { display:flex; align-items:center; gap:7px; padding:7px 10px;
+           background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .group.right { margin-left:auto; }
+  .glabel { color:var(--dim); font-size:10px; letter-spacing:.06em; text-transform:uppercase; margin-right:2px; }
   .lbl { color:var(--dim); font-size:12px; }
-  .panel { background:var(--bg); border:1px solid var(--line); border-radius:12px;
-           padding:18px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
-  .stage { position:relative; }
+  .sep { width:1px; height:22px; background:var(--line); margin:0 2px; }
+
+  /* buttons */
+  .btn { font-size:13px; padding:7px 11px; background:var(--panel); color:var(--txt);
+         border:1px solid var(--line); border-radius:8px; cursor:pointer; line-height:1; }
+  .btn:hover { border-color:#3a3a44; }
+  .btn.on { border-color:var(--cyan); color:var(--cyan); }
+  .btn.primary { background:rgba(103,232,249,.14); border-color:var(--cyan); color:var(--cyan); font-weight:500; padding:9px 16px; }
+  .btn.danger { border-color:var(--danger-line); color:var(--danger); }
+  .btn:disabled { opacity:.35; cursor:default; border-color:var(--line); color:var(--dim); }
+  .group .btn { background:#1d1d22; }
+
+  /* erase tool */
+  .erasebtn { display:inline-flex; align-items:center; gap:6px; }
+  .erasebtn svg { width:15px; height:15px; }
+  .erasebtn.sel { border-color:var(--cyan); color:var(--cyan); background:rgba(103,232,249,.12); }
+  .curglyph { width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center;
+              font-family:"SF Mono",Menlo,monospace; font-size:18px; color:var(--cyan);
+              background:#000; border:1px solid var(--line); border-radius:7px; }
+
+  /* paint segmented + colors */
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button { background:#1d1d22; color:var(--dim); border:0; padding:7px 11px; font-size:13px; cursor:pointer; }
+  .seg button.act { background:#2a2a32; color:var(--txt); }
+  .swatch { width:13px; height:13px; border-radius:3px; display:inline-block; vertical-align:-1px; margin-right:5px; }
+  input[type=color] { width:32px; height:30px; border:1px solid var(--line); border-radius:6px; background:#1d1d22; cursor:pointer; padding:2px; }
+  input[type=text] { height:30px; background:#1d1d22; color:var(--txt); border:1px solid var(--line);
+                     border-radius:6px; padding:0 9px; font-family:"SF Mono",Menlo,monospace; font-size:13px; min-width:130px; }
+
+  /* animation bar */
+  .animbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px;
+             padding:9px 12px; background:var(--panel); border:1px solid var(--line); border-radius:10px; }
+  .frames { display:flex; flex-wrap:wrap; gap:5px; }
+  .fbtn { min-width:30px; height:30px; padding:0 8px; font-size:13px; background:#1d1d22; color:var(--dim);
+          border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+  .fbtn.act { border-color:var(--cyan); color:var(--cyan); background:rgba(103,232,249,.12); }
+
+  /* canvas stage — centered work area */
+  .stage { background:var(--bg); border:1px solid var(--line); border-radius:12px;
+           min-height:320px; padding:32px; display:flex; align-items:center; justify-content:center; }
   .grid { display:inline-block; background:#000; cursor:crosshair; white-space:pre;
           font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; }
   .grid.show-grid { background-image:
-        linear-gradient(to right, rgba(160,168,184,.38) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(160,168,184,.38) 1px, transparent 1px);
+        linear-gradient(to right, rgba(160,168,184,.30) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(160,168,184,.30) 1px, transparent 1px);
         background-size: var(--cw) var(--ch); }
+  .grid.show-grid.axis { background-image:
+        linear-gradient(to right, var(--axiscol) 0 var(--axisw), transparent var(--axisw)),
+        linear-gradient(to right, rgba(160,168,184,.30) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(160,168,184,.30) 1px, transparent 1px);
+        background-size: 100% 100%, var(--cw) var(--ch), var(--cw) var(--ch);
+        background-repeat: no-repeat, repeat, repeat; }
   .cell { background:transparent; }
-  .cell:hover { background:rgba(103,232,249,.30); }
-  .prev-wrap { text-align:center; }
-  .prev { background:#000; border:1px solid #222; border-radius:8px; padding:14px;
-          font-family:"SF Mono",Menlo,"JetBrains Mono",monospace; line-height:1; white-space:pre; }
-  .glyphs { display:flex; flex-wrap:wrap; gap:4px; margin:12px 0 6px; }
+  .cell:hover { background:rgba(103,232,249,.28); }
+
+  /* glyph palette */
+  .palette { margin:14px 0 4px; }
+  .pgroup { margin-bottom:9px; }
+  .plabel { color:var(--dim); font-size:10px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:5px; }
+  .pgrid { display:flex; flex-wrap:wrap; gap:4px; }
   .gbtn { width:30px; height:30px; font-family:"SF Mono",Menlo,monospace; font-size:17px;
-          background:var(--panel); color:#cfd2c4; border:1px solid var(--line);
-          border-radius:6px; cursor:pointer; padding:0; }
-  .gbtn.sel { border-color:var(--cyan); color:var(--cyan); }
-  .gbtn.erase { font-size:10px; color:var(--dim); }
-  .sep { width:1px; height:24px; background:var(--line); margin:0 3px; }
-  .btn { font-size:13px; padding:7px 11px; background:var(--panel); color:var(--txt);
-         border:1px solid var(--line); border-radius:7px; cursor:pointer; }
-  .btn.on { border-color:var(--cyan); color:var(--cyan); }
-  .btn.go { border-color:#3a7d52; color:#9be0b4; }
-  input[type=color] { width:34px; height:30px; border:1px solid var(--line);
-                      border-radius:6px; background:var(--panel); cursor:pointer; padding:2px; }
-  input[type=text] { width:110px; height:30px; background:var(--panel); color:var(--txt);
-                     border:1px solid var(--line); border-radius:6px; padding:0 8px;
-                     font-family:"SF Mono",Menlo,monospace; }
+          background:var(--panel); color:#cfd2c4; border:1px solid var(--line); border-radius:6px; cursor:pointer; padding:0; }
+  .gbtn:hover { border-color:#3a3a44; }
+  .gbtn.sel { border-color:var(--cyan); color:var(--cyan); background:rgba(103,232,249,.12); }
+
+  /* action bar (export area) */
+  .actionbar { display:flex; align-items:center; gap:9px; margin-top:16px; }
+  .actionbar .spacer { flex:1; }
   textarea { width:100%; height:120px; background:var(--bg); color:var(--dim);
-             border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:8px;
+             border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:9px;
              font-family:"SF Mono",Menlo,monospace; font-size:11px; }
-  .seg { display:inline-flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
-  .seg button { background:var(--panel); color:var(--dim); border:0; padding:7px 11px;
-                font-size:13px; cursor:pointer; }
-  .seg button.act { background:#23232a; color:var(--txt); }
-  .swatch { width:13px; height:13px; border-radius:3px; display:inline-block; vertical-align:-1px; margin-right:5px; }
   .hint { color:var(--dim); font-size:11px; margin-top:8px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Block Sprite Editor</h1>
-  <p class="sub">Draw block-ASCII sprites in two colors (body + accent). Glyphs sit edge-to-edge so block and box lines connect. Left-click paints, right-click erases, mirror keeps it symmetric. Export or Load JSON to reuse sprites in any project.</p>
+  <p class="sub">Draw block-ASCII sprites in two colors (body + accent). Glyphs sit edge-to-edge so block and box lines connect. Mirror, undo/redo, resize and a small animation timeline are built in. Export or Load JSON to reuse sprites anywhere.</p>
 
-  <div class="row">
-    <span class="lbl">name</span>
-    <input type="text" id="sid" value="pip">
-    <span class="lbl">presets</span>
-    <button class="btn" data-preset="pip">Pip</button>
-    <button class="btn" data-preset="nox">Nox</button>
-    <button class="btn" data-preset="moss">Moss</button>
-    <button class="btn" data-preset="byte">Byte</button>
-    <span class="sep"></span>
-    <button class="btn" id="undo">Undo</button>
-    <button class="btn" id="clear">Clear</button>
+  <!-- Project bar -->
+  <div class="bar">
+    <div class="group">
+      <span class="glabel">Name</span>
+      <input type="text" id="sid" value="pip" placeholder="Sprite name">
+    </div>
+    <div class="group">
+      <span class="glabel">Presets</span>
+      <button class="btn" data-preset="pip">Pip</button>
+      <button class="btn" data-preset="nox">Nox</button>
+      <button class="btn" data-preset="moss">Moss</button>
+      <button class="btn" data-preset="byte">Byte</button>
+    </div>
   </div>
 
-  <div class="row">
-    <span class="lbl">paint</span>
-    <span class="seg" id="layer">
-      <button data-l="b" class="act"><span class="swatch" id="sw-b"></span>body</button>
-      <button data-l="a"><span class="swatch" id="sw-a"></span>accent</button>
+  <!-- Editor toolbar -->
+  <div class="bar">
+    <div class="group">
+      <span class="glabel">Tool</span>
+      <button class="btn erasebtn" id="erase" title="Erase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H8.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3"/><path d="M18 13.3l-6.3 -6.3"/></svg>
+        Erase
+      </button>
+      <span class="curglyph" id="curglyph">█</span>
+    </div>
+    <div class="group">
+      <span class="glabel">Paint</span>
+      <span class="seg" id="layer">
+        <button data-l="b" class="act"><span class="swatch" id="sw-b"></span>Body</button>
+        <button data-l="a"><span class="swatch" id="sw-a"></span>Accent</button>
+      </span>
+      <input type="color" id="col-b" value="#6f74c0" title="Body color">
+      <input type="color" id="col-a" value="#b9a5f0" title="Accent color">
+    </div>
+    <div class="group">
+      <span class="glabel">Canvas</span>
+      <button class="btn" data-size="w-1">W&minus;</button>
+      <button class="btn" data-size="w+1">W+</button>
+      <button class="btn" data-size="h-1">H&minus;</button>
+      <button class="btn" data-size="h+1">H+</button>
+      <span class="lbl mono" id="dim">8 &times; 6</span>
+    </div>
+    <div class="group">
+      <span class="glabel">View</span>
+      <button class="btn on" id="mirror">Mirror</button>
+      <button class="btn on" id="gridtog">Grid</button>
+      <button class="btn" data-zoom="-1">Zoom &minus;</button>
+      <button class="btn" data-zoom="1">Zoom +</button>
+    </div>
+    <div class="group">
+      <span class="glabel">History</span>
+      <button class="btn" id="undo">Undo</button>
+      <button class="btn" id="redo">Redo</button>
+    </div>
+    <div class="group right">
+      <button class="btn" id="animate">Animate</button>
+      <button class="btn danger" id="clear">Clear</button>
+    </div>
+  </div>
+
+  <!-- Animation timeline (hidden until Animate) -->
+  <div class="animbar" id="animbar" style="display:none">
+    <span class="glabel">Frames</span>
+    <div class="frames" id="frames"></div>
+    <button class="btn" id="addframe">+ Add Frame</button>
+    <button class="btn" id="delframe">Delete Frame</button>
+    <span class="sep"></span>
+    <button class="btn" id="play">Play</button>
+    <button class="btn" id="stop">Pause</button>
+    <span class="glabel">FPS</span>
+    <span class="seg" id="fps">
+      <button data-fps="4">4</button><button data-fps="6">6</button>
+      <button data-fps="8" class="act">8</button><button data-fps="12">12</button>
     </span>
-    <input type="color" id="col-b" value="#6f74c0" title="body color">
-    <input type="color" id="col-a" value="#b9a5f0" title="accent color">
-    <span class="sep"></span>
-    <button class="btn on" id="mirror">Mirror</button>
-    <button class="btn on" id="gridtog">Grid</button>
-    <span class="sep"></span>
-    <span class="lbl">zoom</span>
-    <button class="btn" data-zoom="-1">&minus;</button>
-    <button class="btn" data-zoom="1">+</button>
-    <span class="lbl">size</span>
-    <button class="btn" data-size="w-1">W&minus;</button>
-    <button class="btn" data-size="w+1">W+</button>
-    <button class="btn" data-size="h-1">H&minus;</button>
-    <button class="btn" data-size="h+1">H+</button>
-    <span class="lbl mono" id="dim">8x6</span>
   </div>
 
-  <div class="panel">
-    <div class="stage"><div id="grid" class="grid show-grid"></div></div>
-  </div>
+  <!-- Canvas stage -->
+  <div class="stage"><div id="grid" class="grid show-grid"></div></div>
 
-  <div class="glyphs" id="glyphs"></div>
-  <div class="hint">Tip: pick a glyph, choose body/accent, draw. Box-drawing (─ │ ┌ ┐ ├ ┬ ═ ╔) connects across cells. Turn Grid off to see the clean result.</div>
+  <!-- Glyph palette -->
+  <div class="palette" id="palette"></div>
+  <div class="hint">Pick a glyph, choose Body or Accent, and draw. Right-click erases. Box-drawing connects across cells; turn Grid off to see the clean result.</div>
 
-  <div class="row" style="margin-top:14px">
-    <button class="btn go" id="export">Export JSON</button>
+  <!-- Export area -->
+  <div class="actionbar">
     <button class="btn" id="copy">Copy</button>
     <button class="btn" id="load">Load JSON</button>
-    <button class="btn" id="download">Download .json</button>
+    <button class="btn" id="download">Download JSON</button>
     <button class="btn go" id="send" style="display:none">Send to Claude &#8599;</button>
+    <span class="spacer"></span>
+    <button class="btn primary" id="export">Export JSON</button>
   </div>
   <textarea id="out" placeholder="Export writes the sprite JSON here. To edit an existing sprite: paste its JSON and click Load JSON."></textarea>
 </div>
 
 <script>
 (function(){
-  var MIRROR={'▖':'▗','▗':'▖','▘':'▝','▝':'▘','▙':'▟','▟':'▙','▛':'▜','▜':'▛',
-    '▚':'▞','▞':'▚','▌':'▐','▐':'▌','▏':'▕','▕':'▏',
-    '┌':'┐','┐':'┌','└':'┘','┘':'└','├':'┤','┤':'├','╭':'╮','╮':'╭','╯':'╰','╰':'╯',
-    '╔':'╗','╗':'╔','╚':'╝','╝':'╚','╠':'╣','╣':'╠'};
+  "use strict";
+  /* ---------------- glyph mirror map ---------------- */
+  var MIRROR={
+    '▖':'▗','▗':'▖','▘':'▝','▝':'▘','▙':'▟','▟':'▙','▛':'▜','▜':'▛','▚':'▞','▞':'▚',
+    '▌':'▐','▐':'▌','▏':'▕','▕':'▏',
+    '┌':'┐','┐':'┌','└':'┘','┘':'└','╭':'╮','╮':'╭','╰':'╯','╯':'╰',
+    '┏':'┓','┓':'┏','┗':'┛','┛':'┗','┍':'┑','┑':'┍','┎':'┒','┒':'┎','┕':'┙','┙':'┕','┖':'┚','┚':'┖',
+    '├':'┤','┤':'├','┣':'┫','┫':'┣','┝':'┥','┥':'┝','┞':'┦','┦':'┞','┟':'┧','┧':'┟','┠':'┨','┨':'┠','┡':'┩','┩':'┡','┢':'┪','┪':'┢',
+    '╔':'╗','╗':'╔','╚':'╝','╝':'╚','╠':'╣','╣':'╠',
+    '╱':'╲','╲':'╱','<':'>','>':'<','/':'\\','\\':'/'
+  };
   function mir(g){return MIRROR[g]||g;}
 
-  var GLYPHS=[' ',
-    '█','▀','▄','▌','▐','▁','▂','▃','▅','▆','▇','▉','▊','▋','▍','▎','▏','▔','▕',
-    '░','▒','▓',
-    '▖','▗','▘','▝','▙','▟','▛','▜','▚','▞',
-    '─','│','┌','┐','└','┘','├','┤','┬','┴','┼','╭','╮','╰','╯',
-    '═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬',
-    'o','O','#','~',':','.','-','*','+'];
+  /* ---------------- glyph palette (grouped, >2x the old set) ---------------- */
+  var GROUPS=[
+    {label:'Blocks', g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
+    {label:'Quadrants', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
+    {label:'Shades', g:['░','▒','▓']},
+    {label:'Lines', g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
+    {label:'Corners', g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
+    {label:'Junctions', g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
+    {label:'Double', g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
+    {label:'Diagonals', g:['╱','╲','╳']},
+    {label:'Marks', g:['o','O','#','~',':','.','-','*','+','=','/','\\','|','<','>','^','v']}
+  ];
 
+  /* ---------------- presets ---------------- */
   var PRESETS={
     pip:{body:'#c9d2da',accent:'#6fc3df',
       g:[' ▄████▄ ',' ██████ ',' █o  o█ ',' █ ╰╯ █ ',' ██████ ','  ▀██▀  '],
@@ -145,148 +240,250 @@
       m:['        ','        ','  X  X  ','   XX   ','        ','        ']}
   };
 
-  var W=8,H=6,curGlyph='█',curLayer='b',mirror=true,fs=32,drawing=false,erasing=false;
-  var grid=[], hist=[];
-  function colB(){return document.getElementById('col-b').value;}
-  function colA(){return document.getElementById('col-a').value;}
+  /* ---------------- state ---------------- */
+  var S={ name:'pip', w:8, h:6, body:'#6f74c0', accent:'#b9a5f0', frames:[], active:0, fps:8 };
+  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32,
+           drawing:false, erasing:false, playing:false, playIdx:0, animOpen:false, playTimer:null };
+  var undoStack=[], redoStack=[], HISTORY_LIMIT=200;
 
+  function $(id){return document.getElementById(id);}
+  var gridEl=$('grid');
+  function curGrid(){return S.frames[S.active];}
+  function blankGrid(w,h){var g=[];for(var y=0;y<h;y++){var r=[];for(var x=0;x<w;x++)r.push({g:' ',l:'b'});g.push(r);}return g;}
+
+  /* ---------------- history (snapshot full sprite) ---------------- */
+  function snap(){return JSON.stringify({name:S.name,w:S.w,h:S.h,body:S.body,accent:S.accent,active:S.active,fps:S.fps,frames:S.frames});}
+  function restore(str){
+    var o=JSON.parse(str);
+    S.name=o.name;S.w=o.w;S.h=o.h;S.body=o.body;S.accent=o.accent;S.active=o.active;S.fps=o.fps;S.frames=o.frames;
+    syncInputs(); build(); renderFrames();
+  }
+  function pushUndo(){ undoStack.push(snap()); if(undoStack.length>HISTORY_LIMIT)undoStack.shift(); redoStack.length=0; updateHist(); }
+  function undo(){ if(!undoStack.length)return; redoStack.push(snap()); restore(undoStack.pop()); updateHist(); }
+  function redo(){ if(!redoStack.length)return; undoStack.push(snap()); restore(redoStack.pop()); updateHist(); }
+  function updateHist(){ $('undo').disabled=!undoStack.length; $('redo').disabled=!redoStack.length; }
+
+  function syncInputs(){ $('sid').value=S.name; $('col-b').value=S.body; $('col-a').value=S.accent;
+    [].forEach.call(document.querySelectorAll('#fps button'),function(b){b.classList.toggle('act',+b.dataset.fps===S.fps);}); }
+
+  /* ---------------- measure + build + render ---------------- */
   function measure(){
     var s=document.createElement('span');
-    s.style.cssText='font-family:"SF Mono",Menlo,"JetBrains Mono",monospace;font-size:'+fs+'px;line-height:1;position:absolute;visibility:hidden;white-space:pre';
+    s.style.cssText='font-family:"SF Mono",Menlo,"JetBrains Mono",monospace;font-size:'+ui.fs+'px;line-height:1;position:absolute;visibility:hidden;white-space:pre';
     s.textContent='█████';document.body.appendChild(s);
     var r=s.getBoundingClientRect();s.remove();
     return {w:r.width/5,h:r.height};
   }
-  function blank(){grid=[];for(var y=0;y<H;y++){var r=[];for(var x=0;x<W;x++)r.push({g:' ',l:'b'});grid.push(r);}}
-  function snapshot(){hist.push(JSON.stringify(grid));if(hist.length>50)hist.shift();}
-  function undo(){if(!hist.length)return;grid=JSON.parse(hist.pop());build();}
-  function setCell(x,y,g,l){if(x<0||x>=W||y<0||y>=H)return;grid[y][x]={g:g,l:l};}
-  function paint(x,y,erase){
-    var g=erase?' ':curGlyph,l=curLayer;
-    setCell(x,y,g,l);
-    if(mirror)setCell(W-1-x,y,g===' '?' ':mir(g),l);
-    render();
-  }
-
   function build(){
     var m=measure();
-    var el=document.getElementById('grid');
-    el.style.setProperty('--cw',m.w+'px');
-    el.style.setProperty('--ch',m.h+'px');
-    el.style.fontSize=fs+'px';
-    el.style.lineHeight=m.h+'px';
-    el.innerHTML='';
-    for(var y=0;y<H;y++){
-      for(var x=0;x<W;x++){
-        var c=document.createElement('span');c.className='cell';
-        c.dataset.x=x;c.dataset.y=y;el.appendChild(c);
-      }
-      if(y<H-1)el.appendChild(document.createTextNode('\n'));
+    gridEl.style.setProperty('--cw',m.w+'px');
+    gridEl.style.setProperty('--ch',m.h+'px');
+    gridEl.style.fontSize=ui.fs+'px';
+    gridEl.style.lineHeight=m.h+'px';
+    // central mirror axis hint (odd width only)
+    var odd=(S.w%2===1);
+    gridEl.classList.toggle('axis', ui.showGrid && ui.mirror && odd);
+    if(odd){ gridEl.style.setProperty('--axisw',((S.w-1)/2*m.w)+'px'); }
+    gridEl.style.setProperty('--axiscol','rgba(103,232,249,.10)');
+    gridEl.innerHTML='';
+    for(var y=0;y<S.h;y++){
+      for(var x=0;x<S.w;x++){ var c=document.createElement('span'); c.className='cell'; c.dataset.x=x; c.dataset.y=y; gridEl.appendChild(c); }
+      if(y<S.h-1) gridEl.appendChild(document.createTextNode('\n'));
     }
-    document.getElementById('dim').textContent=W+'x'+H;
+    $('dim').textContent=S.w+' × '+S.h;
     render();
   }
+  function paintCells(g){
+    var kids=gridEl.querySelectorAll('.cell');
+    for(var i=0;i<kids.length;i++){ var c=kids[i],x=+c.dataset.x,y=+c.dataset.y,cell=g[y][x];
+      c.textContent=cell.g; c.style.color=cell.l==='a'?S.accent:S.body; }
+  }
   function render(){
-    var kids=document.getElementById('grid').querySelectorAll('.cell');
-    for(var i=0;i<kids.length;i++){
-      var c=kids[i],x=+c.dataset.x,y=+c.dataset.y,cell=grid[y][x];
-      c.textContent=cell.g;
-      c.style.color=cell.l==='a'?colA():colB();
+    paintCells(ui.playing?S.frames[ui.playIdx]:curGrid());
+    $('sw-b').style.background=S.body; $('sw-a').style.background=S.accent;
+  }
+
+  /* ---------------- painting (with central-axis mirror) ---------------- */
+  function setCell(g,x,y,glyph,layer){ if(x<0||x>=S.w||y<0||y>=S.h)return; g[y][x]={g:glyph,l:layer}; }
+  function paint(x,y,erase){
+    var g=curGrid(), glyph=erase?' ':ui.curGlyph, layer=ui.curLayer;
+    setCell(g,x,y,glyph,layer);
+    if(ui.mirror){ var mx=S.w-1-x; if(mx!==x) setCell(g,mx,y, glyph===' '?' ':mir(glyph), layer); }
+    render();
+  }
+
+  /* ---------------- resize: central column / row insert+remove ---------------- */
+  function colHasData(at){ return S.frames.some(function(g){ return g.some(function(r){ return r[at]&&r[at].g!==' '; }); }); }
+  function rowHasData(at){ return S.frames.some(function(g){ return g[at]&&g[at].some(function(c){ return c.g!==' '; }); }); }
+  function changeWidth(d){
+    if(d>0){ if(S.w>=28)return; pushUndo(); var at=Math.floor(S.w/2);
+      S.frames.forEach(function(g){ for(var y=0;y<S.h;y++) g[y].splice(at,0,{g:' ',l:'b'}); }); S.w++; }
+    else { if(S.w<=3)return; var at2=Math.floor((S.w-1)/2);
+      if(colHasData(at2) && !confirm('The centre column has content and will be removed. Continue?'))return;
+      pushUndo(); S.frames.forEach(function(g){ for(var y=0;y<S.h;y++) g[y].splice(at2,1); }); S.w--; }
+    build(); renderFrames();
+  }
+  function changeHeight(d){
+    if(d>0){ if(S.h>=20)return; pushUndo(); var at=Math.floor(S.h/2);
+      S.frames.forEach(function(g){ var r=[]; for(var x=0;x<S.w;x++)r.push({g:' ',l:'b'}); g.splice(at,0,r); }); S.h++; }
+    else { if(S.h<=3)return; var at2=Math.floor((S.h-1)/2);
+      if(rowHasData(at2) && !confirm('The centre row has content and will be removed. Continue?'))return;
+      pushUndo(); S.frames.forEach(function(g){ g.splice(at2,1); }); S.h--; }
+    build(); renderFrames();
+  }
+
+  /* ---------------- frames / animation ---------------- */
+  function cloneGrid(g){ return g.map(function(r){ return r.map(function(c){ return {g:c.g,l:c.l}; }); }); }
+  function renderFrames(){
+    var fr=$('frames'); fr.innerHTML='';
+    S.frames.forEach(function(g,i){
+      var b=document.createElement('button'); b.className='fbtn'+(i===S.active?' act':''); b.textContent=(i+1);
+      b.onclick=function(){ selectFrame(i); }; fr.appendChild(b);
+    });
+    $('addframe').disabled = S.frames.length>=16;
+    $('delframe').disabled = S.frames.length<=1;
+  }
+  function selectFrame(i){ S.active=i; if(ui.playing){ ui.playIdx=i; } render(); renderFrames(); }
+  function addFrame(){ if(S.frames.length>=16)return; pushUndo(); S.frames.splice(S.active+1,0,cloneGrid(curGrid())); S.active++; render(); renderFrames(); }
+  function delFrame(){ if(S.frames.length<=1)return; pushUndo(); S.frames.splice(S.active,1); if(S.active>=S.frames.length)S.active=S.frames.length-1; build(); renderFrames(); }
+  function play(){ if(ui.playing||S.frames.length<2)return; ui.playing=true; ui.playIdx=S.active; setPlayState();
+    ui.playTimer=setInterval(function(){ ui.playIdx=(ui.playIdx+1)%S.frames.length; render();
+      [].forEach.call($('frames').children,function(b,i){ b.classList.toggle('act',i===ui.playIdx); }); }, Math.round(1000/S.fps)); }
+  function stop(){ if(!ui.playing)return; ui.playing=false; clearInterval(ui.playTimer); ui.playTimer=null; setPlayState(); render(); renderFrames(); }
+  function setPlayState(){ $('play').classList.toggle('on',ui.playing); $('stop').classList.toggle('on',!ui.playing&&ui.animOpen); }
+
+  /* ---------------- presets / JSON ---------------- */
+  function loadPreset(name){ var p=PRESETS[name]; if(!p)return; pushUndo();
+    S.name=name; S.body=p.body; S.accent=p.accent; S.h=p.g.length; S.w=p.g[0].length;
+    S.frames=[ stringsToGrid(p.g, p.m, S.w, S.h, true) ]; S.active=0;
+    syncInputs(); build(); renderFrames();
+  }
+  function stringsToGrid(glyphs,mask,w,h,maskIsX){
+    var g=blankGrid(w,h);
+    for(var y=0;y<h;y++)for(var x=0;x<w;x++){
+      var ch=(glyphs[y]&&glyphs[y][x])||' ';
+      var acc=!!(mask&&mask[y]&&mask[y][x]==='X');
+      g[y][x]={g:ch,l:acc?'a':'b'};
     }
-    document.getElementById('sw-b').style.background=colB();
-    document.getElementById('sw-a').style.background=colA();
+    return g;
   }
-  function resize(nw,nh){
-    var ng=[];for(var y=0;y<nh;y++){var r=[];for(var x=0;x<nw;x++)r.push((grid[y]&&grid[y][x])?grid[y][x]:{g:' ',l:'b'});ng.push(r);}
-    W=nw;H=nh;grid=ng;build();
-  }
-  function loadPreset(name){
-    var p=PRESETS[name];if(!p)return;snapshot();
-    document.getElementById('col-b').value=p.body;
-    document.getElementById('col-a').value=p.accent;
-    document.getElementById('sid').value=name;
-    H=p.g.length;W=p.g[0].length;blank();
-    for(var y=0;y<H;y++)for(var x=0;x<W;x++)grid[y][x]={g:p.g[y][x],l:p.m[y][x]==='X'?'a':'b'};
-    build();
+  function frameToStrings(g){
+    var glyphs=[],mask=[];
+    for(var y=0;y<S.h;y++){ var gr='',mr=''; for(var x=0;x<S.w;x++){ var c=g[y][x]; gr+=c.g; mr+=(c.l==='a'&&c.g!==' ')?'X':' '; } glyphs.push(gr); mask.push(mr); }
+    return {glyphs:glyphs,accent_mask:mask};
   }
   function exportJSON(){
-    var glyphs=[],mask=[];
-    for(var y=0;y<H;y++){var gr='',mr='';for(var x=0;x<W;x++){var c=grid[y][x];gr+=c.g;mr+=(c.l==='a'&&c.g!==' ')?'X':' ';}glyphs.push(gr);mask.push(mr);}
-    return JSON.stringify({id:document.getElementById('sid').value||'creature',width:W,height:H,
-      body_color:colB(),accent_color:colA(),glyphs:glyphs,accent_mask:mask},null,2);
+    var frames=S.frames.map(frameToStrings);
+    var top=frames[S.active]||frames[0];
+    return JSON.stringify({
+      version:2, id:$('sid').value||'sprite', width:S.w, height:S.h,
+      body_color:S.body, accent_color:S.accent, fps:S.fps, active:S.active,
+      frames:frames,
+      glyphs:top.glyphs, accent_mask:top.accent_mask   /* legacy single-frame consumers */
+    },null,2);
+  }
+  function loadJSON(t){
+    var o=JSON.parse(t);
+    pushUndo();
+    S.name=o.id||o.name||'sprite';
+    if(o.body_color)S.body=o.body_color;
+    if(o.accent_color)S.accent=o.accent_color;
+    if(o.fps)S.fps=o.fps;
+    if(o.frames&&o.frames.length){
+      var w=o.width||((o.frames[0].glyphs[0]||'').length), h=o.height||o.frames[0].glyphs.length;
+      S.w=w; S.h=h; S.frames=o.frames.map(function(f){ return stringsToGrid(f.glyphs,f.accent_mask,w,h); });
+    } else if(o.glyphs&&o.glyphs.length){               /* legacy v1 single frame */
+      var w2=o.width||o.glyphs[0].length, h2=o.height||o.glyphs.length;
+      S.w=w2; S.h=h2; S.frames=[ stringsToGrid(o.glyphs,o.accent_mask,w2,h2) ];
+    } else { throw new Error('no glyphs'); }
+    S.active=Math.min(o.active||0, S.frames.length-1);
+    syncInputs(); build(); renderFrames();
   }
 
-  // palette
-  var gw=document.getElementById('glyphs');
-  GLYPHS.forEach(function(g){
-    var b=document.createElement('button');
-    b.className='gbtn'+(g===curGlyph?' sel':'')+(g===' '?' erase':'');
-    b.textContent=g===' '?'erase':g;b.dataset.g=g;
-    b.onclick=function(){curGlyph=g;[].forEach.call(gw.children,function(x){x.classList.remove('sel');});b.classList.add('sel');};
-    gw.appendChild(b);
-  });
+  /* ---------------- glyph selection ---------------- */
+  function setGlyph(g){
+    ui.curGlyph=g;
+    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){ b.classList.toggle('sel', b.dataset.g===g); });
+    $('erase').classList.toggle('sel', g===' ');
+    $('curglyph').textContent=(g===' '?'—':g);
+  }
+  function buildPalette(){
+    var pal=$('palette'); pal.innerHTML='';
+    GROUPS.forEach(function(grp){
+      var box=document.createElement('div'); box.className='pgroup';
+      var lab=document.createElement('div'); lab.className='plabel'; lab.textContent=grp.label; box.appendChild(lab);
+      var pg=document.createElement('div'); pg.className='pgrid';
+      grp.g.forEach(function(g){
+        var b=document.createElement('button'); b.className='gbtn'; b.textContent=g; b.dataset.g=g;
+        b.onclick=function(){ setGlyph(g); }; pg.appendChild(b);
+      });
+      box.appendChild(pg); pal.appendChild(box);
+    });
+  }
 
-  // painting
-  var gridEl=document.getElementById('grid');
+  /* ---------------- events ---------------- */
   gridEl.addEventListener('mousedown',function(e){
-    if(!e.target.classList.contains('cell'))return;
-    e.preventDefault();snapshot();
-    drawing=true;erasing=(e.button===2);
-    paint(+e.target.dataset.x,+e.target.dataset.y,erasing);
+    if(ui.playing||!e.target.classList.contains('cell'))return;
+    e.preventDefault(); pushUndo(); ui.drawing=true; ui.erasing=(e.button===2);
+    paint(+e.target.dataset.x,+e.target.dataset.y,ui.erasing);
   });
   gridEl.addEventListener('mouseover',function(e){
-    if(drawing&&e.target.classList.contains('cell'))paint(+e.target.dataset.x,+e.target.dataset.y,erasing);
+    if(ui.drawing&&e.target.classList.contains('cell')) paint(+e.target.dataset.x,+e.target.dataset.y,ui.erasing);
   });
   gridEl.addEventListener('contextmenu',function(e){e.preventDefault();});
-  document.addEventListener('mouseup',function(){drawing=false;erasing=false;});
-  document.addEventListener('keydown',function(e){if((e.metaKey||e.ctrlKey)&&e.key==='z'){e.preventDefault();undo();}});
+  document.addEventListener('mouseup',function(){ui.drawing=false;ui.erasing=false;});
 
-  // controls
-  document.querySelectorAll('[data-preset]').forEach(function(b){b.onclick=function(){loadPreset(b.dataset.preset);};});
-  document.getElementById('clear').onclick=function(){snapshot();blank();build();};
-  document.getElementById('undo').onclick=undo;
-  document.querySelectorAll('#layer button').forEach(function(b){b.onclick=function(){
-    curLayer=b.dataset.l;document.querySelectorAll('#layer button').forEach(function(x){x.classList.remove('act');});b.classList.add('act');};});
-  document.getElementById('col-b').oninput=render;
-  document.getElementById('col-a').oninput=render;
-  var mb=document.getElementById('mirror');
-  mb.onclick=function(){mirror=!mirror;mb.classList.toggle('on',mirror);};
-  var gt=document.getElementById('gridtog');
-  gt.onclick=function(){gt.classList.toggle('on');gridEl.classList.toggle('show-grid');};
-  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
-    fs=Math.max(14,Math.min(46,fs+(+b.dataset.zoom)*4));build();};});
-  document.querySelectorAll('[data-size]').forEach(function(b){b.onclick=function(){
-    var d=b.dataset.size;
-    if(d==='w-1'&&W>3)resize(W-1,H);if(d==='w+1'&&W<28)resize(W+1,H);
-    if(d==='h-1'&&H>3)resize(W,H-1);if(d==='h+1'&&H<20)resize(W,H+1);};});
-  document.getElementById('export').onclick=function(){document.getElementById('out').value=exportJSON();};
-  document.getElementById('copy').onclick=function(){var t=exportJSON();document.getElementById('out').value=t;if(navigator.clipboard)navigator.clipboard.writeText(t);};
-  document.getElementById('load').onclick=function(){
-    var t=document.getElementById('out').value.trim();if(!t)return;
-    try{
-      var o=JSON.parse(t);
-      if(!o.glyphs||!o.glyphs.length)throw 0;
-      snapshot();
-      document.getElementById('sid').value=o.id||'sprite';
-      if(o.body_color)document.getElementById('col-b').value=o.body_color;
-      if(o.accent_color)document.getElementById('col-a').value=o.accent_color;
-      H=o.glyphs.length;W=o.glyphs[0].length;blank();
-      for(var y=0;y<H;y++)for(var x=0;x<W;x++){
-        var g=(o.glyphs[y]&&o.glyphs[y][x])||' ';
-        var acc=!!(o.accent_mask&&o.accent_mask[y]&&o.accent_mask[y][x]==='X');
-        grid[y][x]={g:g,l:acc?'a':'b'};
-      }
-      build();
-    }catch(e){alert('Invalid sprite JSON');}
-  };
-  document.getElementById('download').onclick=function(){var t=exportJSON();document.getElementById('out').value=t;
-    var blob=new Blob([t],{type:'application/json'});var a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download=(document.getElementById('sid').value||'creature')+'.json';a.click();};
-  var sendBtn=document.getElementById('send');
-  if(typeof sendPrompt==='function'){sendBtn.style.display='';
-    sendBtn.onclick=function(){sendPrompt('Sprite from the editor — wire it into the game:\n```json\n'+exportJSON()+'\n```');};}
+  document.addEventListener('keydown',function(e){
+    var t=e.target.tagName; if(t==='INPUT'||t==='TEXTAREA')return;
+    var meta=e.metaKey||e.ctrlKey;
+    if(meta&&e.key.toLowerCase()==='z'&&!e.shiftKey){ e.preventDefault(); undo(); }
+    else if(meta&&((e.key.toLowerCase()==='z'&&e.shiftKey)||e.key.toLowerCase()==='y')){ e.preventDefault(); redo(); }
+  });
 
+  document.querySelectorAll('[data-preset]').forEach(function(b){ b.onclick=function(){ loadPreset(b.dataset.preset); }; });
+  $('erase').onclick=function(){ setGlyph(' '); };
+  $('clear').onclick=function(){ pushUndo(); S.frames[S.active]=blankGrid(S.w,S.h); render(); renderFrames(); };
+  $('undo').onclick=undo; $('redo').onclick=redo;
+  document.querySelectorAll('#layer button').forEach(function(b){ b.onclick=function(){ ui.curLayer=b.dataset.l;
+    document.querySelectorAll('#layer button').forEach(function(x){x.classList.remove('act');}); b.classList.add('act'); }; });
+  $('col-b').addEventListener('focus',function(){ ui._cb=S.body; });
+  $('col-a').addEventListener('focus',function(){ ui._ca=S.accent; });
+  $('col-b').addEventListener('input',function(){ S.body=$('col-b').value; render(); });
+  $('col-a').addEventListener('input',function(){ S.accent=$('col-a').value; render(); });
+  $('col-b').addEventListener('change',function(){ var v=S.body; S.body=(ui._cb!=null?ui._cb:v); pushUndo(); S.body=v; render(); });
+  $('col-a').addEventListener('change',function(){ var v=S.accent; S.accent=(ui._ca!=null?ui._ca:v); pushUndo(); S.accent=v; render(); });
+  $('sid').addEventListener('change',function(){ S.name=$('sid').value; });
+  $('mirror').onclick=function(){ ui.mirror=!ui.mirror; $('mirror').classList.toggle('on',ui.mirror); build(); };
+  $('gridtog').onclick=function(){ ui.showGrid=!ui.showGrid; $('gridtog').classList.toggle('on',ui.showGrid);
+    gridEl.classList.toggle('show-grid',ui.showGrid); build(); };
+  document.querySelectorAll('[data-zoom]').forEach(function(b){ b.onclick=function(){ ui.fs=Math.max(14,Math.min(48,ui.fs+(+b.dataset.zoom)*4)); build(); }; });
+  document.querySelectorAll('[data-size]').forEach(function(b){ b.onclick=function(){
+    var d=b.dataset.size; if(d==='w-1')changeWidth(-1); else if(d==='w+1')changeWidth(1);
+    else if(d==='h-1')changeHeight(-1); else if(d==='h+1')changeHeight(1); }; });
+
+  $('animate').onclick=function(){ ui.animOpen=!ui.animOpen; $('animbar').style.display=ui.animOpen?'flex':'none';
+    $('animate').classList.toggle('on',ui.animOpen); if(!ui.animOpen)stop(); renderFrames(); };
+  $('addframe').onclick=addFrame; $('delframe').onclick=delFrame;
+  $('play').onclick=play; $('stop').onclick=stop;
+  document.querySelectorAll('#fps button').forEach(function(b){ b.onclick=function(){ S.fps=+b.dataset.fps;
+    document.querySelectorAll('#fps button').forEach(function(x){x.classList.remove('act');}); b.classList.add('act');
+    if(ui.playing){ stop(); play(); } }; });
+
+  $('export').onclick=function(){ $('out').value=exportJSON(); };
+  $('copy').onclick=function(){ var t=exportJSON(); $('out').value=t; if(navigator.clipboard)navigator.clipboard.writeText(t); };
+  $('load').onclick=function(){ var t=$('out').value.trim(); if(!t)return; try{ loadJSON(t); }catch(e){ alert('Invalid sprite JSON'); } };
+  $('download').onclick=function(){ var t=exportJSON(); $('out').value=t;
+    var blob=new Blob([t],{type:'application/json'}); var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download=($('sid').value||'sprite')+'.json'; a.click(); };
+  var sendBtn=$('send');
+  if(typeof sendPrompt==='function'){ sendBtn.style.display=''; sendBtn.onclick=function(){ sendPrompt('Sprite from the editor — wire it into the game:\n```json\n'+exportJSON()+'\n```'); }; }
+
+  /* ---------------- init ---------------- */
+  buildPalette();
   loadPreset('pip');
+  setGlyph('█');
+  updateHist();
+  undoStack.length=0; redoStack.length=0; updateHist();   /* the initial preset load should not be undoable */
 })();
 </script>
 </body>
