@@ -30,19 +30,24 @@
     /* radius / metrics straight from the mockup */
     --r-tool:12px;   /* tool_section / panels */
     --r-btn:4px;     /* Button / input */
+
+    /* vertical rhythm */
+    --space-sm:16px; /* tight — around the stage */
+    --space:24px;    /* standard — between sections */
+    --space-lg:36px; /* 1.5x — top of page + header */
   }
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
-  .wrap{max-width:960px;margin:0 auto;padding:40px 39px;}
+  .wrap{max-width:960px;margin:0 auto;padding:var(--space-lg) 39px calc(var(--space) * 2);}
 
   /* ---------------- header ---------------- */
-  header{margin-bottom:48px;}
+  header{margin-bottom:var(--space-lg);}
   h1{font-size:20px;font-weight:500;margin:0 0 8px;}
   .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;}
 
   /* ---------------- bars & tool sections ---------------- */
-  .bars{display:flex;flex-direction:column;gap:12px;margin-bottom:32px;}
+  .bars{display:flex;flex-direction:column;gap:12px;margin-bottom:var(--space);}
   .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
   .tool{display:flex;align-items:center;gap:10px;
         background:var(--tool-background);border:1px solid var(--stroke);
@@ -107,20 +112,24 @@
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
   .stage-bl{bottom:11px;left:11px;} .stage-br{bottom:11px;right:11px;}
 
-  .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;
-                background:var(--tool-background);overflow:hidden;}
+  /* canvas frame: when the grid is on, the grid draws its own 4 edges (uniform);
+     when off, .framed supplies the border so the field is still outlined. */
+  .canvas-frame{display:inline-block;line-height:0;border-radius:2px;overflow:hidden;background:#000;}
+  .canvas-frame.framed{border:1px solid var(--stroke);}
   .grid{display:inline-block;background:#000;cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);}
+  /* left+top edges come from the gradient line at 0; right+bottom from the border — all 1px --stroke */
   .grid.show-grid{background-image:
-        linear-gradient(to right, rgba(160,168,184,.30) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(160,168,184,.30) 1px, transparent 1px);
+        linear-gradient(to right, var(--stroke) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--stroke) 1px, transparent 1px);
         background-size:var(--cw) var(--ch);
-        background-position:-1px -1px;}
+        background-position:0 0;
+        border-right:1px solid var(--stroke);border-bottom:1px solid var(--stroke);}
   .cell{background:transparent;}
   .cell:hover{background:rgba(103,232,249,.28);}
 
   /* ---------------- hint banner ---------------- */
-  .hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;
+  .hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-sm);
         background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -129,7 +138,7 @@
   .hint-x:hover{color:var(--main-text);}
 
   /* ---------------- animation timeline ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-16px 0 16px;
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 var(--space-sm);
            background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
            padding:9px 12px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
@@ -139,7 +148,7 @@
   .sep{width:1px;height:22px;background:var(--stroke);}
 
   /* ---------------- glyph palette ---------------- */
-  .palette{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px;}
+  .palette{display:flex;flex-wrap:wrap;gap:12px;margin-top:var(--space);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -152,10 +161,10 @@
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:32px;}
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space);}
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:12px;background:var(--tool-background);
+  .iobox{position:relative;margin-top:var(--space);background:var(--tool-background);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:11px;}
   textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--main-text);
            border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:43px;}
@@ -166,7 +175,7 @@
   #load{left:11px;} #copy{right:11px;}
 
   /* ---------------- footer ---------------- */
-  footer{margin-top:48px;}
+  footer{margin-top:var(--space);}
   .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 18px;max-width:880px;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
@@ -303,9 +312,8 @@
        Hope you enjoy drawing in it — write some letters!</p>
     <div class="foot-row">
       <div class="links">
-        <a href="#" id="link-email">Email</a>
-        <a href="#" id="link-socials">Socials</a>
-        <a href="#" id="link-coffee">Buy Me Coffee</a>
+        <a href="mailto:unowness@protonmail.com" id="link-email">Email</a>
+        <a href="https://youtu.be/33DsFhSL5O0" id="link-coffee" target="_blank" rel="noopener">Buy Me Coffee</a>
       </div>
       <span class="copy-note">Unowness, 2026</span>
     </div>
@@ -740,7 +748,8 @@
 
   /* stage controls */
   $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;$('filled').classList.toggle('on',d.bgOn);render();};
-  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
+  function syncFrame(){var f=gridEl.parentNode;if(f)f.classList.toggle('framed',!ui.showGrid);}
+  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);syncFrame();};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(14,Math.min(48,ui.fs+(+b.dataset.zoom)*4));build();};});
   $('undo').onclick=undo;$('redo').onclick=redo;
@@ -784,6 +793,7 @@
   renderTabs();
   applyView();
   build();
+  syncFrame();
   renderFrames();
   updateHist();
 })();
