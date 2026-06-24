@@ -115,13 +115,12 @@
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
   .stage-bl{bottom:11px;left:11px;} .stage-br{bottom:11px;right:11px;}
 
-  /* fullscreen popup — the stage goes fixed full-viewport, controls dock 48px from the edges,
-     canvas fills the middle (sized to fit by fitCanvas). Esc or the X closes it. */
+  /* fullscreen popup — the stage becomes a big rounded frame 48px from the screen edges
+     (box-shadow paints the dark backdrop around it); controls keep their corner docking.
+     Esc or the X closes it. */
   body.fs-lock{overflow:hidden;}
-  .stage.fullscreen{position:fixed;inset:0;z-index:9999;border:none;border-radius:0;background:var(--canvas);}
-  .stage.fullscreen .stage-tl{top:48px;left:48px;} .stage.fullscreen .stage-tr{top:48px;right:48px;}
-  .stage.fullscreen .stage-bl{bottom:48px;left:48px;} .stage.fullscreen .stage-br{bottom:48px;right:48px;}
-  .stage.fullscreen .stage-canvas{position:absolute;inset:96px 48px;min-height:0;max-height:none;max-width:none;padding:0;}
+  .stage.fullscreen{position:fixed;inset:48px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
+  .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
 
   /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:#000;}
@@ -359,12 +358,12 @@
     {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
     {label:'Shade',    g:['░','▒','▓']},
     {label:'Line',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
-    {label:'Slant', g:['╱','╲','╳']},
+    {label:'Slash', g:['╱','╲','╳']},
     {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
     {label:'Join',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
     {label:'Double',    g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
-    {label:'Ascii',   g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|','<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
+    {label:'Glyph',   g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|','<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
     {label:'Decor',     g:['●','○','◍','◉','◆','◇','◈','★','☆','✦','✧','◦','•','§','¶','¤','±','×','÷','¿','¡','‹','›','«','»','†','‡','…']}
   ];
 
@@ -782,8 +781,9 @@
   var FS_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>';
   var CLOSE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   function fitCanvas(){
-    var d=D(),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs;
-    var availW=Math.max(60,window.innerWidth-96-24),availH=Math.max(60,window.innerHeight-192-24);
+    var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
+    var availW=Math.max(60,sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-8);
+    var availH=Math.max(60,sc.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-8);
     var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
