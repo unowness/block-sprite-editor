@@ -34,15 +34,15 @@
     --r-btn:4px;     /* Button / input */
 
     /* vertical rhythm */
-    --space-cluster:12px; /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
-    --space-section:36px; /* between the main sections */
-    --space-frame:44px;   /* header <-> content stack <-> footer */
-    --space-page:48px;    /* page top + bottom */
+    --space-cluster:8px;  /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
+    --space-section:40px; /* between the main sections */
+    --space-frame:40px;   /* header -> content stack */
+    --space-page:40px;    /* page top + bottom */
   }
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
-  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 39px;}
+  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 40px;}
 
   /* ---------------- header ---------------- */
   header{margin-bottom:var(--space-frame);}
@@ -53,11 +53,12 @@
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
-  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
   .tool{display:flex;align-items:flex-start;gap:10px;
         background:var(--tool-background);border:1px solid var(--stroke);
         border-radius:var(--r-tool);padding:8px 8px 8px 12px;}
-  .tool.grow{flex:1;}   /* Row B Paint absorbs the slack so the row reaches the right edge */
+  .tool.grow{flex:1;}                    /* Row B Canvas grows so the row reaches the right edge */
+  .tool.grow .num{flex:1;width:auto;}    /* and its inputs lengthen to fill — no empty gap, no Paint tail */
   .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;}
 
   /* ---------------- buttons ---------------- */
@@ -150,7 +151,7 @@
   .cell:hover{background:rgba(103,232,249,.28);}
 
   /* ---------------- hint banner ---------------- */
-  .hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-cluster);
+  .hint{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
         background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -185,11 +186,11 @@
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-section);}
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-section);}
   #export{min-width:120px;}  /* wider Export button (Figma) */
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:14px;background:var(--tool-background);
+  .iobox{position:relative;margin-top:8px;background:var(--tool-background);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:11px;}
   textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--main-text);
            border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:43px;}
@@ -200,8 +201,8 @@
   #load{left:11px;} #copy{right:11px;}
 
   /* ---------------- footer ---------------- */
-  footer{margin-top:var(--space-frame);}
-  .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;opacity:.6;}
+  footer{margin-top:56px;}   /* footer sits a touch lower than the 40px section rhythm (Figma) */
+  .note{color:var(--main-text-05);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
   .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
@@ -224,6 +225,7 @@
        no empty tail), vertically centred */
     .tool{width:100%;align-items:center;}
     .tool-label{margin-right:auto;}
+    .tool.grow .num{flex:none;width:48px;}   /* canvas inputs stay compact on mobile */
     /* Paint: Body/Accent/Decoration become swatch-only; Background keeps its label */
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}
     /* Stage controls: icon-only on mobile (hide the text labels) */
@@ -260,7 +262,7 @@
 
     <!-- Row B — paint + view + canvas -->
     <div class="bar">
-      <div class="tool grow">
+      <div class="tool">
         <span class="tool-label">Paint</span>
         <div class="paints" id="paints">
           <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Body</button>
@@ -274,7 +276,7 @@
         <button class="btn on" data-view="ascii">ASCII</button>
         <button class="btn"    data-view="animation">Animation</button>
       </div>
-      <div class="tool">
+      <div class="tool grow">
         <span class="tool-label">Canvas</span>
         <input class="input num" type="number" id="cw" min="3" max="128" title="Width">
         <input class="input num" type="number" id="ch" min="3" max="128" title="Height">
@@ -368,7 +370,8 @@
       <span class="copy-note">Blockmode by Unowness · 2026</span>
       <div class="links">
         <a href="mailto:unowness@protonmail.com" id="link-email">Send an Email</a>
-        <a href="https://youtu.be/33DsFhSL5O0" id="link-coffee" target="_blank" rel="noopener">Buy Me Coffee</a>
+        <a href="#" id="link-socials">Socials</a>
+        <a href="https://youtu.be/33DsFhSL5O0" id="link-coffee" target="_blank" rel="noopener">Buy Me a Coffee</a>
       </div>
     </div>
   </footer>
