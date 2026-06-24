@@ -115,6 +115,14 @@
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
   .stage-bl{bottom:11px;left:11px;} .stage-br{bottom:11px;right:11px;}
 
+  /* fullscreen popup — the stage goes fixed full-viewport, controls dock 48px from the edges,
+     canvas fills the middle (sized to fit by fitCanvas). Esc or the X closes it. */
+  body.fs-lock{overflow:hidden;}
+  .stage.fullscreen{position:fixed;inset:0;z-index:9999;border:none;border-radius:0;background:var(--canvas);}
+  .stage.fullscreen .stage-tl{top:48px;left:48px;} .stage.fullscreen .stage-tr{top:48px;right:48px;}
+  .stage.fullscreen .stage-bl{bottom:48px;left:48px;} .stage.fullscreen .stage-br{bottom:48px;right:48px;}
+  .stage.fullscreen .stage-canvas{position:absolute;inset:96px 48px;min-height:0;max-height:none;max-width:none;padding:0;}
+
   /* canvas frame: when the grid is on, the grid draws its own 4 edges (uniform);
      when off, .framed supplies the border so the field is still outlined. */
   .canvas-frame{display:inline-block;line-height:0;border-radius:2px;overflow:hidden;background:#000;}
@@ -260,6 +268,9 @@
     <div class="stage-tr">
       <button class="btn" data-zoom="-1">Zoom &minus;</button>
       <button class="btn" data-zoom="1">Zoom +</button>
+      <button class="btn icon" id="fs" title="Fullscreen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>
+      </button>
     </div>
     <div class="stage-canvas"><div class="canvas-frame"><div id="grid" class="grid show-grid"></div></div></div>
     <div class="stage-bl">
@@ -379,7 +390,7 @@
   var docs=[ newDoc('Current') ];
   var activeDoc=0;
   var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
-           view:'ascii', exportType:'json',
+           view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
            drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null };
 
   function $(id){return document.getElementById(id);}
@@ -768,7 +779,30 @@
   function syncFrame(){var f=gridEl.parentNode;if(f)f.classList.toggle('framed',!ui.showGrid);}
   $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);syncFrame();};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
-  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(14,Math.min(48,ui.fs+(+b.dataset.zoom)*4));build();};});
+  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
+
+  /* ---------------- fullscreen popup ---------------- */
+  var FS_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>';
+  var CLOSE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  function fitCanvas(){
+    var d=D(),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs;
+    var availW=Math.max(60,window.innerWidth-96-24),availH=Math.max(60,window.innerHeight-192-24);
+    var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
+    ui.fs=Math.max(10,Math.min(200,fs));build();
+  }
+  function enterFullscreen(){
+    ui.fsPrev=ui.fs;ui.fsOpen=true;
+    document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
+    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';fitCanvas();
+  }
+  function exitFullscreen(){
+    ui.fsOpen=false;
+    document.querySelector('.stage').classList.remove('fullscreen');document.body.classList.remove('fs-lock');
+    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';ui.fs=ui.fsPrev||32;build();
+  }
+  $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
+  window.addEventListener('resize',function(){if(ui.fsOpen)fitCanvas();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.fsOpen){e.preventDefault();exitFullscreen();}});
   $('undo').onclick=undo;$('redo').onclick=redo;
   $('erase').onclick=function(){setGlyph(' ');};
   $('clear').onclick=function(){pushUndo();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
