@@ -104,9 +104,11 @@
           padding:0;border:0;opacity:0;cursor:pointer;background:none;}
 
   /* ---------------- stage ---------------- */
-  .stage{position:relative;min-height:346px;background:var(--canvas);
+  /* stage grows vertically with the canvas: stage-canvas is in flow + min-height,
+     so a tall sprite stretches the whole frame instead of scrolling inside a fixed box. */
+  .stage{position:relative;background:var(--canvas);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
-  .stage-canvas{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  .stage-canvas{position:relative;min-height:346px;display:flex;align-items:center;justify-content:center;
                 padding:54px 12px;overflow:auto;}
   .stage-tl,.stage-tr,.stage-bl,.stage-br{position:absolute;z-index:2;display:flex;gap:8px;}
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
@@ -225,8 +227,8 @@
       </div>
       <div class="tool push">
         <span class="tool-label">Canvas</span>
-        <input class="input num" type="number" id="cw" min="3" max="40" title="Width">
-        <input class="input num" type="number" id="ch" min="3" max="40" title="Height">
+        <input class="input num" type="number" id="cw" min="3" max="128" title="Width">
+        <input class="input num" type="number" id="ch" min="3" max="128" title="Height">
       </div>
     </div>
   </div>
@@ -498,14 +500,14 @@
   function delRow(){var d=D(),at=Math.floor((d.h-1)/2);d.frames.forEach(function(g){g.splice(at,1);});d.h--;}
 
   function resizeWidth(target){
-    var d=D();target=Math.max(3,Math.min(40,target|0));if(target===d.w){$('cw').value=d.w;return;}
+    var d=D();target=Math.max(3,Math.min(128,target|0));if(target===d.w){$('cw').value=d.w;return;}
     if(target<d.w){var at=Math.floor((d.w-1)/2);if(colHasData(at)&&!confirm('Shrinking width removes the centre column(s) and their content. Continue?')){$('cw').value=d.w;return;}}
-    pushUndo();while(d.w<target)addCol();while(d.w>target)delCol();build();renderFrames();
+    pushUndo();while(d.w<target)addCol();while(d.w>target)delCol();build();renderFrames();$('cw').value=d.w;
   }
   function resizeHeight(target){
-    var d=D();target=Math.max(3,Math.min(40,target|0));if(target===d.h){$('ch').value=d.h;return;}
+    var d=D();target=Math.max(3,Math.min(128,target|0));if(target===d.h){$('ch').value=d.h;return;}
     if(target<d.h){var at=Math.floor((d.h-1)/2);if(rowHasData(at)&&!confirm('Shrinking height removes the centre row(s) and their content. Continue?')){$('ch').value=d.h;return;}}
-    pushUndo();while(d.h<target)addRow();while(d.h>target)delRow();build();renderFrames();
+    pushUndo();while(d.h<target)addRow();while(d.h>target)delRow();build();renderFrames();$('ch').value=d.h;
   }
 
   /* ============================================================
