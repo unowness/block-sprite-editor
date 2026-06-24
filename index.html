@@ -152,10 +152,11 @@
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
-  /* fixed-width label column (fits the longest section name) so every glyph grid starts at the same x */
+  /* label column = widest label (measured in JS); every glyph grid starts at the same x.
+     --plabel-w / --pgrid-w are set by buildPalette from the actual content width. */
   .plabel{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
-          white-space:nowrap;line-height:32px;width:72px;flex:none;}
-  .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:780px;}
+          white-space:nowrap;line-height:32px;width:var(--plabel-w,auto);flex:none;}
+  .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:#cfd2c4;
         background:#000;border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
   .gbtn:hover{border-color:#3a3a44;}
@@ -343,10 +344,10 @@
   /* palette groups — order follows the mockup; "Joins" is the old Junctions, Squares is new */
   var GROUPS=[
     {label:'Blocks',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
-    {label:'Quadrants', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
+    {label:'Quads', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
     {label:'Shades',    g:['░','▒','▓']},
     {label:'Lines',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
-    {label:'Diagonals', g:['╱','╲','╳']},
+    {label:'Diags', g:['╱','╲','╳']},
     {label:'Corners',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
     {label:'Joins',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Squares',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
@@ -559,6 +560,18 @@
       });
       box.appendChild(pg);pal.appendChild(box);
     });
+    sizePaletteColumns();
+  }
+  /* reserve a label column equal to the widest label, and size each glyph grid to the
+     rest of the row (from the real content width) so glyphs align and don't wrap a stray box. */
+  function sizePaletteColumns(){
+    var pal=$('palette'),maxLabel=0;
+    pal.style.removeProperty('--plabel-w');                 /* measure natural label widths */
+    [].forEach.call(pal.querySelectorAll('.plabel'),function(l){ if(l.offsetWidth>maxLabel)maxLabel=l.offsetWidth; });
+    maxLabel=Math.ceil(maxLabel);
+    var avail=pal.clientWidth||882;                         /* content width (882 now, 960 if widened) */
+    pal.style.setProperty('--plabel-w', maxLabel+'px');
+    pal.style.setProperty('--pgrid-w', Math.max(0, avail - 30 - maxLabel)+'px');  /* 30 = pl12 + gap10 + pr8 */
   }
 
   /* ============================================================
