@@ -107,6 +107,8 @@
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
   .stage-bl{bottom:11px;left:11px;} .stage-br{bottom:11px;right:11px;}
 
+  .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;
+                background:var(--tool-background);overflow:hidden;}
   .grid{display:inline-block;background:#000;cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);}
   .grid.show-grid{background-image:
@@ -127,7 +129,7 @@
   .hint-x:hover{color:var(--main-text);}
 
   /* ---------------- animation timeline ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-16px 0 16px;
            background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
            padding:9px 12px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
@@ -218,18 +220,34 @@
     </div>
   </div>
 
+  <!-- Animation timeline (shown above the stage in Animation view) -->
+  <div class="animbar" id="animbar" style="display:none">
+    <span class="tool-label">Frames</span>
+    <div class="frames" id="frames"></div>
+    <button class="btn" id="addframe">+ Add Frame</button>
+    <button class="btn" id="delframe">Delete Frame</button>
+    <span class="sep"></span>
+    <button class="btn" id="play">Play</button>
+    <button class="btn" id="stop">Pause</button>
+    <span class="tool-label">FPS</span>
+    <button class="btn" data-fps="4">4</button>
+    <button class="btn" data-fps="6">6</button>
+    <button class="btn on" data-fps="8">8</button>
+    <button class="btn" data-fps="12">12</button>
+  </div>
+
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
       <button class="btn on" id="filled">Filled</button>
-      <button class="btn" id="gridtog">Grid</button>
+      <button class="btn on" id="gridtog">Grid</button>
       <button class="btn on" id="mirror">Mirror</button>
     </div>
     <div class="stage-tr">
       <button class="btn" data-zoom="-1">Zoom &minus;</button>
       <button class="btn" data-zoom="1">Zoom +</button>
     </div>
-    <div class="stage-canvas"><div id="grid" class="grid"></div></div>
+    <div class="stage-canvas"><div class="canvas-frame"><div id="grid" class="grid show-grid"></div></div></div>
     <div class="stage-bl">
       <button class="btn" id="undo">Undo</button>
       <button class="btn" id="redo">Redo</button>
@@ -246,22 +264,6 @@
   <div class="hint" id="hint">
     <span>Choose a paint and glyph to draw. Right-click erases. Background and grid settings are included in export.</span>
     <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
-  </div>
-
-  <!-- Animation timeline (visible in Animation view) -->
-  <div class="animbar" id="animbar" style="display:none">
-    <span class="tool-label">Frames</span>
-    <div class="frames" id="frames"></div>
-    <button class="btn" id="addframe">+ Add Frame</button>
-    <button class="btn" id="delframe">Delete Frame</button>
-    <span class="sep"></span>
-    <button class="btn" id="play">Play</button>
-    <button class="btn" id="stop">Pause</button>
-    <span class="tool-label">FPS</span>
-    <button class="btn" data-fps="4">4</button>
-    <button class="btn" data-fps="6">6</button>
-    <button class="btn on" data-fps="8">8</button>
-    <button class="btn" data-fps="12">12</button>
   </div>
 
   <!-- Glyph palette -->
@@ -363,7 +365,7 @@
 
   var docs=[ newDoc('Current') ];
   var activeDoc=0;
-  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:false, fs:32, scale:4,
+  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
            view:'ascii', exportType:'json',
            drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null };
 
