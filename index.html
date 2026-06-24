@@ -104,11 +104,12 @@
           padding:0;border:0;opacity:0;cursor:pointer;background:none;}
 
   /* ---------------- stage ---------------- */
-  /* stage grows vertically with the canvas: stage-canvas is in flow + min-height,
-     so a tall sprite stretches the whole frame instead of scrolling inside a fixed box. */
+  /* stage grows with the canvas up to a cap (1280x600); past that the canvas scrolls
+     INSIDE the frame. Controls stay docked to the frame corners (outside the scroll). */
   .stage{position:relative;background:var(--canvas);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
-  .stage-canvas{position:relative;min-height:346px;display:flex;align-items:center;justify-content:center;
+  .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
+                display:flex;align-items:safe center;justify-content:safe center;
                 padding:54px 12px;overflow:auto;}
   .stage-tl,.stage-tr,.stage-bl,.stage-br{position:absolute;z-index:2;display:flex;gap:8px;}
   .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
