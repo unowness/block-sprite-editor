@@ -54,12 +54,12 @@
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
   .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
-  .tool{display:flex;align-items:flex-start;gap:10px;
+  .tool{display:flex;align-items:flex-start;gap:8px;
         background:var(--tool-background);border:1px solid var(--stroke);
         border-radius:var(--r-tool);padding:8px 8px 8px 12px;}
   .tool.grow{flex:1;}                    /* Row B Canvas grows so the row reaches the right edge */
   .tool.grow .num{flex:1;width:auto;}    /* and its inputs lengthen to fill — no empty gap, no Paint tail */
-  .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;}
+  .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;margin-right:2px;}  /* +2 over the 8px gap = 10px label->control */
 
   /* ---------------- buttons ---------------- */
   /* all controls share a 32px box; the 1px border is INSIDE (border-box), so active/focus
@@ -107,7 +107,7 @@
   .tab .x:hover{color:var(--main-text);background:rgba(255,255,255,.08);}
 
   /* ---------------- paint pills ---------------- */
-  .paints{display:flex;gap:6px;flex-wrap:wrap;}
+  .paints{display:flex;gap:8px;flex-wrap:wrap;}
   .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
          background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
          padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
