@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Sprite Editor</title>
+<title>ASCII Sprite Editor</title>
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -43,16 +43,16 @@
 
   /* ---------------- header ---------------- */
   header{margin-bottom:var(--space-section);}
-  h1{font-size:20px;font-weight:500;margin:0 0 8px;}
+  h1{font-size:16px;font-weight:500;margin:0 0 8px;}
   .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;opacity:.6;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
   .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
-  .tool{display:flex;align-items:center;gap:10px;
+  .tool{display:flex;align-items:flex-start;gap:10px;
         background:var(--tool-background);border:1px solid var(--stroke);
         border-radius:var(--r-tool);padding:8px 8px 8px 12px;}
-  .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;}
+  .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;}
 
   /* ---------------- buttons ---------------- */
   .btn{font-family:var(--font-ui);font-size:13px;line-height:1.1;color:var(--main-text);
@@ -192,13 +192,38 @@
   .links{display:flex;gap:12px;}
   .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
   .links a:hover{color:var(--accent);}
-  .copy-note{color:var(--tool-text-id);font-size:13px;opacity:.6;}
+  .copy-note{color:var(--main-text);font-size:13px;}
+
+  /* stage-control icon swatches (shown on mobile, hidden on desktop) */
+  .iw{display:none;align-items:center;justify-content:center;}
+  .iw svg{width:14px;height:14px;display:block;}
+  .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
+             box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);}
+
+  /* ============================================================
+     Mobile (<=600px): icon controls, stacked tools/palette, common label column
+     ============================================================ */
+  @media (max-width:600px){
+    .wrap{padding:var(--space-page) 16px;}
+    /* every tool on its own row; labels form a fixed column so controls line up */
+    .tool{width:100%;}
+    .tool-label{width:52px;}
+    /* Paint: Body/Accent/Decoration become swatch-only; Background keeps its label */
+    .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}
+    /* Stage controls -> icons (fixes the Zoom vs Filled/Grid/Mirror overlap) */
+    .stage-tl .tw, .stage-tr .zw{display:none;}
+    .stage-tl .iw{display:inline-flex;}
+    /* Palette: one group per row, drop the Shade/Slash tight exception so all align */
+    .pgroup{width:100%;}
+    .pgroup.tight .plabel{width:var(--plabel-w,auto);}
+    .pgrid{max-width:none;}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>Block Sprite Editor</h1>
+    <h1>ASCII Sprite Editor</h1>
     <p class="sub">Draw block-ASCII sprites in four colors (body + accent + decor + background). Glyphs sit edge-to-edge so block and box lines connect. Mirror, Undo / Redo, Resize and an Animation timeline are built in. Export or Load JSON to reuse sprites anywhere. Export your art in SVG, PNG or MP4 formats with up to x16 upscale.</p>
   </header>
 
@@ -259,13 +284,13 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled">Filled</button>
-      <button class="btn on" id="gridtog">Grid</button>
-      <button class="btn on" id="mirror">Mirror</button>
+      <button class="btn on" id="filled"><span class="tw">Filled</span><span class="iw fillic"></span></button>
+      <button class="btn on" id="gridtog"><span class="tw">Grid</span><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1"/><path d="M3.5 9.5h17M3.5 15h17M9.5 3.5v17M15 3.5v17"/></svg></span></button>
+      <button class="btn on" id="mirror"><span class="tw">Mirror</span><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1">Zoom &minus;</button>
-      <button class="btn" data-zoom="1">Zoom +</button>
+      <button class="btn" data-zoom="-1"><span class="zw">Zoom </span>&minus;</button>
+      <button class="btn" data-zoom="1"><span class="zw">Zoom </span>+</button>
       <button class="btn icon" id="fs" title="Fullscreen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>
       </button>
@@ -329,7 +354,7 @@
         <a href="mailto:unowness@protonmail.com" id="link-email">Send me a letter</a>
         <a href="https://youtu.be/33DsFhSL5O0" id="link-coffee" target="_blank" rel="noopener">Buy Me Coffee</a>
       </div>
-      <span class="copy-note">Unowness, 2026</span>
+      <span class="copy-note">Unowness · 2026</span>
     </div>
   </footer>
 </div>
@@ -485,6 +510,7 @@
     var d=D();
     paintCells(ui.playing?d.frames[ui.playIdx]:curGrid());
     gridEl.style.backgroundColor=d.bgOn?d.bgColor:'#000';
+    $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');  /* mobile fill icon swatch */
   }
 
   /* ============================================================
