@@ -14,6 +14,7 @@
     --tool-background:#16161A;
     --input-background:#1D1D22;
     --stroke:#2A2A30;
+    --stroke-focus:#5A5A64;
     --main-text:#E6E6DF;
     --main-text-05:rgba(230,230,223,.5);
     --tool-text-id:#9AA0A6;
@@ -70,6 +71,11 @@
   .input.num::-webkit-outer-spin-button,
   .input.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   #sid{width:200px;}
+
+  /* focus states — design-system, not native */
+  .input:focus{outline:none;border-color:var(--stroke-focus);}
+  button:focus,input:focus{outline:none;}
+  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible{border-color:var(--accent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -149,9 +155,11 @@
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:12px;background:var(--tool-background);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:11px;}
-  textarea{display:block;width:100%;height:120px;resize:vertical;background:var(--page);color:var(--tool-text-id);
-           border:1px solid var(--stroke);border-radius:var(--r-btn);padding:10px;
-           font-family:var(--font-mono);font-size:11px;margin-bottom:43px;}
+  textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--main-text);
+           border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:43px;}
+  textarea:focus{outline:none;}
+  textarea::placeholder{color:var(--tool-text-id);}
+  .iobox:focus-within{border-color:var(--stroke-focus);}
   .iobox .btn{position:absolute;bottom:11px;}
   #load{left:11px;} #copy{right:11px;}
 
@@ -280,7 +288,7 @@
 
   <!-- Import / output -->
   <div class="iobox">
-    <textarea id="out" placeholder="Export writes the sprite JSON here. To edit an existing sprite: paste its JSON and click Load JSON, or use Import JSON to pick a file."></textarea>
+    <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
     <button class="btn" id="load">Import JSON</button>
     <input type="file" id="loadfile" accept="application/json,.json" hidden>
     <button class="btn" id="copy">Copy</button>
@@ -388,7 +396,7 @@
     var box=$('tabs');box.innerHTML='';
     docs.forEach(function(d,i){
       var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
-      var name=document.createElement('span');name.textContent=d.name||'untitled';
+      var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:(d.name||'untitled');
       name.onclick=function(){selectTab(i);};t.appendChild(name);
       if(docs.length>1){
         var x=document.createElement('span');x.className='x';x.textContent='×';x.title='Close';
@@ -715,7 +723,7 @@
 
   /* document / tabs */
   $('addtab').onclick=addTab;
-  $('sid').addEventListener('input',function(){D().id=$('sid').value;});
+  $('sid').addEventListener('input',function(){D().id=$('sid').value;renderTabs();});
 
   /* paint layers + colors */
   document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
