@@ -32,22 +32,22 @@
     --r-btn:4px;     /* Button / input */
 
     /* vertical rhythm */
-    --space-sm:16px; /* tight — around the stage */
-    --space:24px;    /* standard — between sections */
-    --space-lg:36px; /* 1.5x — top of page + header */
+    --space-cluster:12px; /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
+    --space-section:36px; /* between the main sections */
+    --space-page:48px;    /* page top + bottom + header -> content */
   }
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
-  .wrap{max-width:960px;margin:0 auto;padding:var(--space-lg) 39px calc(var(--space) * 2);}
+  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 39px;}
 
   /* ---------------- header ---------------- */
-  header{margin-bottom:var(--space-lg);}
+  header{margin-bottom:var(--space-page);}
   h1{font-size:20px;font-weight:500;margin:0 0 8px;}
   .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;}
 
   /* ---------------- bars & tool sections ---------------- */
-  .bars{display:flex;flex-direction:column;gap:12px;margin-bottom:var(--space);}
+  .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
   .bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;}
   .tool{display:flex;align-items:center;gap:10px;
         background:var(--tool-background);border:1px solid var(--stroke);
@@ -129,7 +129,7 @@
   .cell:hover{background:rgba(103,232,249,.28);}
 
   /* ---------------- hint banner ---------------- */
-  .hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-sm);
+  .hint{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-cluster);
         background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -138,7 +138,7 @@
   .hint-x:hover{color:var(--main-text);}
 
   /* ---------------- animation timeline ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 var(--space-sm);
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 var(--space-cluster);
            background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
            padding:9px 12px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
@@ -148,23 +148,24 @@
   .sep{width:1px;height:22px;background:var(--stroke);}
 
   /* ---------------- glyph palette ---------------- */
-  .palette{display:flex;flex-wrap:wrap;gap:12px;margin-top:var(--space);}
+  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-section);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
+  /* fixed-width label column (fits the longest section name) so every glyph grid starts at the same x */
   .plabel{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
-          white-space:nowrap;line-height:32px;}
-  .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:792px;}
+          white-space:nowrap;line-height:32px;width:72px;flex:none;}
+  .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:780px;}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:#cfd2c4;
         background:#000;border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
   .gbtn:hover{border-color:#3a3a44;}
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space);}
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-section);}
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:var(--space);background:var(--tool-background);
+  .iobox{position:relative;margin-top:14px;background:var(--tool-background);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:11px;}
   textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--main-text);
            border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:43px;}
@@ -175,8 +176,8 @@
   #load{left:11px;} #copy{right:11px;}
 
   /* ---------------- footer ---------------- */
-  footer{margin-top:var(--space);}
-  .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 18px;max-width:880px;}
+  footer{margin-top:var(--space-section);}
+  .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
   .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
