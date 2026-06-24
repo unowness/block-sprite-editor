@@ -49,7 +49,7 @@
   .brand{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
-  .sub{color:var(--main-text-05);font-size:13px;line-height:1.3;margin:0;max-width:880px;}
+  .sub{color:var(--tool-text-id);opacity:.75;font-size:13px;line-height:1.3;margin:0;max-width:880px;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
@@ -126,8 +126,8 @@
                 display:flex;align-items:safe center;justify-content:safe center;
                 padding:54px 12px;overflow:auto;}
   .stage-tl,.stage-tr,.stage-bl,.stage-br{position:absolute;z-index:2;display:flex;gap:8px;}
-  .stage-tl{top:11px;left:11px;} .stage-tr{top:11px;right:11px;}
-  .stage-bl{bottom:11px;left:11px;} .stage-br{bottom:11px;right:11px;}
+  .stage-tl{top:8px;left:8px;} .stage-tr{top:8px;right:8px;}
+  .stage-bl{bottom:8px;left:8px;} .stage-br{bottom:8px;right:8px;}
 
   /* fullscreen popup — the stage becomes a big rounded frame 48px from the screen edges
      (box-shadow paints the dark backdrop around it); controls keep their corner docking.
@@ -191,18 +191,18 @@
 
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:8px;background:var(--page);
-         border:1px solid var(--stroke);border-radius:var(--r-tool);padding:11px;}
-  textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--main-text);
-           border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:43px;}
+         border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
+  textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--tool-text-id);
+           border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:40px;}
   textarea:focus{outline:none;}
   textarea::placeholder{color:var(--tool-text-id);}
   .iobox:focus-within{border-color:var(--stroke-focus);}
-  .iobox .btn{position:absolute;bottom:11px;}
-  #load{left:11px;} #copy{right:11px;}
+  .iobox .btn{position:absolute;bottom:8px;}
+  #load{left:8px;} #copy{right:8px;}
 
   /* ---------------- footer ---------------- */
   footer{margin-top:var(--space-section);}   /* 40px above footer; the 56px sits BELOW it (page bottom padding) */
-  .note{color:var(--main-text-05);font-size:13px;line-height:1.3;margin:0 0 12px;max-width:880px;}
+  .note{color:var(--tool-text-id);opacity:.75;font-size:13px;line-height:1.3;margin:0 0 12px;max-width:880px;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
   .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
@@ -251,7 +251,7 @@
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
-        <input class="input" type="text" id="sid" placeholder="Input">
+        <input class="input" type="text" id="sid" placeholder="Name your sprite">
       </div>
       <div class="tool">
         <span class="tool-label">Tabs</span>
