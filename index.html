@@ -42,9 +42,9 @@
   .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 39px;}
 
   /* ---------------- header ---------------- */
-  header{margin-bottom:var(--space-page);}
+  header{margin-bottom:var(--space-section);}
   h1{font-size:20px;font-weight:500;margin:0 0 8px;}
-  .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;}
+  .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;opacity:.6;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
@@ -164,6 +164,8 @@
      --plabel-w / --pgrid-w are set by buildPalette from the actual content width. */
   .plabel{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
           white-space:nowrap;line-height:32px;width:var(--plabel-w,auto);flex:none;}
+  /* paired right-side groups (Shade, Slash) opt out of the shared column: label hugs its glyphs (10px gap) */
+  .pgroup.tight .plabel{width:auto;}
   .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:#cfd2c4;
         background:#000;border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
@@ -186,12 +188,12 @@
 
   /* ---------------- footer ---------------- */
   footer{margin-top:var(--space-section);}
-  .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;}
+  .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;opacity:.6;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
   .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
   .links a:hover{color:var(--accent);}
-  .copy-note{color:var(--tool-text-id);font-size:13px;}
+  .copy-note{color:var(--tool-text-id);font-size:13px;opacity:.6;}
 </style>
 </head>
 <body>
@@ -356,9 +358,9 @@
   var GROUPS=[
     {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
     {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
-    {label:'Shade',    g:['░','▒','▓']},
+    {label:'Shade',    tight:true, g:['░','▒','▓']},
     {label:'Line',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
-    {label:'Slash', g:['╱','╲','╳']},
+    {label:'Slash', tight:true, g:['╱','╲','╳']},
     {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
     {label:'Join',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
@@ -562,7 +564,7 @@
   function buildPalette(){
     var pal=$('palette');pal.innerHTML='';
     GROUPS.forEach(function(grp){
-      var box=document.createElement('div');box.className='pgroup';
+      var box=document.createElement('div');box.className='pgroup'+(grp.tight?' tight':'');
       var lab=document.createElement('div');lab.className='plabel';lab.textContent=grp.label;box.appendChild(lab);
       var pg=document.createElement('div');pg.className='pgrid';
       grp.g.forEach(function(g){
