@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ASCII Sprite Editor</title>
+<title>Blockmode — ASCII Sprite Editor</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -34,7 +36,8 @@
     /* vertical rhythm */
     --space-cluster:12px; /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
     --space-section:36px; /* between the main sections */
-    --space-page:48px;    /* page top + bottom + header -> content */
+    --space-frame:44px;   /* header <-> content stack <-> footer */
+    --space-page:48px;    /* page top + bottom */
   }
 
   *{box-sizing:border-box;}
@@ -42,9 +45,11 @@
   .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 39px;}
 
   /* ---------------- header ---------------- */
-  header{margin-bottom:var(--space-section);}
-  h1{font-size:16px;font-weight:500;margin:0 0 8px;}
-  .sub{color:var(--tool-text-id);font-size:13px;line-height:1.4;margin:0;max-width:880px;opacity:.6;}
+  header{margin-bottom:var(--space-frame);}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+  .logo{width:56px;height:56px;display:block;flex:none;}
+  .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
+  .sub{color:var(--main-text-05);font-size:13px;line-height:1.2;margin:0;max-width:880px;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
@@ -52,19 +57,28 @@
   .tool{display:flex;align-items:flex-start;gap:10px;
         background:var(--tool-background);border:1px solid var(--stroke);
         border-radius:var(--r-tool);padding:8px 8px 8px 12px;}
+  .tool.grow{flex:1;}   /* Row B Paint absorbs the slack so the row reaches the right edge */
   .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;}
 
   /* ---------------- buttons ---------------- */
-  .btn{font-family:var(--font-ui);font-size:13px;line-height:1.1;color:var(--main-text);
+  /* all controls share a 32px box; the 1px border is INSIDE (border-box), so active/focus
+     border is a colour swap only — never a size change. */
+  .btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 9px;
+       font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:9px;cursor:pointer;white-space:nowrap;}
+       cursor:pointer;white-space:nowrap;}
   .btn:hover{border-color:#3a3a44;}
   .btn.on{border-color:var(--accent);color:var(--accent);}
-  .btn.icon{display:inline-flex;align-items:center;justify-content:center;padding:9px;}
+  .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   .btn.alert{background:rgba(203,64,54,.15);border-color:var(--alert);color:var(--alert);}
   .btn.green{background:rgba(92,228,34,.1);border-color:var(--green);color:var(--green);}
+  /* active + coloured buttons get a hover too: the stroke drops to 0.5 opacity */
+  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:rgba(103,232,249,.5);}
+  .btn.alert:hover{border-color:rgba(203,64,54,.5);}
+  .btn.green:hover{border-color:rgba(92,228,34,.5);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
+  .btn:disabled:hover{border-color:var(--stroke);}
 
   /* ---------------- inputs ---------------- */
   .input{height:32px;background:var(--input-background);color:var(--main-text);
@@ -83,9 +97,9 @@
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .tab{display:inline-flex;align-items:center;gap:6px;
+  .tab{display:inline-flex;align-items:center;gap:6px;height:32px;
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:9px;font-size:13px;color:var(--main-text);cursor:pointer;}
+       padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .tab.on{border-color:var(--accent);color:var(--accent);}
   .tab .x{display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;}
@@ -93,9 +107,9 @@
 
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:6px;flex-wrap:wrap;}
-  .paint{display:inline-flex;align-items:center;gap:8px;
+  .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
          background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-         padding:9px;font-size:13px;color:var(--main-text);cursor:pointer;}
+         padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .paint.on{border-color:var(--accent);color:var(--accent);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid rgba(255,255,255,.15);overflow:hidden;flex:none;}
@@ -163,8 +177,7 @@
      --plabel-w / --pgrid-w are set by buildPalette from the actual content width. */
   .plabel{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
           white-space:nowrap;line-height:32px;width:var(--plabel-w,auto);flex:none;}
-  /* paired right-side groups (Shade, Slash) opt out of the shared column: label hugs its glyphs (10px gap) */
-  .pgroup.tight .plabel{width:auto;}
+  /* every label uses the shared 48px column — including the paired Shades/Slash groups */
   .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:#cfd2c4;
         background:#000;border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
@@ -173,6 +186,7 @@
 
   /* ---------------- export bar ---------------- */
   .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:var(--space-section);}
+  #export{min-width:120px;}  /* wider Export button (Figma) */
 
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:14px;background:var(--tool-background);
@@ -186,7 +200,7 @@
   #load{left:11px;} #copy{right:11px;}
 
   /* ---------------- footer ---------------- */
-  footer{margin-top:var(--space-section);}
+  footer{margin-top:var(--space-frame);}
   .note{color:var(--tool-text-id);font-size:13px;line-height:1.5;margin:0 0 var(--space-cluster);max-width:880px;opacity:.6;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
@@ -194,8 +208,9 @@
   .links a:hover{color:var(--accent);}
   .copy-note{color:var(--main-text);font-size:13px;}
 
-  /* stage-control icon swatches (shown on mobile, hidden on desktop) */
-  .iw{display:none;align-items:center;justify-content:center;}
+  /* stage-control icons — icon + label on desktop, icon-only on mobile (8px icon→label gap, per Figma) */
+  .stage-tl .btn,.stage-tr .btn{gap:8px;}
+  .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
              box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);}
@@ -205,17 +220,16 @@
      ============================================================ */
   @media (max-width:600px){
     .wrap{padding:var(--space-page) 16px;}
-    /* every tool on its own row; labels form a fixed column so controls line up */
-    .tool{width:100%;}
-    .tool-label{width:52px;}
+    /* every tool full-width; label pinned left, controls pushed right (settings-row style,
+       no empty tail), vertically centred */
+    .tool{width:100%;align-items:center;}
+    .tool-label{margin-right:auto;}
     /* Paint: Body/Accent/Decoration become swatch-only; Background keeps its label */
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}
-    /* Stage controls -> icons (fixes the Zoom vs Filled/Grid/Mirror overlap) */
+    /* Stage controls: icon-only on mobile (hide the text labels) */
     .stage-tl .tw, .stage-tr .zw{display:none;}
-    .stage-tl .iw{display:inline-flex;}
-    /* Palette: one group per row, drop the Shade/Slash tight exception so all align */
+    /* Palette: one group per row */
     .pgroup{width:100%;}
-    .pgroup.tight .plabel{width:var(--plabel-w,auto);}
     .pgrid{max-width:none;}
   }
 </style>
@@ -223,8 +237,11 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>ASCII Sprite Editor</h1>
-    <p class="sub">Draw block-ASCII sprites in four colors (body + accent + decor + background). Glyphs sit edge-to-edge so block and box lines connect. Mirror, Undo / Redo, Resize and an Animation timeline are built in. Export or Load JSON to reuse sprites anywhere. Export your art in SVG, PNG or MP4 formats with up to x16 upscale.</p>
+    <div class="brand">
+      <img class="logo" src="favicon.png" width="56" height="56" alt="Blockmode logo">
+      <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
+    </div>
+    <p class="sub">Draw block-ASCII sprites in four colors (body + accent + decor + background). Glyphs sit edge-to-edge so block and box lines connect. Mirror, Undo / Redo, Resize and an Animation timeline are built in. Export or Load JSON to reuse sprites anywhere. Export your art in SVG, PNG or MP4 formats with up to ×16 upscale.</p>
   </header>
 
   <div class="bars">
@@ -243,7 +260,7 @@
 
     <!-- Row B — paint + view + canvas -->
     <div class="bar">
-      <div class="tool">
+      <div class="tool grow">
         <span class="tool-label">Paint</span>
         <div class="paints" id="paints">
           <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Body</button>
@@ -284,24 +301,24 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled"><span class="tw">Filled</span><span class="iw fillic"></span></button>
-      <button class="btn on" id="gridtog"><span class="tw">Grid</span><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="1"/><path d="M3.5 9.5h17M3.5 15h17M9.5 3.5v17M15 3.5v17"/></svg></span></button>
-      <button class="btn on" id="mirror"><span class="tw">Mirror</span><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4"/></svg></span></button>
+      <button class="btn on" id="filled"><span class="iw fillic"></span><span class="tw">Filled</span></button>
+      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M5 1.8v10.4M9 1.8v10.4M1.8 5h10.4M1.8 9h10.4"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v10h2M10 2h2v10h-2M7 2v10"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1"><span class="zw">Zoom </span>&minus;</button>
-      <button class="btn" data-zoom="1"><span class="zw">Zoom </span>+</button>
+      <button class="btn" data-zoom="-1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="1.4" width="11.2" height="11.2" rx="2.4"/><path d="M4 7h6"/></svg></span><span class="zw">Zoom</span></button>
+      <button class="btn" data-zoom="1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="1.4" width="11.2" height="11.2" rx="2.4"/><path d="M4 7h6M7 4v6"/></svg></span><span class="zw">Zoom</span></button>
       <button class="btn icon" id="fs" title="Fullscreen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>
       </button>
     </div>
     <div class="stage-canvas"><div class="canvas-frame"><div id="grid" class="grid show-grid"></div></div></div>
     <div class="stage-bl">
-      <button class="btn" id="undo">Undo</button>
-      <button class="btn" id="redo">Redo</button>
       <button class="btn icon" id="erase" title="Erase">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H8.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3"/><path d="M18 13.3l-6.3 -6.3"/></svg>
       </button>
+      <button class="btn" id="undo">Undo</button>
+      <button class="btn" id="redo">Redo</button>
     </div>
     <div class="stage-br">
       <button class="btn alert" id="clear">Clear</button>
@@ -328,10 +345,10 @@
     </div>
     <div class="tool">
       <span class="tool-label">Scale</span>
-      <button class="btn"    data-s="1">1x</button>
-      <button class="btn on" data-s="4">4x</button>
-      <button class="btn"    data-s="8">8x</button>
-      <button class="btn"    data-s="16">16x</button>
+      <button class="btn"    data-s="1">1×</button>
+      <button class="btn on" data-s="4">4×</button>
+      <button class="btn"    data-s="8">8×</button>
+      <button class="btn"    data-s="16">16×</button>
       <button class="btn green" id="export">Export</button>
     </div>
   </div>
@@ -346,15 +363,13 @@
 
   <!-- Footer -->
   <footer>
-    <p class="note">When I was a kid, my dad had a typewriter — and even before I could read or write, I loved drawing with characters on paper.<br>
-       Drawing has so many techniques to explore, and I believe constraints create masterpieces. I needed an ASCII editor, so I built my own.<br>
-       Hope you enjoy drawing in it — write some letters!</p>
+    <p class="note">When I was a kid, my dad had a typewriter — and even before I could read or write, I loved drawing with characters on paper. Drawing has so many techniques to explore, and I believe constraints create masterpieces. I needed an ASCII editor, so I built my own. Hope you enjoy drawing in it — write some letters!</p>
     <div class="foot-row">
+      <span class="copy-note">Blockmode by Unowness · 2026</span>
       <div class="links">
-        <a href="mailto:unowness@protonmail.com" id="link-email">Send me a letter</a>
+        <a href="mailto:unowness@protonmail.com" id="link-email">Send an Email</a>
         <a href="https://youtu.be/33DsFhSL5O0" id="link-coffee" target="_blank" rel="noopener">Buy Me Coffee</a>
       </div>
-      <span class="copy-note">Unowness · 2026</span>
     </div>
   </footer>
 </div>
@@ -382,13 +397,13 @@
   var GROUPS=[
     {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
     {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
-    {label:'Shade',    tight:true, g:['░','▒','▓']},
-    {label:'Line',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
+    {label:'Shades',   tight:true, g:['░','▒','▓']},
+    {label:'Lines',    g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
     {label:'Slash', tight:true, g:['╱','╲','╳']},
     {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
-    {label:'Join',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
-    {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
+    {label:'Joins',    g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Double',    g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
+    {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
     {label:'Glyph',   g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|','<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
     {label:'Decor',     g:['●','○','◍','◉','◆','◇','◈','★','☆','✦','✧','◦','•','§','¶','¤','±','×','÷','¿','¡','‹','›','«','»','†','‡','…']}
   ];
@@ -603,13 +618,10 @@
   /* reserve a label column equal to the widest label, and size each glyph grid to the
      rest of the row (from the real content width) so glyphs align and don't wrap a stray box. */
   function sizePaletteColumns(){
-    var pal=$('palette'),maxLabel=0;
-    pal.style.removeProperty('--plabel-w');                 /* measure natural label widths */
-    [].forEach.call(pal.querySelectorAll('.plabel'),function(l){ if(l.offsetWidth>maxLabel)maxLabel=l.offsetWidth; });
-    maxLabel=Math.ceil(maxLabel);
+    var pal=$('palette'),labelW=48;                         /* fixed 48px label column for every group (Figma) */
     var avail=pal.clientWidth||882;                         /* content width (882 now, 960 if widened) */
-    pal.style.setProperty('--plabel-w', maxLabel+'px');
-    pal.style.setProperty('--pgrid-w', Math.max(0, avail - 30 - maxLabel)+'px');  /* 30 = pl12 + gap10 + pr8 */
+    pal.style.setProperty('--plabel-w', labelW+'px');
+    pal.style.setProperty('--pgrid-w', Math.max(0, avail - 30 - labelW)+'px');  /* 30 = pl12 + gap10 + pr8 */
   }
 
   /* ============================================================
