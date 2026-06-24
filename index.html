@@ -123,10 +123,8 @@
   .stage.fullscreen .stage-bl{bottom:48px;left:48px;} .stage.fullscreen .stage-br{bottom:48px;right:48px;}
   .stage.fullscreen .stage-canvas{position:absolute;inset:96px 48px;min-height:0;max-height:none;max-width:none;padding:0;}
 
-  /* canvas frame: when the grid is on, the grid draws its own 4 edges (uniform);
-     when off, .framed supplies the border so the field is still outlined. */
-  .canvas-frame{display:inline-block;line-height:0;border-radius:2px;overflow:hidden;background:#000;}
-  .canvas-frame.framed{border:1px solid var(--stroke);}
+  /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
+  .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:#000;}
   .grid{display:inline-block;background:#000;cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);}
   /* left+top edges come from the gradient line at 0; right+bottom from the border — all 1px --stroke */
@@ -357,16 +355,16 @@
 
   /* palette groups — order follows the mockup; "Joins" is the old Junctions, Squares is new */
   var GROUPS=[
-    {label:'Blocks',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
-    {label:'Quads', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
-    {label:'Shades',    g:['░','▒','▓']},
-    {label:'Lines',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
-    {label:'Diags', g:['╱','╲','╳']},
-    {label:'Corners',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
-    {label:'Joins',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
-    {label:'Squares',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
+    {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
+    {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
+    {label:'Shade',    g:['░','▒','▓']},
+    {label:'Line',     g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋']},
+    {label:'Slant', g:['╱','╲','╳']},
+    {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
+    {label:'Join',     g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
+    {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
     {label:'Double',    g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
-    {label:'Symbols',   g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|','<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
+    {label:'Ascii',   g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|','<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
     {label:'Decor',     g:['●','○','◍','◉','◆','◇','◈','★','☆','✦','✧','◦','•','§','¶','¤','±','×','÷','¿','¡','‹','›','«','»','†','‡','…']}
   ];
 
@@ -776,8 +774,7 @@
 
   /* stage controls */
   $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;$('filled').classList.toggle('on',d.bgOn);render();};
-  function syncFrame(){var f=gridEl.parentNode;if(f)f.classList.toggle('framed',!ui.showGrid);}
-  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);syncFrame();};
+  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
 
@@ -844,7 +841,6 @@
   renderTabs();
   applyView();
   build();
-  syncFrame();
   renderFrames();
   updateHist();
 })();
