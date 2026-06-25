@@ -268,15 +268,15 @@
       <div class="tool">
         <span class="tool-label">Paint</span>
         <div class="paints" id="paints">
-          <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Body</button>
+          <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Main</button>
           <button class="paint"    data-l="a"><span class="swatch"><input type="color" id="col-a"></span>Accent</button>
-          <button class="paint"    data-l="d"><span class="swatch"><input type="color" id="col-d"></span>Decoration</button>
-          <button class="paint"    data-l="bg"><span class="swatch"><input type="color" id="col-bg"></span>Background</button>
+          <button class="paint"    data-l="d"><span class="swatch"><input type="color" id="col-d"></span>Detail</button>
+          <button class="paint"    data-l="bg"><span class="swatch"><input type="color" id="col-bg"></span>Canvas</button>
         </div>
       </div>
       <div class="tool">
         <span class="tool-label">View</span>
-        <button class="btn on" data-view="ascii">ASCII</button>
+        <button class="btn on" data-view="ascii">Drawing</button>
         <button class="btn"    data-view="animation">Animation</button>
       </div>
       <div class="tool grow">
@@ -311,8 +311,8 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled"><span class="iw fillic"></span><span class="tw">Filled</span></button>
-      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="0.9" stroke-linejoin="round"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M4.5 2v10M7 2v10M9.5 2v10M2 4.5h10M2 7h10M2 9.5h10"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="filled"><span class="iw fillic"></span><span class="tw">Canvas</span></button>
+      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M3.5 0.5v13M10.5 0.5v13M0.5 3.5h13M0.5 10.5h13"/></svg></span><span class="tw">Grid</span></button>
       <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v10h2M10 2h2v10h-2M7 2v10"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
