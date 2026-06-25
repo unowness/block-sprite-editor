@@ -37,12 +37,12 @@
     --space-cluster:8px;  /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
     --space-section:40px; /* between the main sections */
     --space-frame:40px;   /* header -> content stack */
-    --space-page:40px;    /* page top + bottom */
+    --space-page:36px;    /* page top (compensates the title text); bottom is 48 */
   }
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
-  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 40px 56px;}  /* top 40, sides 40, bottom 56 */
+  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 40px 48px;}  /* top 36, sides 40, bottom 48 */
 
   /* ---------------- header ---------------- */
   header{margin-bottom:var(--space-frame);}
@@ -159,15 +159,15 @@
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
   .hint-x:hover{color:var(--main-text);}
 
-  /* ---------------- animation timeline ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 var(--space-cluster);
-           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
-           padding:9px 12px;}
+  /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 var(--space-cluster);}
+  .animbar-right{display:flex;flex-wrap:wrap;gap:8px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
-  .fbtn{min-width:32px;height:32px;padding:0 8px;font-size:13px;color:var(--main-text);
+  .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
+        font-size:13px;color:var(--main-text);
         background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
   .fbtn.on{border-color:var(--accent);color:var(--accent);}
-  .sep{width:1px;height:22px;background:var(--stroke);}
+  #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-section);}
@@ -187,7 +187,7 @@
 
   /* ---------------- export bar ---------------- */
   .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-section);}
-  #export{min-width:120px;}  /* wider Export button (Figma) */
+  #export{min-width:160px;}  /* wider Export button (Figma) */
 
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:8px;background:var(--page);
@@ -230,6 +230,9 @@
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}
     /* Stage controls: icon-only on mobile (hide the text labels) */
     .stage-tl .tw, .stage-tr .zw{display:none;}
+    /* Animation bar: stack the Frames/FPS/Preview blocks; Play/Pause become icon-only */
+    .animbar,.animbar-right{flex-direction:column;align-items:stretch;}
+    #play .pw,#stop .pw{display:none;}
     /* Palette: one group per row */
     .pgroup{width:100%;}
     .pgrid{max-width:none;}
@@ -284,27 +287,32 @@
     </div>
   </div>
 
-  <!-- Animation timeline (shown above the stage in Animation view) -->
+  <!-- Animation timeline (shown above the stage in Animation view): Frames | FPS + Preview -->
   <div class="animbar" id="animbar" style="display:none">
-    <span class="tool-label">Frames</span>
-    <div class="frames" id="frames"></div>
-    <button class="btn" id="addframe">+ Add Frame</button>
-    <button class="btn" id="delframe">Delete Frame</button>
-    <span class="sep"></span>
-    <button class="btn" id="play">Play</button>
-    <button class="btn" id="stop">Pause</button>
-    <span class="tool-label">FPS</span>
-    <button class="btn" data-fps="4">4</button>
-    <button class="btn" data-fps="6">6</button>
-    <button class="btn on" data-fps="8">8</button>
-    <button class="btn" data-fps="12">12</button>
+    <div class="tool">
+      <span class="tool-label">Frames</span>
+      <div class="frames" id="frames"></div>
+      <button class="btn icon" id="addframe" title="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg></button>
+      <button class="btn icon" id="delframe" title="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 3.8h8.8M5.4 3.8V2.7h3.2v1.1M3.9 3.8l.5 7a1 1 0 0 0 1 .9h3.2a1 1 0 0 0 1-.9l.5-7"/></svg></button>
+    </div>
+    <div class="animbar-right">
+      <div class="tool">
+        <span class="tool-label">FPS</span>
+        <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second">
+      </div>
+      <div class="tool">
+        <span class="tool-label">Preview</span>
+        <button class="btn" id="play"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M4.7 3.3v7.4l6-3.7z"/></svg></span><span class="pw">Play</span></button>
+        <button class="btn" id="stop"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.2 3.4v7.2M8.8 3.4v7.2"/></svg></span><span class="pw">Pause</span></button>
+      </div>
+    </div>
   </div>
 
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
       <button class="btn on" id="filled"><span class="iw fillic"></span><span class="tw">Filled</span></button>
-      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M5 1.8v10.4M9 1.8v10.4M1.8 5h10.4M1.8 9h10.4"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="0.9" stroke-linejoin="round"><rect x="2" y="2" width="10" height="10" rx="1"/><path d="M4.5 2v10M7 2v10M9.5 2v10M2 4.5h10M2 7h10M2 9.5h10"/></svg></span><span class="tw">Grid</span></button>
       <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v10h2M10 2h2v10h-2M7 2v10"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
@@ -490,7 +498,7 @@
     $('cw').value=d.w; $('ch').value=d.h;
     setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('bg',d.bgColor);
     $('filled').classList.toggle('on',d.bgOn);
-    [].forEach.call(document.querySelectorAll('[data-fps]'),function(b){b.classList.toggle('on',+b.dataset.fps===d.fps);});
+    $('fps').value=d.fps;
   }
   function setSwatch(layer,color){
     var inp=$('col-'+layer);if(inp){inp.value=color;inp.parentNode.style.background=color;}
@@ -853,9 +861,8 @@
   /* animation */
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
   $('play').onclick=play;$('stop').onclick=stop;
-  document.querySelectorAll('[data-fps]').forEach(function(b){b.onclick=function(){D().fps=+b.dataset.fps;
-    document.querySelectorAll('[data-fps]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');
-    if(ui.playing){stop();play();}};});
+  $('fps').addEventListener('change',function(){var v=Math.max(1,Math.min(60,Math.round(+$('fps').value)||D().fps));
+    D().fps=v;$('fps').value=v;if(ui.playing){stop();play();}});
 
   /* export */
   document.querySelectorAll('[data-type]').forEach(function(b){b.onclick=function(){setExportType(b.dataset.type);};});
