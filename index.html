@@ -42,7 +42,7 @@
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
-  .wrap{max-width:960px;margin:0 auto;padding:var(--space-page) 40px 48px;}  /* top 36, sides 40, bottom 48 */
+  .wrap{max-width:1040px;margin:0 auto;padding:var(--space-page) 40px 48px;}  /* 1040 - 2*40 = 960 content (Figma 42:363) */
 
   /* ---------------- header ---------------- */
   header{margin-bottom:var(--space-frame);}
@@ -133,8 +133,17 @@
      (box-shadow paints the dark backdrop around it); controls keep their corner docking.
      Esc or the X closes it. */
   body.fs-lock{overflow:hidden;}
-  .stage.fullscreen{position:fixed;inset:48px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
+  .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:72px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
   .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
+  /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
+  body.fs-lock .wrap>*:not(.stage):not(.fscustom){visibility:hidden;}
+  /* Custom panel shown in fullscreen, below the stage in the backdrop (Figma Desktop-Fullscreen) */
+  .fscustom{display:none;}
+  body.fs-lock .fscustom{display:flex;position:fixed;z-index:10000;left:50%;transform:translateX(-50%);bottom:20px;
+           align-items:flex-start;gap:10px;}
+  .fscustom-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
+           white-space:nowrap;line-height:32px;width:48px;flex:none;}
+  .fscustom .pgrid{max-width:none;flex-wrap:nowrap;}
 
   /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:#000;}
@@ -187,7 +196,7 @@
 
   /* ---------------- export bar ---------------- */
   .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-section);}
-  #export{min-width:160px;}  /* wider Export button (Figma) */
+  #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:8px;background:var(--page);
@@ -210,32 +219,64 @@
   .copy-note{color:var(--main-text);font-size:13px;}
 
   /* stage-control icons — icon + label on desktop, icon-only on mobile (8px icon→label gap, per Figma) */
-  .stage-tl .btn,.stage-tr .btn{gap:8px;}
+  .stage-tl .btn,.stage-tr .btn,.stage-bl .btn,.stage-br .btn{gap:8px;}
   .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
              box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);}
 
+  /* ---------------- canvas size inputs (57px, auto-grow when long) ---------------- */
+  #cw,#ch{width:57px;}
+
+  /* ---------------- stage Background button (swatch colour + on/off, Figma 42:363) ---------------- */
+  #filled .swatch{width:14px;height:14px;}
+
+  /* ---------------- canvas wrap + per-side stretch handles ---------------- */
+  /* wrap is the un-clipped positioning context (the frame itself clips its gridlines) */
+  .canvas-wrap{position:relative;display:inline-block;line-height:0;}
+  .shandle{position:absolute;z-index:3;width:14px;height:14px;display:block;padding:0;border:none;background:none;
+           opacity:0;transition:opacity .1s;pointer-events:none;}
+  .shandle.show{opacity:1;pointer-events:auto;}
+  .shandle svg{width:14px;height:14px;display:block;}
+  .sh-l{left:-7px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
+  .sh-r{right:-7px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
+  .sh-t{top:-7px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
+  .sh-b{bottom:-7px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
+
+  /* ---------------- selection (Select tool) ---------------- */
+  .canvas-frame{position:relative;}                 /* anchor for the selection rect */
+  .grid.selmode{cursor:default;}
+  .sel-rect{position:absolute;z-index:4;border:1px solid var(--accent);
+            background:rgba(103,232,249,.12);pointer-events:none;box-sizing:border-box;}
+  .sel-rect.moving{background:rgba(103,232,249,.20);border-style:dashed;}
+
+  /* ---------------- custom glyph cells (editable) ---------------- */
+  .gbtn.custom{color:var(--main-text);caret-color:var(--accent);overflow:hidden;
+               display:flex;align-items:center;justify-content:center;line-height:1;}  /* centre the glyph like preset cells */
+  .gbtn.custom:focus{outline:none;border-color:var(--stroke-focus);}
+  .gbtn.custom.on{color:var(--accent);border-color:var(--accent);}
+
   /* ============================================================
      Mobile (<=600px): icon controls, stacked tools/palette, common label column
      ============================================================ */
   @media (max-width:600px){
-    .wrap{padding:var(--space-page) 16px;}
-    /* every tool full-width; label pinned left, controls pushed right (settings-row style,
-       no empty tail), vertically centred */
-    .tool{width:100%;align-items:center;}
-    .tool-label{margin-right:auto;}
-    .tool.grow .num{flex:none;width:48px;}   /* canvas inputs stay compact on mobile */
-    /* Paint: Body/Accent/Decoration become swatch-only; Background keeps its label */
-    .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}
-    /* Stage controls: icon-only on mobile (hide the text labels) */
-    .stage-tl .tw, .stage-tr .zw{display:none;}
-    /* Animation bar: stack the Frames/FPS/Preview blocks; Play/Pause become icon-only */
-    .animbar,.animbar-right{flex-direction:column;align-items:stretch;}
+    .wrap{padding:var(--space-page) 16px 48px;}      /* 48px below the footer to page end */
+    /* tools HUG their content (don't stretch full-width) and wrap as needed — Figma mobile */
+    .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}   /* paint -> swatch-only */
+    .stage-tl .tw, .stage-tr .zw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only */
+    .animbar,.exportbar{justify-content:flex-start;}        /* hug-left instead of space-between */
     #play .pw,#stop .pw{display:none;}
-    /* Palette: one group per row */
     .pgroup{width:100%;}
     .pgrid{max-width:none;}
+    /* footer: links stacked (12px apart), byline below them (Figma mobile) */
+    .note{margin-bottom:20px;}
+    .foot-row{flex-direction:column-reverse;align-items:flex-start;gap:20px;}
+    .links{flex-direction:column;align-items:flex-start;gap:12px;}
+    /* fullscreen: tight 8px insets; Custom panel 2 rows, no label, 16px from edges */
+    .stage.fullscreen{top:8px;left:8px;right:8px;bottom:104px;}
+    body.fs-lock .fscustom{left:16px;right:16px;bottom:16px;transform:none;justify-content:center;flex-wrap:wrap;gap:8px;}
+    body.fs-lock .fscustom .fscustom-label{display:none;}
+    body.fs-lock .fscustom .pgrid{flex-wrap:wrap;justify-content:center;}
   }
 </style>
 </head>
@@ -246,7 +287,7 @@
       <img class="logo" src="favicon.png" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
-    <p class="sub">Draw block-ASCII sprites in four colors (body + accent + decor + background). Glyphs sit edge-to-edge so block and box lines connect. Mirror, Undo / Redo, Resize and an Animation timeline are built in. Export or Load JSON to reuse sprites anywhere. Export your art in SVG, PNG or MP4 formats with up to ×16 upscale.</p>
+    <p class="sub">Draw block-ASCII sprites in Blockmode, to use it in your projects. Choose a paint and glyph to draw. Right-click to erase. Background and Grid will be included in the export if they're active at the time of export. Export or load JSON to save your sprites and edit them in the next session. Export your art in SVG, PNG, or MP4 formats with up to ×16 upscale. Tell your friends about Blockmod ( n_n)b.</p>
   </header>
 
   <div class="bars">
@@ -271,15 +312,15 @@
           <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Main</button>
           <button class="paint"    data-l="a"><span class="swatch"><input type="color" id="col-a"></span>Accent</button>
           <button class="paint"    data-l="d"><span class="swatch"><input type="color" id="col-d"></span>Detail</button>
-          <button class="paint"    data-l="bg"><span class="swatch"><input type="color" id="col-bg"></span>Canvas</button>
+          <button class="paint"    data-l="e"><span class="swatch"><input type="color" id="col-e"></span>Extra</button>
         </div>
       </div>
       <div class="tool">
-        <span class="tool-label">View</span>
+        <span class="tool-label">Editor</span>
         <button class="btn on" data-view="ascii">Drawing</button>
         <button class="btn"    data-view="animation">Animation</button>
       </div>
-      <div class="tool grow">
+      <div class="tool">
         <span class="tool-label">Canvas</span>
         <input class="input num" type="number" id="cw" min="3" max="128" title="Width">
         <input class="input num" type="number" id="ch" min="3" max="128" title="Height">
@@ -311,7 +352,7 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled"><span class="iw fillic"></span><span class="tw">Canvas</span></button>
+      <button class="btn on" id="filled"><span class="swatch"><input type="color" id="col-bg"></span><span class="tw">Background</span></button>
       <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M3.5 0.5v13M10.5 0.5v13M0.5 3.5h13M0.5 10.5h13"/></svg></span><span class="tw">Grid</span></button>
       <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v10h2M10 2h2v10h-2M7 2v10"/></svg></span><span class="tw">Mirror</span></button>
     </div>
@@ -322,22 +363,32 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>
       </button>
     </div>
-    <div class="stage-canvas"><div class="canvas-frame"><div id="grid" class="grid show-grid"></div></div></div>
+    <div class="stage-canvas">
+      <div class="canvas-wrap">
+        <div class="canvas-frame"><div id="grid" class="grid show-grid"></div><div class="sel-rect" id="selrect" style="display:none"></div></div>
+        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M2 13L13 13L13 1L2 1" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
+        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M12 13L1 13L1 1L12 1" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
+        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M13 2L13 13L1 13L1 2" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
+        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M0.999999 12L1 1L13 1L13 12" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
+      </div>
+    </div>
     <div class="stage-bl">
-      <button class="btn icon" id="erase" title="Erase">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H8.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3"/><path d="M18 13.3l-6.3 -6.3"/></svg>
-      </button>
-      <button class="btn" id="undo">Undo</button>
-      <button class="btn" id="redo">Redo</button>
+      <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H8.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3"/><path d="M18 13.3l-6.3 -6.3"/></svg></span><span class="tw">Eraser</span></button>
+      <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4V1.5H4M10 1.5h2.5V4M12.5 10v2.5H10M4 12.5H1.5V10"/></svg></span><span class="tw">Select</span></button>
     </div>
     <div class="stage-br">
-      <button class="btn alert" id="clear">Clear</button>
+      <button class="btn" id="undo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6a3 3 0 0 1 0 6H6"/><path d="M5.5 4.5 3 7l2.5 2.5"/></svg></span><span class="tw">Undo</span></button>
+      <button class="btn" id="redo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7H5a3 3 0 0 0 0 6h3"/><path d="M8.5 4.5 11 7 8.5 9.5"/></svg></span><span class="tw">Redo</span></button>
+      <button class="btn alert" id="clear"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 3.8h8.8M5.4 3.8V2.7h3.2v1.1M3.9 3.8l.5 7a1 1 0 0 0 1 .9h3.2a1 1 0 0 0 1-.9l.5-7"/></svg></span><span class="tw">Clear</span></button>
     </div>
   </div>
 
+  <!-- Fullscreen Custom panel (shown only in fullscreen; mirrors the palette CUSTOM row) -->
+  <div class="fscustom" id="fscustom"><span class="fscustom-label">CUSTOM</span><div class="pgrid" id="fscustomgrid"></div></div>
+
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Choose a paint and glyph to draw. Right-click erases. Background and grid settings are included in export.</span>
+    <span>Custom panel: Ctrl+V pastes a glyph, Backspace removes it. Arrow keys move the selection.</span>
     <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
   </div>
 
@@ -373,13 +424,13 @@
 
   <!-- Footer -->
   <footer>
-    <p class="note">When I was a kid, my dad had a typewriter — and even before I could read or write, I loved drawing with characters on paper. Drawing has so many techniques to explore, and I believe constraints create masterpieces. I needed an ASCII editor, so I built my own. Hope you enjoy drawing in it — write some letters!</p>
+    <p class="note">When I was a kid, my dad had a typewriter — and even before I could read or write, I loved drawing with characters on paper. Drawing has so many techniques to explore, and I believe constraints create masterpieces. One day I needed an ASCII editor for a project, so I decided to build my own. Hope you enjoy drawing in it — write some letters!</p>
     <div class="foot-row">
       <span class="copy-note">Blockmode by Unowness · 2026</span>
       <div class="links">
+        <a href="https://ko-fi.com/unowness" id="link-coffee" target="_blank" rel="noopener">Buy Me a Coffee</a>
         <a href="mailto:unowness@protonmail.com" id="link-email">Send an Email</a>
         <a href="#" id="link-socials">Socials</a>
-        <a href="https://ko-fi.com/unowness" id="link-coffee" target="_blank" rel="noopener">Buy me a coffee</a>
       </div>
     </div>
   </footer>
@@ -419,8 +470,8 @@
     {label:'Decor',     g:['●','○','◍','◉','◆','◇','◈','★','☆','✦','✧','◦','•','§','¶','¤','±','×','÷','¿','¡','‹','›','«','»','†','‡','…']}
   ];
 
-  var LAYER_FIELD={b:'body',a:'accent',d:'decoration',bg:'bgColor'};  /* paint layer -> color field */
-  var DEFAULTS={body:'#6f74c0',accent:'#b9a5f0',decoration:'#f0a5c0',bgColor:'#101018'};
+  var LAYER_FIELD={b:'body',a:'accent',d:'decoration',e:'extra',bg:'bgColor'};  /* paint layer -> color field */
+  var DEFAULTS={body:'#6f74c0',accent:'#b9a5f0',decoration:'#f0a5c0',extra:'#E8C15A',bgColor:'#101018'};
   var HISTORY_LIMIT=200;
   var IMG_PX=22;   /* base raster cell font px (= 1x) */
 
@@ -431,8 +482,8 @@
   function newDoc(name,w,h){
     w=w||8; h=h||6;
     return { name:name||'untitled', id:'', w:w, h:h,
-             body:DEFAULTS.body, accent:DEFAULTS.accent, decoration:DEFAULTS.decoration,
-             bgOn:true, bgColor:DEFAULTS.bgColor,
+             body:DEFAULTS.body, accent:DEFAULTS.accent, decoration:DEFAULTS.decoration, extra:DEFAULTS.extra,
+             bgOn:true, bgColor:DEFAULTS.bgColor, custom:[],
              frames:[blankGrid(w,h)], active:0, fps:8, _undo:[], _redo:[] };
   }
 
@@ -440,24 +491,28 @@
   var activeDoc=0;
   var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
            view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
-           drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null };
+           drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null,
+           cellW:0, cellH:0,
+           tool:'draw',                          /* 'draw' | 'select' */
+           sel:null, selBuf:null, selPos:null,   /* selection rect / floating buffer / float top-left */
+           selMoving:false, selDragNew:false, selAnchor:null, selDragOff:null, sideDrag:null };
 
   function $(id){return document.getElementById(id);}
   function D(){return docs[activeDoc];}
   function curGrid(){return D().frames[D().active];}
-  function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:d.body;}
+  function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:layer==='e'?d.extra:d.body;}
   var gridEl=$('grid');
 
   /* ============================================================
      3. History — per-document snapshots
      ============================================================ */
   function snap(){var d=D();return JSON.stringify({name:d.name,id:d.id,w:d.w,h:d.h,body:d.body,accent:d.accent,
-    decoration:d.decoration,bgOn:d.bgOn,bgColor:d.bgColor,active:d.active,fps:d.fps,frames:d.frames});}
+    decoration:d.decoration,extra:d.extra,bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,active:d.active,fps:d.fps,frames:d.frames});}
   function applySnap(str){
     var o=JSON.parse(str),d=D();
-    d.name=o.name;d.id=o.id;d.w=o.w;d.h=o.h;d.body=o.body;d.accent=o.accent;d.decoration=o.decoration;
-    d.bgOn=o.bgOn;d.bgColor=o.bgColor;d.active=o.active;d.fps=o.fps;d.frames=o.frames;
-    syncInputs();build();renderFrames();renderTabs();
+    d.name=o.name;d.id=o.id;d.w=o.w;d.h=o.h;d.body=o.body;d.accent=o.accent;d.decoration=o.decoration;d.extra=o.extra||DEFAULTS.extra;
+    d.bgOn=o.bgOn;d.bgColor=o.bgColor;d.custom=o.custom||[];d.active=o.active;d.fps=o.fps;d.frames=o.frames;
+    clearSelection();syncInputs();build();renderFrames();renderTabs();
   }
   function pushUndo(){var d=D();d._undo.push(snap());if(d._undo.length>HISTORY_LIMIT)d._undo.shift();d._redo.length=0;updateHist();}
   function undo(){var d=D();if(!d._undo.length)return;d._redo.push(snap());applySnap(d._undo.pop());updateHist();}
@@ -480,11 +535,11 @@
       box.appendChild(t);
     });
   }
-  function selectTab(i){if(i===activeDoc)return;stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
-  function addTab(){stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
+  function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
+  function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
   function closeTab(i){
     if(docs.length<=1)return;
-    docs.splice(i,1);
+    commitSelection();docs.splice(i,1);
     if(activeDoc>=docs.length)activeDoc=docs.length-1;else if(activeDoc>i)activeDoc--;
     syncInputs();build();renderFrames();renderTabs();updateHist();
   }
@@ -495,11 +550,14 @@
   function syncInputs(){
     var d=D();
     $('sid').value=d.id;
-    $('cw').value=d.w; $('ch').value=d.h;
-    setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('bg',d.bgColor);
+    $('cw').value=d.w; $('ch').value=d.h; sizeNumInput($('cw')); sizeNumInput($('ch'));
+    setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('e',d.extra); setSwatch('bg',d.bgColor);
     $('filled').classList.toggle('on',d.bgOn);
     $('fps').value=d.fps;
+    buildCustomRow();
   }
+  /* canvas W/H inputs are 57px by default; grow them when the typed value gets long (Figma comment 5) */
+  function sizeNumInput(el){if(!el)return;var n=(el.value||'').length;el.style.width=n>4?((n*10)+18)+'px':'';}
   function setSwatch(layer,color){
     var inp=$('col-'+layer);if(inp){inp.value=color;inp.parentNode.style.background=color;}
   }
@@ -516,6 +574,7 @@
   }
   function build(){
     var d=D(),m=measure();
+    ui.cellW=m.w; ui.cellH=m.h;            /* cache cell px for selection + stretch-handle math */
     gridEl.style.setProperty('--cw',m.w+'px');
     gridEl.style.setProperty('--ch',m.h+'px');
     gridEl.style.fontSize=ui.fs+'px';
@@ -534,10 +593,32 @@
   }
   function render(){
     var d=D();
-    paintCells(ui.playing?d.frames[ui.playIdx]:curGrid());
+    var g=ui.playing?d.frames[ui.playIdx]:curGrid();
+    paintCells(ui.selBuf?overlayBuf(g):g);     /* show the floating selection on top while moving */
     gridEl.style.backgroundColor=d.bgOn?d.bgColor:'#000';
-    $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');  /* mobile fill icon swatch */
-    if(!ui.drawing&&!ui.playing)updateOut();   /* keep the JSON box in sync (skip mid-drag/playback) */
+    $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');
+    positionSelRect();
+    if(!ui.drawing&&!ui.playing&&!ui.selMoving&&!ui.sideDrag)updateOut();   /* keep the JSON box in sync (skip mid-gesture/playback) */
+  }
+  /* a shallow copy of g with the floating selection buffer stamped at selPos (non-blank cells only) */
+  function overlayBuf(g){
+    var d=D(),out=g.map(function(r){return r.slice();}),buf=ui.selBuf;
+    for(var y=0;y<buf.length;y++)for(var x=0;x<buf[0].length;x++){
+      var c=buf[y][x];if(c.g===' ')continue;
+      var gx=ui.selPos.x+x,gy=ui.selPos.y+y;
+      if(gx>=0&&gx<d.w&&gy>=0&&gy<d.h)out[gy][gx]=c;
+    }
+    return out;
+  }
+  function positionSelRect(){
+    var el=$('selrect');if(!el)return;
+    if(!ui.sel||ui.playing){el.style.display='none';return;}
+    var cw=ui.cellW||1,ch=ui.cellH||1;
+    var x=ui.selBuf?ui.selPos.x:ui.sel.x, y=ui.selBuf?ui.selPos.y:ui.sel.y;
+    el.style.display='block';
+    el.style.left=(x*cw)+'px'; el.style.top=(y*ch)+'px';
+    el.style.width=(ui.sel.w*cw)+'px'; el.style.height=(ui.sel.h*ch)+'px';
+    el.classList.toggle('moving',!!ui.selBuf);
   }
 
   /* ============================================================
@@ -553,25 +634,159 @@
   }
 
   /* ============================================================
-     8. Resize — central column / row insert + remove
+     8. Resize — edge-anchored grow/shrink (never tears the art)
+        - W/H inputs grow/shrink split evenly across both edges, so the
+          drawing stays whole & centred (Figma comment 8), mirror-safe.
+        - the 4 stage handles stretch one side at a time.
      ============================================================ */
-  function colHasData(at){return D().frames.some(function(g){return g.some(function(r){return r[at]&&r[at].g!==' ';});});}
-  function rowHasData(at){return D().frames.some(function(g){return g[at]&&g[at].some(function(c){return c.g!==' ';});});}
-  function addCol(){var d=D(),at=Math.floor(d.w/2);d.frames.forEach(function(g){for(var y=0;y<d.h;y++)g[y].splice(at,0,{g:' ',l:'b'});});d.w++;}
-  function delCol(){var d=D(),at=Math.floor((d.w-1)/2);d.frames.forEach(function(g){for(var y=0;y<d.h;y++)g[y].splice(at,1);});d.w--;}
-  function addRow(){var d=D(),at=Math.floor(d.h/2);d.frames.forEach(function(g){var r=[];for(var x=0;x<d.w;x++)r.push({g:' ',l:'b'});g.splice(at,0,r);});d.h++;}
-  function delRow(){var d=D(),at=Math.floor((d.h-1)/2);d.frames.forEach(function(g){g.splice(at,1);});d.h--;}
+  function blankCell(){return {g:' ',l:'b'};}
+  function colHasDataAt(at){return D().frames.some(function(g){return g.some(function(r){return r[at]&&r[at].g!==' ';});});}
+  function rowHasDataAt(at){return D().frames.some(function(g){return g[at]&&g[at].some(function(c){return c.g!==' ';});});}
+  /* edge primitives — no clamp, callers guard the 3..128 range */
+  function addColLeft(){D().frames.forEach(function(g){g.forEach(function(r){r.unshift(blankCell());});});D().w++;}
+  function addColRight(){D().frames.forEach(function(g){g.forEach(function(r){r.push(blankCell());});});D().w++;}
+  function delColLeft(){D().frames.forEach(function(g){g.forEach(function(r){r.shift();});});D().w--;}
+  function delColRight(){D().frames.forEach(function(g){g.forEach(function(r){r.pop();});});D().w--;}
+  function addRowTop(){var d=D();d.frames.forEach(function(g){var r=[];for(var x=0;x<d.w;x++)r.push(blankCell());g.unshift(r);});d.h++;}
+  function addRowBottom(){var d=D();d.frames.forEach(function(g){var r=[];for(var x=0;x<d.w;x++)r.push(blankCell());g.push(r);});d.h++;}
+  function delRowTop(){D().frames.forEach(function(g){g.shift();});D().h--;}
+  function delRowBottom(){D().frames.forEach(function(g){g.pop();});D().h--;}
+
+  function edgeColsHaveData(l,r){var d=D(),i;for(i=0;i<l;i++)if(colHasDataAt(i))return true;for(i=0;i<r;i++)if(colHasDataAt(d.w-1-i))return true;return false;}
+  function edgeRowsHaveData(t,b){var d=D(),i;for(i=0;i<t;i++)if(rowHasDataAt(i))return true;for(i=0;i<b;i++)if(rowHasDataAt(d.h-1-i))return true;return false;}
 
   function resizeWidth(target){
-    var d=D();target=Math.max(3,Math.min(128,target|0));if(target===d.w){$('cw').value=d.w;return;}
-    if(target<d.w){var at=Math.floor((d.w-1)/2);if(colHasData(at)&&!confirm('Shrinking width removes the centre column(s) and their content. Continue?')){$('cw').value=d.w;return;}}
-    pushUndo();while(d.w<target)addCol();while(d.w>target)delCol();build();renderFrames();$('cw').value=d.w;
+    var d=D();target=Math.max(3,Math.min(128,target|0));
+    if(target===d.w){$('cw').value=d.w;sizeNumInput($('cw'));return;}
+    if(target<d.w){
+      var rm=d.w-target,l=Math.floor(rm/2),r=rm-l,i;
+      if(edgeColsHaveData(l,r)&&!confirm('Shrinking width removes outer column(s) and their content. Continue?')){$('cw').value=d.w;sizeNumInput($('cw'));return;}
+      pushUndo();clearSelection();for(i=0;i<l;i++)delColLeft();for(i=0;i<r;i++)delColRight();
+    }else{
+      var add=target-d.w,la=Math.floor(add/2),ra=add-la,j;
+      pushUndo();clearSelection();for(j=0;j<la;j++)addColLeft();for(j=0;j<ra;j++)addColRight();
+    }
+    build();renderFrames();$('cw').value=d.w;sizeNumInput($('cw'));
   }
   function resizeHeight(target){
-    var d=D();target=Math.max(3,Math.min(128,target|0));if(target===d.h){$('ch').value=d.h;return;}
-    if(target<d.h){var at=Math.floor((d.h-1)/2);if(rowHasData(at)&&!confirm('Shrinking height removes the centre row(s) and their content. Continue?')){$('ch').value=d.h;return;}}
-    pushUndo();while(d.h<target)addRow();while(d.h>target)delRow();build();renderFrames();$('ch').value=d.h;
+    var d=D();target=Math.max(3,Math.min(128,target|0));
+    if(target===d.h){$('ch').value=d.h;sizeNumInput($('ch'));return;}
+    if(target<d.h){
+      var rm=d.h-target,t=Math.floor(rm/2),b=rm-t,i;
+      if(edgeRowsHaveData(t,b)&&!confirm('Shrinking height removes outer row(s) and their content. Continue?')){$('ch').value=d.h;sizeNumInput($('ch'));return;}
+      pushUndo();clearSelection();for(i=0;i<t;i++)delRowTop();for(i=0;i<b;i++)delRowBottom();
+    }else{
+      var add=target-d.h,ta=Math.floor(add/2),ba=add-ta,j;
+      pushUndo();clearSelection();for(j=0;j<ta;j++)addRowTop();for(j=0;j<ba;j++)addRowBottom();
+    }
+    build();renderFrames();$('ch').value=d.h;sizeNumInput($('ch'));
   }
+  /* one cell on a single side, no undo push (the drag handler snapshots once at gesture start) */
+  function sideStep(side,grow){
+    var d=D(),len=(side==='l'||side==='r')?d.w:d.h;
+    if(grow){if(len>=128)return false;side==='l'?addColLeft():side==='r'?addColRight():side==='t'?addRowTop():addRowBottom();}
+    else{if(len<=3)return false;side==='l'?delColLeft():side==='r'?delColRight():side==='t'?delRowTop():delRowBottom();}
+    return true;
+  }
+
+  /* ============================================================
+     8b. Tooling: Draw / Select  + the floating-selection model
+     ============================================================ */
+  function setTool(t){
+    if(t!=='select')commitSelection();           /* leaving select stamps + drops the selection */
+    ui.tool=t;
+    $('select').classList.toggle('on',t==='select');
+    gridEl.classList.toggle('selmode',t==='select');
+    render();
+  }
+  function inSel(x,y){var s=ui.sel;return !!s&&x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h;}
+  function clearSelection(){ui.sel=null;ui.selBuf=null;ui.selPos=null;ui.selMoving=false;ui.selDragNew=false;ui.selAnchor=null;var el=$('selrect');if(el)el.style.display='none';}
+  /* lift the selected cells into a floating buffer (source cleared); idempotent */
+  function liftSelection(){
+    if(ui.selBuf||!ui.sel)return;
+    pushUndo();
+    var g=curGrid(),s=ui.sel,buf=[],x,y;
+    for(y=0;y<s.h;y++){var row=[];for(x=0;x<s.w;x++){var c=g[s.y+y][s.x+x];row.push({g:c.g,l:c.l});g[s.y+y][s.x+x]=blankCell();}buf.push(row);}
+    ui.selBuf=buf;ui.selPos={x:s.x,y:s.y};
+  }
+  function stampBuf(px,py){
+    var d=D(),g=curGrid(),buf=ui.selBuf,x,y;
+    for(y=0;y<buf.length;y++)for(x=0;x<buf[0].length;x++){var c=buf[y][x];if(c.g===' ')continue;
+      var gx=px+x,gy=py+y;if(gx>=0&&gx<d.w&&gy>=0&&gy<d.h)g[gy][gx]={g:c.g,l:c.l};}
+  }
+  function commitFloat(){if(!ui.selBuf)return;stampBuf(ui.selPos.x,ui.selPos.y);ui.sel={x:ui.selPos.x,y:ui.selPos.y,w:ui.selBuf[0].length,h:ui.selBuf.length};ui.selBuf=null;ui.selPos=null;}
+  function cancelFloat(){if(!ui.selBuf)return;stampBuf(ui.sel.x,ui.sel.y);ui.selBuf=null;ui.selPos=null;}
+  function commitSelection(){commitFloat();ui.sel=null;ui.selMoving=false;ui.selDragNew=false;var el=$('selrect');if(el)el.style.display='none';render();}
+  function deleteSelection(){
+    if(ui.selBuf){ui.selBuf=null;ui.selPos=null;ui.sel=null;render();updateOut();return;}   /* source already cleared at lift */
+    if(!ui.sel)return;
+    pushUndo();var g=curGrid(),s=ui.sel,x,y;
+    for(y=0;y<s.h;y++)for(x=0;x<s.w;x++)g[s.y+y][s.x+x]=blankCell();
+    ui.sel=null;render();updateOut();
+  }
+  function nudgeSelection(dx,dy){
+    if(!ui.sel)return;liftSelection();var d=D();
+    ui.selPos.x=Math.max(0,Math.min(d.w-ui.sel.w,ui.selPos.x+dx));
+    ui.selPos.y=Math.max(0,Math.min(d.h-ui.sel.h,ui.selPos.y+dy));
+    render();
+  }
+  function cellFromPoint(clientX,clientY){
+    var fr=document.querySelector('.canvas-frame').getBoundingClientRect();
+    var cw=ui.cellW||1,ch=ui.cellH||1;
+    return {x:Math.floor((clientX-fr.left)/cw),y:Math.floor((clientY-fr.top)/ch)};
+  }
+  function selMouseDown(x,y){
+    if(inSel(x,y)){liftSelection();ui.selMoving=true;ui.selDragOff={x:x-ui.selPos.x,y:y-ui.selPos.y};}
+    else{commitSelection();ui.selAnchor={x:x,y:y};ui.sel={x:x,y:y,w:1,h:1};ui.selDragNew=true;}
+    render();
+  }
+
+  /* ============================================================
+     8c. Custom glyph row (editable palette cells, Figma comments 12-14)
+        - click empty cell -> caret; type or Ctrl+V one glyph
+        - Enter / blur commits and selects it; it then acts as a glyph button
+        - Backspace clears the cell
+     ============================================================ */
+  function makeCustomCell(i){
+    var ch=D().custom[i]||'';
+    var b=document.createElement('div');
+    b.className='gbtn custom'+(ch&&ch===ui.curGlyph?' on':'');
+    b.dataset.idx=i;b.setAttribute('contenteditable','true');b.spellcheck=false;b.textContent=ch;
+    b.addEventListener('mousedown',customMouseDown);
+    b.addEventListener('blur',customBlur);
+    b.addEventListener('keydown',customKey);
+    b.addEventListener('input',customInput);
+    b.addEventListener('paste',customPaste);
+    return b;
+  }
+  function fillCustomGrid(grid){if(!grid)return;grid.innerHTML='';for(var i=0;i<16;i++)grid.appendChild(makeCustomCell(i));}
+  /* the palette CUSTOM row and the fullscreen Custom panel mirror the same d.custom data */
+  function buildCustomRow(){var d=D();if(!d.custom)d.custom=[];fillCustomGrid($('customgrid'));fillCustomGrid($('fscustomgrid'));}
+  function firstGlyph(s){s=(s||'').replace(/[\r\n\t]/g,'');var a=Array.from(s);return a.length?a[0]:'';}
+  function customCommit(b){
+    var i=+b.dataset.idx,ch=firstGlyph(b.textContent);
+    D().custom[i]=ch;
+    if(ch)setGlyph(ch);
+    buildCustomRow();refreshCustomActive();updateOut();
+  }
+  function customMouseDown(e){
+    var b=e.currentTarget,i=+b.dataset.idx,ch=D().custom[i]||'';
+    if(ch){setGlyph(ch);return;}                          /* filled -> select that glyph for drawing */
+    if(ui.curGlyph&&ui.curGlyph!==' '){                   /* empty + a glyph chosen -> drop it in, keep caret for Ctrl+V */
+      D().custom[i]=ui.curGlyph;b.textContent=ui.curGlyph;refreshCustomActive();updateOut();
+      setTimeout(function(){placeCaretEnd(b);},0);
+    }
+  }
+  function customBlur(e){customCommit(e.currentTarget);}
+  function customKey(e){
+    var b=e.currentTarget;
+    if(e.key==='Enter'){e.preventDefault();b.blur();}
+    else if(e.key==='Backspace'||e.key==='Delete'){e.preventDefault();D().custom[+b.dataset.idx]='';buildCustomRow();refreshCustomActive();updateOut();}
+  }
+  function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||'');if(a.length>1){b.textContent=a[a.length-1];placeCaretEnd(b);}}
+  function customPaste(e){e.preventDefault();var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);}}
+  function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
+  function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
   /* ============================================================
      9. Frames / animation
@@ -589,7 +804,7 @@
   function selectFrame(i){D().active=i;if(ui.playing)ui.playIdx=i;render();renderFrames();}
   function addFrame(){var d=D();if(d.frames.length>=16)return;pushUndo();d.frames.splice(d.active+1,0,cloneGrid(curGrid()));d.active++;render();renderFrames();}
   function delFrame(){var d=D();if(d.frames.length<=1)return;pushUndo();d.frames.splice(d.active,1);if(d.active>=d.frames.length)d.active=d.frames.length-1;build();renderFrames();}
-  function play(){var d=D();if(ui.playing||d.frames.length<2)return;ui.playing=true;ui.playIdx=d.active;setPlayState();
+  function play(){var d=D();if(ui.playing||d.frames.length<2)return;commitSelection();ui.playing=true;ui.playIdx=d.active;setPlayState();
     ui.playTimer=setInterval(function(){ui.playIdx=(ui.playIdx+1)%d.frames.length;render();
       [].forEach.call($('frames').children,function(b,i){b.classList.toggle('on',i===ui.playIdx);});},Math.round(1000/d.fps));}
   function stop(){if(!ui.playing)return;ui.playing=false;clearInterval(ui.playTimer);ui.playTimer=null;setPlayState();render();renderFrames();}
@@ -609,12 +824,19 @@
      11. Glyph palette + selection
      ============================================================ */
   function setGlyph(g){
+    if(ui.tool==='select')setTool('draw');
     ui.curGlyph=g;
     [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.toggle('on',b.dataset.g===g);});
+    refreshCustomActive();
     $('erase').classList.toggle('on',g===' ');
   }
   function buildPalette(){
     var pal=$('palette');pal.innerHTML='';
+    /* CUSTOM row first — editable cells, filled by buildCustomRow() */
+    var cbox=document.createElement('div');cbox.className='pgroup';cbox.id='customgroup';
+    var clab=document.createElement('div');clab.className='plabel';clab.textContent='CUSTOM';cbox.appendChild(clab);
+    var cgrid=document.createElement('div');cgrid.className='pgrid';cgrid.id='customgrid';cbox.appendChild(cgrid);
+    pal.appendChild(cbox);
     GROUPS.forEach(function(grp){
       var box=document.createElement('div');box.className='pgroup'+(grp.tight?' tight':'');
       var lab=document.createElement('div');lab.className='plabel';lab.textContent=grp.label;box.appendChild(lab);
@@ -626,12 +848,13 @@
       box.appendChild(pg);pal.appendChild(box);
     });
     sizePaletteColumns();
+    buildCustomRow();
   }
   /* reserve a label column equal to the widest label, and size each glyph grid to the
      rest of the row (from the real content width) so glyphs align and don't wrap a stray box. */
   function sizePaletteColumns(){
     var pal=$('palette'),labelW=48;                         /* fixed 48px label column for every group (Figma) */
-    var avail=pal.clientWidth||882;                         /* content width (882 now, 960 if widened) */
+    var avail=pal.clientWidth||960;                         /* content width (now 960, Figma 42:363) */
     pal.style.setProperty('--plabel-w', labelW+'px');
     pal.style.setProperty('--pgrid-w', Math.max(0, avail - 30 - labelW)+'px');  /* 30 = pl12 + gap10 + pr8 */
   }
@@ -640,6 +863,7 @@
      12. Paint layer + color pickers
      ============================================================ */
   function selectLayer(l){
+    if(ui.tool==='select')setTool('draw');
     ui.curLayer=l;
     [].forEach.call(document.querySelectorAll('.paint'),function(b){b.classList.toggle('on',b.dataset.l===l);});
   }
@@ -675,17 +899,21 @@
       var ch=(glyphs[y]&&glyphs[y][x])||' ',l='b';
       if(colors&&colors[y]&&colors[y][x]&&colors[y][x]!==' ')l=colors[y][x];
       else if(mask&&mask[y]&&mask[y][x]==='X')l='a';
-      if(l!=='a'&&l!=='d')l='b';
+      if(l!=='a'&&l!=='d'&&l!=='e')l='b';
       g[y][x]={g:ch,l:ch===' '?'b':l};
     }
     return g;
   }
   function exportJSON(){
-    var d=D(),frames=d.frames.map(frameToStrings),top=frames[d.active]||frames[0];
+    var d=D();
+    /* if a selection is floating mid-move, export what's shown (buffer stamped on the active frame) */
+    var frames=d.frames.map(function(g,i){return frameToStrings(i===d.active&&ui.selBuf?overlayBuf(g):g);});
+    var top=frames[d.active]||frames[0];
     return JSON.stringify({
       version:3,id:d.id||'sprite',width:d.w,height:d.h,
-      body_color:d.body,accent_color:d.accent,decoration_color:d.decoration,
+      body_color:d.body,accent_color:d.accent,decoration_color:d.decoration,extra_color:d.extra,
       background_color:d.bgOn?d.bgColor:null,fps:d.fps,active:d.active,
+      custom_glyphs:(d.custom||[]).filter(function(c){return c;}),
       frames:frames,
       glyphs:top.glyphs,colors:top.colors,accent_mask:top.accent_mask   /* legacy single-frame consumers */
     },null,2);
@@ -696,7 +924,9 @@
     if(o.body_color)d.body=o.body_color;
     if(o.accent_color)d.accent=o.accent_color;
     if(o.decoration_color)d.decoration=o.decoration_color;
+    if(o.extra_color)d.extra=o.extra_color;
     d.bgOn=!!o.background_color;d.bgColor=o.background_color||d.bgColor;
+    d.custom=Array.isArray(o.custom_glyphs)?o.custom_glyphs.slice(0,16):(d.custom||[]);
     if(o.fps)d.fps=o.fps;
     if(o.frames&&o.frames.length){
       var w=o.width||((o.frames[0].glyphs[0]||'').length),h=o.height||o.frames[0].glyphs.length;
@@ -706,7 +936,7 @@
       d.w=w2;d.h=h2;d.frames=[stringsToGrid(o.glyphs,o.colors,o.accent_mask,w2,h2)];
     }else throw new Error('no glyphs');
     d.active=Math.min(o.active||0,d.frames.length-1);
-    syncInputs();build();renderFrames();renderTabs();
+    clearSelection();syncInputs();build();renderFrames();renderTabs();
   }
 
   function downloadBlob(blob,fname){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1500);}
@@ -782,9 +1012,12 @@
      ============================================================ */
   /* canvas painting */
   gridEl.addEventListener('mousedown',function(e){
-    if(ui.playing||!e.target.classList.contains('cell')||ui.curLayer==='bg')return;
+    if(ui.playing||!e.target.classList.contains('cell'))return;
+    var x=+e.target.dataset.x,y=+e.target.dataset.y;
+    if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y);return;}
+    if(ui.curLayer==='bg')return;
     e.preventDefault();pushUndo();ui.drawing=true;ui.erasing=(e.button===2);
-    paint(+e.target.dataset.x,+e.target.dataset.y,ui.erasing);
+    paint(x,y,ui.erasing);
   });
   gridEl.addEventListener('mouseover',function(e){
     if(ui.drawing&&e.target.classList.contains('cell'))paint(+e.target.dataset.x,+e.target.dataset.y,ui.erasing);
@@ -792,17 +1025,92 @@
   gridEl.addEventListener('contextmenu',function(e){e.preventDefault();});
   document.addEventListener('mouseup',function(){var was=ui.drawing;ui.drawing=false;ui.erasing=false;if(was)updateOut();});
 
+  /* selection: draw a new rect, or drag the floating selection */
+  document.addEventListener('mousemove',function(e){
+    if(ui.tool!=='select'||ui.playing)return;
+    if(ui.selDragNew){
+      var c=cellFromPoint(e.clientX,e.clientY),d=D(),ax=ui.selAnchor.x,ay=ui.selAnchor.y;
+      var x0=Math.max(0,Math.min(ax,c.x)),y0=Math.max(0,Math.min(ay,c.y));
+      var x1=Math.min(d.w-1,Math.max(0,Math.max(ax,c.x))),y1=Math.min(d.h-1,Math.max(0,Math.max(ay,c.y)));
+      ui.sel={x:x0,y:y0,w:x1-x0+1,h:y1-y0+1};positionSelRect();
+    }else if(ui.selMoving){
+      var c2=cellFromPoint(e.clientX,e.clientY),d2=D();
+      var nx=Math.max(0,Math.min(d2.w-ui.sel.w,c2.x-ui.selDragOff.x));
+      var ny=Math.max(0,Math.min(d2.h-ui.sel.h,c2.y-ui.selDragOff.y));
+      if(!ui.selPos||nx!==ui.selPos.x||ny!==ui.selPos.y){ui.selPos={x:nx,y:ny};render();}
+    }
+  });
+  document.addEventListener('mouseup',function(){
+    if(ui.selDragNew){ui.selDragNew=false;ui.selAnchor=null;}
+    if(ui.selMoving){ui.selMoving=false;updateOut();}
+  });
+
+  /* per-side stretch handles: reveal within 40px of an edge (Figma comment 7); drag to grow/shrink that side */
+  (function(){
+    var sc=document.querySelector('.stage-canvas');
+    var hmap={l:document.querySelector('.sh-l'),r:document.querySelector('.sh-r'),t:document.querySelector('.sh-t'),b:document.querySelector('.sh-b')};
+    function hideAll(){if(ui.sideDrag)return;for(var k in hmap)hmap[k].classList.remove('show');}
+    sc.addEventListener('mousemove',function(e){
+      if(ui.sideDrag)return;
+      if(ui.tool==='select'||ui.playing){hideAll();return;}
+      var fr=document.querySelector('.canvas-frame').getBoundingClientRect(),Z=40,X=e.clientX,Y=e.clientY;
+      hmap.l.classList.toggle('show',Math.abs(X-fr.left)<=Z&&Y>fr.top-Z&&Y<fr.bottom+Z);
+      hmap.r.classList.toggle('show',Math.abs(X-fr.right)<=Z&&Y>fr.top-Z&&Y<fr.bottom+Z);
+      hmap.t.classList.toggle('show',Math.abs(Y-fr.top)<=Z&&X>fr.left-Z&&X<fr.right+Z);
+      hmap.b.classList.toggle('show',Math.abs(Y-fr.bottom)<=Z&&X>fr.left-Z&&X<fr.right+Z);
+    });
+    sc.addEventListener('mouseleave',hideAll);
+    Object.keys(hmap).forEach(function(side){
+      hmap[side].addEventListener('mousedown',function(e){
+        if(ui.playing)return;
+        e.preventDefault();e.stopPropagation();commitSelection();
+        ui.sideDrag={side:side,sx:e.clientX,sy:e.clientY,applied:0,pushed:false};
+        hmap[side].classList.add('show');
+        document.body.style.cursor=(side==='l'||side==='r')?'ew-resize':'ns-resize';
+      });
+    });
+    document.addEventListener('mousemove',function(e){
+      var sd=ui.sideDrag;if(!sd)return;
+      var horiz=(sd.side==='l'||sd.side==='r'),cellPx=horiz?ui.cellW:ui.cellH;if(!cellPx)return;
+      var px=horiz?(e.clientX-sd.sx):(e.clientY-sd.sy),dir=(sd.side==='r'||sd.side==='b')?1:-1;
+      var want=Math.round(px*dir/cellPx);
+      if(want===sd.applied)return;
+      if(!sd.pushed){pushUndo();sd.pushed=true;}
+      var changed=false;
+      while(sd.applied<want){if(!sideStep(sd.side,true))break;sd.applied++;changed=true;}
+      while(sd.applied>want){if(!sideStep(sd.side,false))break;sd.applied--;changed=true;}
+      if(changed){build();renderFrames();syncInputs();hmap[sd.side].classList.add('show');}
+    });
+    document.addEventListener('mouseup',function(){if(ui.sideDrag){ui.sideDrag=null;document.body.style.cursor='';hideAll();updateOut();}});
+  })();
+
   /* keyboard */
   document.addEventListener('keydown',function(e){
-    var t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA')return;
+    var t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||e.target.isContentEditable)return;
     var meta=e.metaKey||e.ctrlKey;
+    /* selection editing — only with an active selection in Select mode */
+    if(!meta&&ui.tool==='select'&&(ui.sel||ui.selBuf)){
+      var done=true;
+      switch(e.key){
+        case 'Escape': if(ui.selBuf)cancelFloat(); clearSelection(); render(); break;
+        case 'Enter': commitFloat(); render(); updateOut(); break;
+        case 'Delete': case 'Backspace': deleteSelection(); break;
+        case 'ArrowLeft': nudgeSelection(-1,0); updateOut(); break;
+        case 'ArrowRight': nudgeSelection(1,0); updateOut(); break;
+        case 'ArrowUp': nudgeSelection(0,-1); updateOut(); break;
+        case 'ArrowDown': nudgeSelection(0,1); updateOut(); break;
+        default: done=false;
+      }
+      if(done){e.preventDefault();return;}
+    }
     if(meta&&e.key.toLowerCase()==='z'&&!e.shiftKey){e.preventDefault();undo();}
     else if(meta&&((e.key.toLowerCase()==='z'&&e.shiftKey)||e.key.toLowerCase()==='y')){e.preventDefault();redo();}
     else if(!meta){
       var k=e.key.toLowerCase();
-      if(k==='1')selectLayer('b');else if(k==='2')selectLayer('a');else if(k==='3')selectLayer('d');
+      if(k==='1')selectLayer('b');else if(k==='2')selectLayer('a');else if(k==='3')selectLayer('d');else if(k==='4')selectLayer('e');
       else if(k==='m')$('mirror').click();
       else if(k==='g')$('gridtog').click();
+      else if(k==='s')$('select').click();
       else if(k==='e')setGlyph(' ');
     }
   });
@@ -813,17 +1121,22 @@
 
   /* paint layers + colors */
   document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
-  ['b','a','d','bg'].forEach(wireColor);
+  ['b','a','d','e','bg'].forEach(wireColor);
 
   /* view */
-  document.querySelectorAll('[data-view]').forEach(function(b){b.onclick=function(){ui.view=b.dataset.view;applyView();};});
+  document.querySelectorAll('[data-view]').forEach(function(b){b.onclick=function(){commitSelection();ui.view=b.dataset.view;applyView();};});
 
   /* canvas size */
   $('cw').addEventListener('change',function(){resizeWidth(+$('cw').value);});
   $('ch').addEventListener('change',function(){resizeHeight(+$('ch').value);});
+  $('cw').addEventListener('input',function(){sizeNumInput($('cw'));});
+  $('ch').addEventListener('input',function(){sizeNumInput($('ch'));});
 
   /* stage controls */
   $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;$('filled').classList.toggle('on',d.bgOn);render();};
+  /* the embedded swatch opens the colour picker without toggling the Background button */
+  ['click','mousedown'].forEach(function(ev){$('col-bg').addEventListener(ev,function(e){e.stopPropagation();});});
+  $('select').onclick=function(){setTool(ui.tool==='select'?'draw':'select');};
   $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
@@ -853,7 +1166,7 @@
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.fsOpen){e.preventDefault();exitFullscreen();}});
   $('undo').onclick=undo;$('redo').onclick=redo;
   $('erase').onclick=function(){setGlyph(' ');};
-  $('clear').onclick=function(){pushUndo();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
+  $('clear').onclick=function(){pushUndo();clearSelection();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
 
   /* hint */
   $('hintx').onclick=function(){$('hint').style.display='none';};
