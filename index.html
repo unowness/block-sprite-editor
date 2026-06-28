@@ -126,9 +126,9 @@
                 display:flex;align-items:safe center;justify-content:safe center;
                 padding:54px 12px;overflow:auto;scrollbar-width:none;}
   .stage-canvas::-webkit-scrollbar{width:0;height:0;display:none;}   /* hide native — custom bar below */
-  /* custom scrollbar (Figma Scroll-bar): fixed-length rounded rail + grey thumb, 12px inside the field */
-  .fscroll{position:absolute;z-index:5;display:none;background:var(--tool-background);
-           border:1px solid var(--stroke);border-radius:4px;}
+  /* custom scrollbar: only the thumb (caret) shows; the track is a transparent rail
+     stretched between the corner controls (12px gaps), on the control axis */
+  .fscroll{position:absolute;z-index:5;display:none;background:transparent;}
   .fscroll.show{display:block;}
   .fscroll-h{height:8px;}
   .fscroll-v{width:8px;}
@@ -262,7 +262,7 @@
 
   /* ---------------- custom glyph cells (editable) ---------------- */
   .gbtn.custom{color:var(--main-text);caret-color:var(--accent);overflow:hidden;
-               display:flex;align-items:center;justify-content:center;line-height:1;}  /* centre the glyph like preset cells */
+               text-align:center;line-height:30px;}  /* centre glyph + caret (flex left the empty caret top-left) */
   .gbtn.custom:focus{outline:none;border-color:var(--stroke-focus);}
   .gbtn.custom.on{color:var(--accent);border-color:var(--accent);}
 
@@ -399,7 +399,7 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Custom panel: click a cell, then press Ctrl+V to paste any character from your clipboard — Backspace clears it. In Select mode, drag a box over your art and nudge it with the arrow keys.</span>
+    <span>Custom panel: click a cell, then Ctrl+V to drop your glyph or paste a character; Backspace clears. Select: arrow keys move the box.</span>
     <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
   </div>
 
@@ -811,7 +811,11 @@
     }
   }
   function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||'');if(a.length>1){b.textContent=a[a.length-1];placeCaretEnd(b);}}
-  function customPaste(e){e.preventDefault();var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);}}
+  function customPaste(e){e.preventDefault();
+    var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';
+    var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);
+    if(!ch&&ui.curGlyph&&ui.curGlyph!==' ')ch=ui.curGlyph;   /* empty clipboard -> drop in the selected palette glyph */
+    var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);}}
   function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
   function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
@@ -1043,21 +1047,25 @@
     var sc=document.querySelector('.stage-canvas'),h=$('fsbar-h'),v=$('fsbar-v'),th=$('fsthumb-h'),tv=$('fsthumb-v');
     if(!sc||!h)return;
     if(ui.playing){h.classList.remove('show');v.classList.remove('show');return;}
-    var cs=getComputedStyle(sc),pl=parseFloat(cs.paddingLeft),pr=parseFloat(cs.paddingRight),pt=parseFloat(cs.paddingTop),pb=parseFloat(cs.paddingBottom);
-    var sr=stageEl.getBoundingClientRect(),cr=sc.getBoundingClientRect();
-    var fLeft=(cr.left-sr.left)+pl, fTop=(cr.top-sr.top)+pt, fW=sc.clientWidth-pl-pr, fH=sc.clientHeight-pt-pb;
-    var DESIGN=(window.innerWidth<=600)?240:360;
-    if(sc.scrollWidth>sc.clientWidth+1){                       /* horizontal rail at the field top */
-      var tw=Math.max(40,Math.min(DESIGN,fW-24));
-      h.style.width=tw+'px';h.style.left=Math.round(fLeft+(fW-tw)/2)+'px';h.style.top=Math.round(fTop+12)+'px';
-      var iw=tw-4,fx=sc.clientWidth/sc.scrollWidth,thw=Math.max(16,iw*fx),mx=sc.scrollWidth-sc.clientWidth,px=mx>0?sc.scrollLeft/mx:0;
-      th.style.width=thw+'px';th.style.left=(2+(iw-thw)*px)+'px';h.classList.add('show');
+    var sr=stageEl.getBoundingClientRect();
+    var stl=document.querySelector('.stage-tl').getBoundingClientRect();
+    var str=document.querySelector('.stage-tr').getBoundingClientRect();
+    var sbr=document.querySelector('.stage-br').getBoundingClientRect();
+    /* horizontal rail: on the top-control axis, stretched between the TL and TR groups (12px gaps) */
+    if(sc.scrollWidth>sc.clientWidth+1){
+      var hL=(stl.right-sr.left)+12, hR=(str.left-sr.left)-12, hW=Math.max(24,hR-hL);
+      h.style.left=Math.round(hL)+'px'; h.style.width=Math.round(hW)+'px';
+      h.style.top=Math.round((stl.top-sr.top)+stl.height/2-4)+'px';
+      var iw=hW-4,fx=sc.clientWidth/sc.scrollWidth,thw=Math.max(20,iw*fx),mx=sc.scrollWidth-sc.clientWidth,px=mx>0?sc.scrollLeft/mx:0;
+      th.style.width=thw+'px'; th.style.left=(2+(iw-thw)*px)+'px'; h.classList.add('show');
     }else h.classList.remove('show');
-    if(sc.scrollHeight>sc.clientHeight+1){                     /* vertical rail 12px from the field right */
-      var t2=Math.max(40,Math.min(DESIGN,fH-24));
-      v.style.height=t2+'px';v.style.top=Math.round(fTop+(fH-t2)/2)+'px';v.style.left=Math.round(fLeft+fW-20)+'px';
-      var ih=t2-4,fy=sc.clientHeight/sc.scrollHeight,thh=Math.max(16,ih*fy),my=sc.scrollHeight-sc.clientHeight,py=my>0?sc.scrollTop/my:0;
-      tv.style.height=thh+'px';tv.style.top=(2+(ih-thh)*py)+'px';v.classList.add('show');
+    /* vertical rail: on the right-control axis, stretched between the TR and BR groups (12px gaps) */
+    if(sc.scrollHeight>sc.clientHeight+1){
+      var vT=(str.bottom-sr.top)+12, vB=(sbr.top-sr.top)-12, vH=Math.max(24,vB-vT);
+      v.style.top=Math.round(vT)+'px'; v.style.height=Math.round(vH)+'px';
+      v.style.left=Math.round((sr.right-sr.left)-24-4)+'px';   /* centred on the 32px right-corner button (8px inset + 16) */
+      var ih=vH-4,fy=sc.clientHeight/sc.scrollHeight,thh=Math.max(20,ih*fy),my=sc.scrollHeight-sc.clientHeight,py=my>0?sc.scrollTop/my:0;
+      tv.style.height=thh+'px'; tv.style.top=(2+(ih-thh)*py)+'px'; v.classList.add('show');
     }else v.classList.remove('show');
   }
   function wireScrollThumb(thumb,axis){
