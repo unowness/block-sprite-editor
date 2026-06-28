@@ -395,7 +395,7 @@
   </div>
 
   <!-- Fullscreen Custom panel (shown only in fullscreen; mirrors the palette CUSTOM row) -->
-  <div class="fscustom" id="fscustom"><span class="fscustom-label">CUSTOM</span><div class="pgrid" id="fscustomgrid"></div></div>
+  <div class="fscustom" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
 
   <!-- Hint -->
   <div class="hint" id="hint">
@@ -776,7 +776,7 @@
   }
   function fillCustomGrid(grid){if(!grid)return;grid.innerHTML='';for(var i=0;i<16;i++)grid.appendChild(makeCustomCell(i));}
   /* the palette CUSTOM row and the fullscreen Custom panel mirror the same d.custom data */
-  function buildCustomRow(){var d=D();if(!d.custom)d.custom=[];fillCustomGrid($('customgrid'));fillCustomGrid($('fscustomgrid'));}
+  function buildCustomRow(){var d=D();if(!d.custom)d.custom=[];fillCustomGrid($('customgrid'));}
   function firstGlyph(s){s=(s||'').replace(/[\r\n\t]/g,'');var a=Array.from(s);return a.length?a[0]:'';}
   /* update cell i in BOTH grids in place (no full rebuild -> keeps caret/focus while editing) */
   function syncCustomCell(i,ch){
@@ -1225,21 +1225,25 @@
     var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
+  /* one real Custom panel, moved into the fullscreen overlay and back (no duplicate grid) */
+  function relocateCustom(toFs){var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);}
   function enterFullscreen(){
     ui.fsPrev=ui.fs;ui.fsOpen=true;ui.fsScrollY=window.scrollY||window.pageYOffset||0;
+    relocateCustom(true);
     document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
     document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
-    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';fitCanvas();
+    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
   }
   function exitFullscreen(){
     ui.fsOpen=false;
     document.querySelector('.stage').classList.remove('fullscreen');document.body.classList.remove('fs-lock');
     document.body.style.top='';
     if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
-    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';ui.fs=ui.fsPrev||32;build();
+    relocateCustom(false);
+    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
-  window.addEventListener('resize',function(){if(ui.fsOpen)fitCanvas();updateScrollbars();});
+  window.addEventListener('resize',updateScrollbars);
   document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
   wireScrollThumb($('fsthumb-h'),'x');
   wireScrollThumb($('fsthumb-v'),'y');
