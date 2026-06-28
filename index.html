@@ -124,13 +124,17 @@
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
   .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
-                padding:54px 12px;overflow:auto;
-                scrollbar-width:thin;scrollbar-color:var(--stroke-focus) transparent;}
-  /* thin rounded scrollbars when the canvas is bigger than the field */
-  .stage-canvas::-webkit-scrollbar{width:10px;height:10px;}
-  .stage-canvas::-webkit-scrollbar-track{background:transparent;}
-  .stage-canvas::-webkit-scrollbar-thumb{background:var(--stroke-focus);border-radius:6px;border:3px solid transparent;background-clip:content-box;}
-  .stage-canvas::-webkit-scrollbar-thumb:hover{background:var(--tool-text-id);background-clip:content-box;}
+                padding:54px 12px;overflow:auto;scrollbar-width:none;}
+  .stage-canvas::-webkit-scrollbar{width:0;height:0;display:none;}   /* hide native — custom bar below */
+  /* custom scrollbar (Figma Scroll-bar): fixed-length rounded rail + grey thumb, 12px inside the field */
+  .fscroll{position:absolute;z-index:5;display:none;background:var(--tool-background);
+           border:1px solid var(--stroke);border-radius:4px;}
+  .fscroll.show{display:block;}
+  .fscroll-h{height:8px;}
+  .fscroll-v{width:8px;}
+  .fscroll-thumb{position:absolute;background:var(--tool-text-id);border-radius:2px;cursor:pointer;}
+  .fscroll-h .fscroll-thumb{top:2px;height:4px;}
+  .fscroll-v .fscroll-thumb{left:2px;width:4px;}
   .stage-tl,.stage-tr,.stage-bl,.stage-br{position:absolute;z-index:2;display:flex;gap:8px;}
   .stage-tl{top:8px;left:8px;} .stage-tr{top:8px;right:8px;}
   .stage-bl{bottom:8px;left:8px;} .stage-br{bottom:8px;right:8px;}
@@ -377,6 +381,8 @@
         <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M0.999999 12L1 1L13 1L13 12" stroke="#9AA0A6" stroke-dasharray="3 2"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/></svg></button>
       </div>
     </div>
+    <div class="fscroll fscroll-h" id="fsbar-h"><div class="fscroll-thumb" id="fsthumb-h"></div></div>
+    <div class="fscroll fscroll-v" id="fsbar-v"><div class="fscroll-thumb" id="fsthumb-v"></div></div>
     <div class="stage-bl">
       <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
       <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 1L1 13H13L13 1L1 1Z" stroke-dasharray="3 2"/></svg></span><span class="tw">Select</span></button>
@@ -589,7 +595,7 @@
       for(var x=0;x<d.w;x++){var c=document.createElement('span');c.className='cell';c.dataset.x=x;c.dataset.y=y;gridEl.appendChild(c);}
       if(y<d.h-1)gridEl.appendChild(document.createTextNode('\n'));
     }
-    render();
+    render();updateScrollbars();
   }
   function paintCells(g){
     var kids=gridEl.querySelectorAll('.cell');
@@ -1029,6 +1035,45 @@
   }
 
   /* ============================================================
+     13b. Custom scrollbars (Figma Scroll-bar): fixed-length rail + grey thumb,
+          12px inside the drawing field, shown only when the canvas overflows
+     ============================================================ */
+  var stageEl=document.querySelector('.stage');
+  function updateScrollbars(){
+    var sc=document.querySelector('.stage-canvas'),h=$('fsbar-h'),v=$('fsbar-v'),th=$('fsthumb-h'),tv=$('fsthumb-v');
+    if(!sc||!h)return;
+    if(ui.playing){h.classList.remove('show');v.classList.remove('show');return;}
+    var cs=getComputedStyle(sc),pl=parseFloat(cs.paddingLeft),pr=parseFloat(cs.paddingRight),pt=parseFloat(cs.paddingTop),pb=parseFloat(cs.paddingBottom);
+    var sr=stageEl.getBoundingClientRect(),cr=sc.getBoundingClientRect();
+    var fLeft=(cr.left-sr.left)+pl, fTop=(cr.top-sr.top)+pt, fW=sc.clientWidth-pl-pr, fH=sc.clientHeight-pt-pb;
+    var DESIGN=(window.innerWidth<=600)?240:360;
+    if(sc.scrollWidth>sc.clientWidth+1){                       /* horizontal rail at the field top */
+      var tw=Math.max(40,Math.min(DESIGN,fW-24));
+      h.style.width=tw+'px';h.style.left=Math.round(fLeft+(fW-tw)/2)+'px';h.style.top=Math.round(fTop+12)+'px';
+      var iw=tw-4,fx=sc.clientWidth/sc.scrollWidth,thw=Math.max(16,iw*fx),mx=sc.scrollWidth-sc.clientWidth,px=mx>0?sc.scrollLeft/mx:0;
+      th.style.width=thw+'px';th.style.left=(2+(iw-thw)*px)+'px';h.classList.add('show');
+    }else h.classList.remove('show');
+    if(sc.scrollHeight>sc.clientHeight+1){                     /* vertical rail 12px from the field right */
+      var t2=Math.max(40,Math.min(DESIGN,fH-24));
+      v.style.height=t2+'px';v.style.top=Math.round(fTop+(fH-t2)/2)+'px';v.style.left=Math.round(fLeft+fW-20)+'px';
+      var ih=t2-4,fy=sc.clientHeight/sc.scrollHeight,thh=Math.max(16,ih*fy),my=sc.scrollHeight-sc.clientHeight,py=my>0?sc.scrollTop/my:0;
+      tv.style.height=thh+'px';tv.style.top=(2+(ih-thh)*py)+'px';v.classList.add('show');
+    }else v.classList.remove('show');
+  }
+  function wireScrollThumb(thumb,axis){
+    thumb.addEventListener('mousedown',function(e){
+      e.preventDefault();e.stopPropagation();
+      var sc=document.querySelector('.stage-canvas'),start=axis==='x'?e.clientX:e.clientY,ss=axis==='x'?sc.scrollLeft:sc.scrollTop;
+      var track=thumb.parentElement,trackLen=(axis==='x'?track.clientWidth:track.clientHeight)-4,thumbLen=axis==='x'?thumb.offsetWidth:thumb.offsetHeight;
+      var maxS=axis==='x'?(sc.scrollWidth-sc.clientWidth):(sc.scrollHeight-sc.clientHeight);
+      function mv(ev){var d=(axis==='x'?ev.clientX:ev.clientY)-start,den=trackLen-thumbLen,fr=den>0?d/den:0,ns=ss+fr*maxS;
+        if(axis==='x')sc.scrollLeft=ns;else sc.scrollTop=ns;}
+      function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
+      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
+    });
+  }
+
+  /* ============================================================
      14. Events
      ============================================================ */
   /* canvas painting */
@@ -1186,7 +1231,10 @@
     $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';ui.fs=ui.fsPrev||32;build();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
-  window.addEventListener('resize',function(){if(ui.fsOpen)fitCanvas();});
+  window.addEventListener('resize',function(){if(ui.fsOpen)fitCanvas();updateScrollbars();});
+  document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
+  wireScrollThumb($('fsthumb-h'),'x');
+  wireScrollThumb($('fsthumb-v'),'y');
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.fsOpen){e.preventDefault();exitFullscreen();}});
   $('undo').onclick=undo;$('redo').onclick=redo;
   $('erase').onclick=function(){setGlyph(' ');};
@@ -1232,6 +1280,7 @@
   build();
   renderFrames();
   updateHist();
+  updateScrollbars();
 })();
 </script>
 </body>
