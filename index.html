@@ -124,7 +124,13 @@
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
   .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
-                padding:54px 12px;overflow:auto;}
+                padding:54px 12px;overflow:auto;
+                scrollbar-width:thin;scrollbar-color:var(--stroke-focus) transparent;}
+  /* thin rounded scrollbars when the canvas is bigger than the field */
+  .stage-canvas::-webkit-scrollbar{width:10px;height:10px;}
+  .stage-canvas::-webkit-scrollbar-track{background:transparent;}
+  .stage-canvas::-webkit-scrollbar-thumb{background:var(--stroke-focus);border-radius:6px;border:3px solid transparent;background-clip:content-box;}
+  .stage-canvas::-webkit-scrollbar-thumb:hover{background:var(--tool-text-id);background-clip:content-box;}
   .stage-tl,.stage-tr,.stage-bl,.stage-br{position:absolute;z-index:2;display:flex;gap:8px;}
   .stage-tl{top:8px;left:8px;} .stage-tr{top:8px;right:8px;}
   .stage-bl{bottom:8px;left:8px;} .stage-br{bottom:8px;right:8px;}
@@ -132,7 +138,7 @@
   /* fullscreen popup — the stage becomes a big rounded frame 48px from the screen edges
      (box-shadow paints the dark backdrop around it); controls keep their corner docking.
      Esc or the X closes it. */
-  body.fs-lock{overflow:hidden;}
+  body.fs-lock{overflow:hidden;position:fixed;left:0;right:0;width:100%;}  /* scroll-lock (top offset set in JS to avoid jump) */
   .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:72px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
   .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
   /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
@@ -270,11 +276,12 @@
     .pgrid{max-width:none;}
     /* footer: links stacked (12px apart), byline below them (Figma mobile) */
     .note{margin-bottom:20px;}
-    .foot-row{flex-direction:column-reverse;align-items:flex-start;gap:20px;}
+    .foot-row{flex-direction:column;align-items:flex-start;gap:20px;}
     .links{flex-direction:column;align-items:flex-start;gap:12px;}
     /* fullscreen: tight 8px insets; Custom panel 2 rows, no label, 16px from edges */
     .stage.fullscreen{top:8px;left:8px;right:8px;bottom:104px;}
-    body.fs-lock .fscustom{left:16px;right:16px;bottom:16px;transform:none;justify-content:center;flex-wrap:wrap;gap:8px;}
+    body.fs-lock .fscustom{left:16px;right:16px;bottom:16px;transform:none;justify-content:center;flex-wrap:wrap;gap:8px;
+                           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);padding:6px;}
     body.fs-lock .fscustom .fscustom-label{display:none;}
     body.fs-lock .fscustom .pgrid{flex-wrap:wrap;justify-content:center;}
   }
@@ -333,8 +340,8 @@
     <div class="tool">
       <span class="tool-label">Frames</span>
       <div class="frames" id="frames"></div>
-      <button class="btn icon" id="addframe" title="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><path d="M7 2.5v9M2.5 7h9"/></svg></button>
-      <button class="btn icon" id="delframe" title="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 3.8h8.8M5.4 3.8V2.7h3.2v1.1M3.9 3.8l.5 7a1 1 0 0 0 1 .9h3.2a1 1 0 0 0 1-.9l.5-7"/></svg></button>
+      <button class="btn icon" id="addframe" title="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+      <button class="btn icon" id="delframe" title="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
     </div>
     <div class="animbar-right">
       <div class="tool">
@@ -343,8 +350,8 @@
       </div>
       <div class="tool">
         <span class="tool-label">Preview</span>
-        <button class="btn" id="play"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M4.7 3.3v7.4l6-3.7z"/></svg></span><span class="pw">Play</span></button>
-        <button class="btn" id="stop"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5.2 3.4v7.2M8.8 3.4v7.2"/></svg></span><span class="pw">Pause</span></button>
+        <button class="btn" id="play"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
+        <button class="btn" id="stop"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
       </div>
     </div>
   </div>
@@ -353,33 +360,31 @@
   <div class="stage">
     <div class="stage-tl">
       <button class="btn on" id="filled"><span class="swatch"><input type="color" id="col-bg"></span><span class="tw">Background</span></button>
-      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1"><path d="M3.5 0.5v13M10.5 0.5v13M0.5 3.5h13M0.5 10.5h13"/></svg></span><span class="tw">Grid</span></button>
-      <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v10h2M10 2h2v10h-2M7 2v10"/></svg></span><span class="tw">Mirror</span></button>
+      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 0.5V13.5"/><path d="M13.5 3.5L0.5 3.5"/><path d="M10.5 0.5V13.5"/><path d="M13.5 10.5L0.5 10.5"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 1V13" stroke-dasharray="2 2"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="1.4" width="11.2" height="11.2" rx="2.4"/><path d="M4 7h6"/></svg></span><span class="zw">Zoom</span></button>
-      <button class="btn" data-zoom="1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><rect x="1.4" y="1.4" width="11.2" height="11.2" rx="2.4"/><path d="M4 7h6M7 4v6"/></svg></span><span class="zw">Zoom</span></button>
-      <button class="btn icon" id="fs" title="Fullscreen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>
-      </button>
+      <button class="btn" data-zoom="-1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 7V1H7"/><path d="M13 7V1H7"/><path d="M1 7V13H7"/><path d="M3.5 7H10.5" stroke-linecap="square"/><path d="M13 7V13H7"/></svg></span><span class="zw">Zoom</span></button>
+      <button class="btn" data-zoom="1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 7V1H7"/><path d="M13 7V1H7"/><path d="M1 7V13H7"/><path d="M3 7H11"/><path d="M7.00488 3.005L7.00488 11.005"/><path d="M13 7V13H7"/></svg></span><span class="zw">Zoom</span></button>
+      <button class="btn icon" id="fs" title="Fullscreen"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
     </div>
     <div class="stage-canvas">
       <div class="canvas-wrap">
         <div class="canvas-frame"><div id="grid" class="grid show-grid"></div><div class="sel-rect" id="selrect" style="display:none"></div></div>
-        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M2 13L13 13L13 1L2 1" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
-        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M12 13L1 13L1 1L12 1" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
-        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M13 2L13 13L1 13L1 2" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
-        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#1D1D22"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M0.999999 12L1 1L13 1L13 12" stroke="#E6E6DF" stroke-opacity="0.5" stroke-dasharray="3 2"/></svg></button>
+        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M2 13L13 13L13 1L2 1" stroke="#9AA0A6" stroke-dasharray="3 2"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M12 13L1 13L1 1L12 1" stroke="#9AA0A6" stroke-dasharray="3 2"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M13 2L13 13L1 13L1 2" stroke="#9AA0A6" stroke-dasharray="3 2"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M0.999999 12L1 1L13 1L13 12" stroke="#9AA0A6" stroke-dasharray="3 2"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/></svg></button>
       </div>
     </div>
     <div class="stage-bl">
-      <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20H8.5l-4.21 -4.3a1 1 0 0 1 0 -1.41l10 -10a1 1 0 0 1 1.41 0l5 5a1 1 0 0 1 0 1.41l-9.2 9.3"/><path d="M18 13.3l-6.3 -6.3"/></svg></span><span class="tw">Eraser</span></button>
-      <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4V1.5H4M10 1.5h2.5V4M12.5 10v2.5H10M4 12.5H1.5V10"/></svg></span><span class="tw">Select</span></button>
+      <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
+      <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 1L1 13H13L13 1L1 1Z" stroke-dasharray="3 2"/></svg></span><span class="tw">Select</span></button>
     </div>
     <div class="stage-br">
-      <button class="btn" id="undo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h6a3 3 0 0 1 0 6H6"/><path d="M5.5 4.5 3 7l2.5 2.5"/></svg></span><span class="tw">Undo</span></button>
-      <button class="btn" id="redo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7H5a3 3 0 0 0 0 6h3"/><path d="M8.5 4.5 11 7 8.5 9.5"/></svg></span><span class="tw">Redo</span></button>
-      <button class="btn alert" id="clear"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 3.8h8.8M5.4 3.8V2.7h3.2v1.1M3.9 3.8l.5 7a1 1 0 0 0 1 .9h3.2a1 1 0 0 0 1-.9l.5-7"/></svg></span><span class="tw">Clear</span></button>
+      <button class="btn" id="undo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M5 12L12 12L12 4L3 4"/><path d="M7 1L3 4L7 7"/></svg></span><span class="tw">Undo</span></button>
+      <button class="btn" id="redo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 12L3 12L3 4L12 4"/><path d="M8 1L12 4L8 7"/></svg></span><span class="tw">Redo</span></button>
+      <button class="btn alert" id="clear"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></span><span class="tw">Clear</span></button>
     </div>
   </div>
 
@@ -388,7 +393,7 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Custom panel: Ctrl+V pastes a glyph, Backspace removes it. Arrow keys move the selection.</span>
+    <span>Custom panel: click a cell, then press Ctrl+V to paste any character from your clipboard — Backspace clears it. In Select mode, drag a box over your art and nudge it with the arrow keys.</span>
     <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
   </div>
 
@@ -426,12 +431,12 @@
   <footer>
     <p class="note">When I was a kid, my dad had a typewriter — and even before I could read or write, I loved drawing with characters on paper. Drawing has so many techniques to explore, and I believe constraints create masterpieces. One day I needed an ASCII editor for a project, so I decided to build my own. Hope you enjoy drawing in it — write some letters!</p>
     <div class="foot-row">
-      <span class="copy-note">Blockmode by Unowness · 2026</span>
       <div class="links">
         <a href="https://ko-fi.com/unowness" id="link-coffee" target="_blank" rel="noopener">Buy Me a Coffee</a>
         <a href="mailto:unowness@protonmail.com" id="link-email">Send an Email</a>
         <a href="#" id="link-socials">Socials</a>
       </div>
+      <span class="copy-note">Blockmode by Unowness · 2026</span>
     </div>
   </footer>
 </div>
@@ -747,41 +752,57 @@
         - Enter / blur commits and selects it; it then acts as a glyph button
         - Backspace clears the cell
      ============================================================ */
+  function isCoarse(){return !!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches);}
   function makeCustomCell(i){
     var ch=D().custom[i]||'';
     var b=document.createElement('div');
     b.className='gbtn custom'+(ch&&ch===ui.curGlyph?' on':'');
-    b.dataset.idx=i;b.setAttribute('contenteditable','true');b.spellcheck=false;b.textContent=ch;
+    b.dataset.idx=i;b.spellcheck=false;b.textContent=ch;
+    if(!isCoarse()){                       /* fine pointer (desktop): inline-edit, Ctrl+V, Backspace */
+      b.setAttribute('contenteditable','true');
+      b.addEventListener('blur',customBlur);
+      b.addEventListener('keydown',customKey);
+      b.addEventListener('input',customInput);
+      b.addEventListener('paste',customPaste);
+    }
     b.addEventListener('mousedown',customMouseDown);
-    b.addEventListener('blur',customBlur);
-    b.addEventListener('keydown',customKey);
-    b.addEventListener('input',customInput);
-    b.addEventListener('paste',customPaste);
     return b;
   }
   function fillCustomGrid(grid){if(!grid)return;grid.innerHTML='';for(var i=0;i<16;i++)grid.appendChild(makeCustomCell(i));}
   /* the palette CUSTOM row and the fullscreen Custom panel mirror the same d.custom data */
   function buildCustomRow(){var d=D();if(!d.custom)d.custom=[];fillCustomGrid($('customgrid'));fillCustomGrid($('fscustomgrid'));}
   function firstGlyph(s){s=(s||'').replace(/[\r\n\t]/g,'');var a=Array.from(s);return a.length?a[0]:'';}
+  /* update cell i in BOTH grids in place (no full rebuild -> keeps caret/focus while editing) */
+  function syncCustomCell(i,ch){
+    [].forEach.call(document.querySelectorAll('.gbtn.custom[data-idx="'+i+'"]'),function(c){if(c.textContent!==ch)c.textContent=ch;});
+  }
   function customCommit(b){
     var i=+b.dataset.idx,ch=firstGlyph(b.textContent);
-    D().custom[i]=ch;
-    if(ch)setGlyph(ch);
-    buildCustomRow();refreshCustomActive();updateOut();
+    D().custom[i]=ch;syncCustomCell(i,ch);
+    if(ch)setGlyph(ch);                          /* a filled cell becomes the active drawing glyph */
+    refreshCustomActive();updateOut();
   }
   function customMouseDown(e){
     var b=e.currentTarget,i=+b.dataset.idx,ch=D().custom[i]||'';
-    if(ch){setGlyph(ch);return;}                          /* filled -> select that glyph for drawing */
-    if(ui.curGlyph&&ui.curGlyph!==' '){                   /* empty + a glyph chosen -> drop it in, keep caret for Ctrl+V */
-      D().custom[i]=ui.curGlyph;b.textContent=ui.curGlyph;refreshCustomActive();updateOut();
-      setTimeout(function(){placeCaretEnd(b);},0);
+    if(isCoarse()){       /* touch: no soft keyboard. tap empty -> paste from clipboard; tap filled -> draw (tap again to clear) */
+      e.preventDefault();
+      if(ch){ if(ui.curGlyph===ch){D().custom[i]='';syncCustomCell(i,'');refreshCustomActive();updateOut();} else setGlyph(ch); }
+      else if(navigator.clipboard&&navigator.clipboard.readText){
+        navigator.clipboard.readText().then(function(t){var g=firstGlyph((t||'').replace(/\s/g,''))||firstGlyph(t||'');
+          if(g){D().custom[i]=g;syncCustomCell(i,g);setGlyph(g);refreshCustomActive();updateOut();}}).catch(function(){});
+      }
+      return;
     }
+    if(ch)setGlyph(ch);   /* desktop: filled -> draw with it. empty -> just focus for Ctrl+V (no auto-bind) */
   }
   function customBlur(e){customCommit(e.currentTarget);}
   function customKey(e){
-    var b=e.currentTarget;
+    var b=e.currentTarget,i=+b.dataset.idx;
     if(e.key==='Enter'){e.preventDefault();b.blur();}
-    else if(e.key==='Backspace'||e.key==='Delete'){e.preventDefault();D().custom[+b.dataset.idx]='';buildCustomRow();refreshCustomActive();updateOut();}
+    else if(e.key==='Backspace'||e.key==='Delete'){
+      e.preventDefault();
+      D().custom[i]='';b.textContent='';syncCustomCell(i,'');refreshCustomActive();updateOut();
+    }
   }
   function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||'');if(a.length>1){b.textContent=a[a.length-1];placeCaretEnd(b);}}
   function customPaste(e){e.preventDefault();var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);}}
@@ -1142,8 +1163,8 @@
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
 
   /* ---------------- fullscreen popup ---------------- */
-  var FS_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M8 21H5a2 2 0 0 1-2-2v-3m18 0v3a2 2 0 0 1-2 2h-3"/></svg>';
-  var CLOSE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+  var FS_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg>';
+  var CLOSE_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
   function fitCanvas(){
     var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
     var availW=Math.max(60,sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-8);
@@ -1152,13 +1173,16 @@
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
   function enterFullscreen(){
-    ui.fsPrev=ui.fs;ui.fsOpen=true;
+    ui.fsPrev=ui.fs;ui.fsOpen=true;ui.fsScrollY=window.scrollY||window.pageYOffset||0;
     document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
+    document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
     $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';fitCanvas();
   }
   function exitFullscreen(){
     ui.fsOpen=false;
     document.querySelector('.stage').classList.remove('fullscreen');document.body.classList.remove('fs-lock');
+    document.body.style.top='';
+    if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
     $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';ui.fs=ui.fsPrev||32;build();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
