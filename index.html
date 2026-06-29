@@ -146,15 +146,18 @@
   .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:110px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
   .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
   /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
-  body.fs-lock .wrap>*:not(.stage):not(.fscustom){visibility:hidden;}
-  /* Custom panel shown in fullscreen, below the stage in the backdrop (Figma Desktop-Fullscreen) */
-  .fscustom{display:none;}
-  body.fs-lock .fscustom{display:flex;position:fixed;z-index:10000;left:50%;transform:translateX(-50%);bottom:40px;
-           align-items:flex-start;gap:10px;background:var(--tool-background);border:1px solid var(--stroke);
-           border-radius:var(--r-tool);padding:8px;}
+  body.fs-lock .wrap>*:not(.stage):not(.fsbottom){visibility:hidden;}
+  /* Fullscreen bottom bar: Paint panel (left) + Custom panel (right), in the backdrop below the stage.
+     Both panels host the REAL #paints / #customgrid elements, moved in on enter and back on exit. */
+  .fsbottom{display:none;}
+  body.fs-lock .fsbottom{display:flex;align-items:flex-start;gap:16px;position:fixed;z-index:10000;
+           left:50%;transform:translateX(-50%);bottom:40px;}
+  .fspanel{display:flex;align-items:flex-start;gap:10px;background:var(--tool-background);
+           border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   .fscustom-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
            white-space:nowrap;line-height:32px;width:48px;flex:none;}
-  .fscustom .pgrid{max-width:none;flex-wrap:nowrap;}
+  .fspanel .pgrid{max-width:none;flex-wrap:nowrap;}
+  .fspanel .paints{flex-wrap:nowrap;}
 
   /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:#000;}
@@ -255,6 +258,7 @@
   .sh-b{bottom:-7px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
   .shandle{touch-action:none;}
   @media (pointer:coarse){.shandle{opacity:1;pointer-events:auto;}}  /* touch: handles always grabbable (no hover) */
+  body.fs-lock .shandle{opacity:1;pointer-events:auto;}  /* fullscreen: handles always visible — discoverable in the big void (hover-reveal isn't obvious there) */
 
   /* ---------------- selection (Select tool) ---------------- */
   .canvas-frame{position:relative;}                 /* anchor for the selection rect */
@@ -289,10 +293,11 @@
     .stage.fullscreen{top:16px;left:16px;right:16px;bottom:118px;}
     /* mobile: stretch handles sit 8px OUTSIDE the field (14px handle + 8px gap) */
     .sh-l{left:-22px;} .sh-r{right:-22px;} .sh-t{top:-22px;} .sh-b{bottom:-22px;}
-    body.fs-lock .fscustom{left:16px;right:16px;bottom:16px;transform:none;justify-content:center;flex-wrap:wrap;gap:8px;
-                           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);padding:6px;}
-    body.fs-lock .fscustom .fscustom-label{display:none;}
-    body.fs-lock .fscustom .pgrid{flex-wrap:wrap;justify-content:center;}
+    body.fs-lock .fsbottom{left:16px;right:16px;bottom:16px;transform:none;flex-direction:column;align-items:stretch;gap:8px;}
+    .fspanel{justify-content:center;flex-wrap:wrap;gap:8px;padding:6px;}
+    body.fs-lock .fspanel .fscustom-label{display:none;}
+    body.fs-lock .fspanel .pgrid{flex-wrap:wrap;justify-content:center;}
+    body.fs-lock .fspanel .paints{flex-wrap:wrap;justify-content:center;}
   }
 </style>
 </head>
@@ -322,7 +327,7 @@
 
     <!-- Row B — paint + view + canvas -->
     <div class="bar">
-      <div class="tool">
+      <div class="tool" id="paintgroup">
         <span class="tool-label">Paint</span>
         <div class="paints" id="paints">
           <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Main</button>
@@ -399,8 +404,12 @@
     </div>
   </div>
 
-  <!-- Fullscreen Custom panel (shown only in fullscreen; mirrors the palette CUSTOM row) -->
-  <div class="fscustom" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
+  <!-- Fullscreen bottom bar (shown only in fullscreen): hosts the REAL Paint pills + Custom row,
+       moved in on enter and back on exit. Paint on the left, Custom on the right. -->
+  <div class="fsbottom" id="fsbottom">
+    <div class="fspanel" id="fspaint"><span class="fscustom-label">PAINT</span></div>
+    <div class="fspanel" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
+  </div>
 
   <!-- Hint -->
   <div class="hint" id="hint">
@@ -1262,11 +1271,14 @@
     var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
-  /* one real Custom panel, moved into the fullscreen overlay and back (no duplicate grid) */
-  function relocateCustom(toFs){var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);}
+  /* the REAL Paint pills + Custom row, moved into the fullscreen bottom bar and back (no duplicates) */
+  function relocateFsPanels(toFs){
+    var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);
+    var paints=$('paints');   if(paints)(toFs?$('fspaint'):$('paintgroup')).appendChild(paints);
+  }
   function enterFullscreen(){
     ui.fsPrev=ui.fs;ui.fsOpen=true;ui.fsScrollY=window.scrollY||window.pageYOffset||0;
-    relocateCustom(true);
+    relocateFsPanels(true);
     document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
     document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
     $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
@@ -1276,7 +1288,7 @@
     document.querySelector('.stage').classList.remove('fullscreen');document.body.classList.remove('fs-lock');
     document.body.style.top='';
     if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
-    relocateCustom(false);
+    relocateFsPanels(false);
     $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
