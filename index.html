@@ -178,7 +178,7 @@
   .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
-  .hint span{text-wrap:balance;line-height:1.5;}   /* even line lengths — no single-word orphan when it wraps */
+  .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
           background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
