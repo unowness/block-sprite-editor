@@ -105,6 +105,7 @@
   .tab .x{display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;}
   .tab .x:hover{color:var(--main-text);background:rgba(255,255,255,.08);}
+  .tab .x svg{width:12px;height:12px;display:block;}
 
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
@@ -182,6 +183,7 @@
           background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
   .hint-x:hover{color:var(--main-text);}
+  .hint-x svg{width:14px;height:14px;display:block;}
 
   /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
   .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 var(--space-cluster);}
@@ -326,7 +328,7 @@
       <div class="tool">
         <span class="tool-label">Tabs</span>
         <div class="tabs" id="tabs"></div>
-        <button class="btn" id="addtab" title="New sprite">+</button>
+        <button class="btn icon" id="addtab" title="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
       </div>
     </div>
 
@@ -418,8 +420,8 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Custom panel: click a cell, then Ctrl+V to drop your glyph or paste a character; Backspace clears. Right mouse button erases. Select: arrow keys move the box.</span>
-    <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
+    <span>Custom panel: click a cell, then Ctrl+V to drop or paste a glyph; Backspace clears. Right-click erases. Select: arrow keys move the box.</span>
+    <button class="hint-x" id="hintx" title="Dismiss"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
   </div>
 
   <!-- Glyph palette -->
@@ -559,7 +561,7 @@
       var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:(d.name||'untitled');
       name.onclick=function(){selectTab(i);};t.appendChild(name);
       if(docs.length>1){
-        var x=document.createElement('span');x.className='x';x.textContent='×';x.title='Close';
+        var x=document.createElement('span');x.className='x';x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';x.title='Close';
         x.onclick=function(e){e.stopPropagation();closeTab(i);};t.appendChild(x);
       }
       box.appendChild(t);
