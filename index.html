@@ -261,11 +261,7 @@
   .sh-t{top:-22px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
   .sh-b{bottom:-22px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
   .shandle{touch-action:none;}
-  @media (pointer:coarse){.shandle{opacity:1;pointer-events:auto;}}  /* touch: handles always grabbable (no hover) */
-  body.fs-lock .shandle{opacity:1;pointer-events:auto;}  /* fullscreen: handles always visible — discoverable in the big void (hover-reveal isn't obvious there) */
-  /* fullscreen: handles sit 8px OUTSIDE the field (14px handle + 8px gap) so they don't cover edge cells */
-  body.fs-lock .sh-l{left:-22px;} body.fs-lock .sh-r{right:-22px;}
-  body.fs-lock .sh-t{top:-22px;} body.fs-lock .sh-b{bottom:-22px;}
+  @media (pointer:coarse){.shandle{opacity:1;pointer-events:auto;}}  /* touch only: handles always grabbable (no hover). Desktop (incl. fullscreen) reveals on hover. */
 
   /* ---------------- selection (Select tool) ---------------- */
   .canvas-frame{position:relative;}                 /* anchor for the selection rect */
