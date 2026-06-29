@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blockmode — ASCII Sprite Editor</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
@@ -150,7 +150,7 @@
   /* Fullscreen bottom bar: Paint panel (left) + Custom panel (right), in the backdrop below the stage.
      Both panels host the REAL #paints / #customgrid elements, moved in on enter and back on exit. */
   .fsbottom{display:none;}
-  body.fs-lock .fsbottom{display:flex;align-items:flex-start;gap:16px;position:fixed;z-index:10000;
+  body.fs-lock .fsbottom{display:flex;align-items:flex-start;gap:8px;position:fixed;z-index:10000;
            left:50%;transform:translateX(-50%);bottom:40px;}
   .fspanel{display:flex;align-items:flex-start;gap:10px;background:var(--tool-background);
            border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
@@ -174,9 +174,10 @@
   .cell:hover{background:rgba(103,232,249,.28);}
 
   /* ---------------- hint banner ---------------- */
-  .hint{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
+  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
+  .hint span{text-wrap:balance;line-height:1.5;}   /* even line lengths — no single-word orphan when it wraps */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
           background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
@@ -215,7 +216,7 @@
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:8px;background:var(--page);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
-  textarea{display:block;width:100%;height:120px;resize:none;background:transparent;color:var(--tool-text-id);
+  textarea{display:block;width:100%;height:200px;resize:none;background:transparent;color:var(--tool-text-id);
            border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:40px;}
   textarea:focus{outline:none;}
   textarea::placeholder{color:var(--tool-text-id);}
@@ -259,6 +260,9 @@
   .shandle{touch-action:none;}
   @media (pointer:coarse){.shandle{opacity:1;pointer-events:auto;}}  /* touch: handles always grabbable (no hover) */
   body.fs-lock .shandle{opacity:1;pointer-events:auto;}  /* fullscreen: handles always visible — discoverable in the big void (hover-reveal isn't obvious there) */
+  /* fullscreen: handles sit 8px OUTSIDE the field (14px handle + 8px gap) so they don't cover edge cells */
+  body.fs-lock .sh-l{left:-22px;} body.fs-lock .sh-r{right:-22px;}
+  body.fs-lock .sh-t{top:-22px;} body.fs-lock .sh-b{bottom:-22px;}
 
   /* ---------------- selection (Select tool) ---------------- */
   .canvas-frame{position:relative;}                 /* anchor for the selection rect */
@@ -289,11 +293,12 @@
     .note{margin-bottom:20px;}
     .foot-row{flex-direction:column;align-items:flex-start;gap:20px;}
     .links{flex-direction:column;align-items:flex-start;gap:12px;}
-    /* fullscreen: tight 8px insets; Custom panel 2 rows, no label, 16px from edges */
-    .stage.fullscreen{top:16px;left:16px;right:16px;bottom:118px;}
+    /* fullscreen: tight insets; reserve room at the bottom for the taller Custom+Paint bar (+safe-area)
+       so the stage's bottom-docked controls clear it */
+    .stage.fullscreen{top:16px;left:16px;right:16px;bottom:calc(190px + env(safe-area-inset-bottom));}
     /* mobile: stretch handles sit 8px OUTSIDE the field (14px handle + 8px gap) */
     .sh-l{left:-22px;} .sh-r{right:-22px;} .sh-t{top:-22px;} .sh-b{bottom:-22px;}
-    body.fs-lock .fsbottom{left:16px;right:16px;bottom:16px;transform:none;flex-direction:column;align-items:stretch;gap:8px;}
+    body.fs-lock .fsbottom{left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom));transform:none;flex-direction:column-reverse;align-items:stretch;gap:8px;}
     .fspanel{justify-content:center;flex-wrap:wrap;gap:8px;padding:6px;}
     body.fs-lock .fspanel .fscustom-label{display:none;}
     body.fs-lock .fspanel .pgrid{flex-wrap:wrap;justify-content:center;}
@@ -308,7 +313,7 @@
       <img class="logo" src="favicon.png" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
-    <p class="sub">Draw block-ASCII sprites in Blockmode, to use it in your projects. Choose a paint and glyph to draw. Right-click to erase. Background and Grid will be included in the export if they're active at the time of export. Export or load JSON to save your sprites and edit them in the next session. Export your art in SVG, PNG, or MP4 formats with up to ×16 upscale. Tell your friends about Blockmod ( n_n)b.</p>
+    <p class="sub">Draw block-ASCII sprites in Blockmode, to use it in your projects. Choose a paint and glyph to draw. Right-click to erase. Background and Grid will be included in the export if they're active at the time of export. Export or load JSON to save your sprites and edit them in the next session. Export your art in SVG, PNG, or MP4 formats with up to ×16 upscale. Tell your friends about Blockmode ( n_n)b.</p>
   </header>
 
   <div class="bars">
@@ -413,7 +418,7 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Custom panel: click a cell, then Ctrl+V to drop your glyph or paste a character; Backspace clears. Select: arrow keys move the box.</span>
+    <span>Custom panel: click a cell, then Ctrl+V to drop your glyph or paste a character; Backspace clears. Right mouse button erases. Select: arrow keys move the box.</span>
     <button class="hint-x" id="hintx" title="Dismiss">&times;</button>
   </div>
 
