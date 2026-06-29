@@ -255,10 +255,11 @@
            opacity:0;transition:opacity .1s;pointer-events:none;}
   .shandle.show{opacity:1;pointer-events:auto;}
   .shandle svg{width:14px;height:14px;display:block;}
-  .sh-l{left:-7px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
-  .sh-r{right:-7px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
-  .sh-t{top:-7px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
-  .sh-b{bottom:-7px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
+  /* handles sit 8px OUTSIDE the field (14px handle + 8px gap); reveal zone (JS Z=40) unchanged */
+  .sh-l{left:-22px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
+  .sh-r{right:-22px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
+  .sh-t{top:-22px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
+  .sh-b{bottom:-22px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
   .shandle{touch-action:none;}
   @media (pointer:coarse){.shandle{opacity:1;pointer-events:auto;}}  /* touch: handles always grabbable (no hover) */
   body.fs-lock .shandle{opacity:1;pointer-events:auto;}  /* fullscreen: handles always visible — discoverable in the big void (hover-reveal isn't obvious there) */
