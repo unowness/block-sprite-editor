@@ -6,6 +6,7 @@
 <title>Blockmode — ASCII Sprite Editor</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
+<script>try{if(localStorage.getItem('blockmode:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -17,6 +18,7 @@
     --input-background:#1D1D22;
     --stroke:#2A2A30;
     --stroke-focus:#5A5A64;
+    --stroke-hover:#3A3A44;
     --main-text:#E6E6DF;
     --main-text-05:rgba(230,230,223,.5);
     --tool-text-id:#9AA0A6;
@@ -24,6 +26,10 @@
     --alert:#CB4036;
     --green:#5CE422;
     --canvas:#0D0D0F;
+    --glyph:#cfd2c4;   /* glyph-preview colour on palette tiles */
+    --stage-bg:#070708;    /* editing-window fill (= page in dark) */
+    --canvas-empty:#000;   /* drawing surface when Background is off (transparent) */
+    --grid-line:#2A2A30;   /* grid lines + canvas frame (= --stroke in dark) */
 
     /* type */
     --font-ui:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -39,6 +45,33 @@
     --space-frame:40px;   /* header -> content stack */
     --space-page:36px;    /* page top (compensates the title text); bottom is 48 */
   }
+
+  /* Light theme — adapted, not a raw inversion: warm paper (not clinical white),
+     deeper accent for WCAG-AA text, everything else re-tuned. Toggled via
+     data-theme on <html>; absence = dark (default). */
+  :root[data-theme="light"]{
+    --page:#F2F1EC;
+    --tool-background:#F7F6F2;
+    --input-background:#FFFFFF;
+    --stroke:#D9D7CF;
+    --stroke-focus:#A7A59B;
+    --stroke-hover:#C4C2B8;
+    --main-text:#1F1F1A;
+    --main-text-05:rgba(31,31,26,.5);
+    --tool-text-id:#62625A;
+    --accent:#0E7490;
+    --alert:#BE3B2F;
+    --green:#2E8B1E;
+    --canvas:#F2F1EC;
+    --glyph:#33332C;
+    --stage-bg:#F7F6F2;    /* editing window = tool panels (operator's ask) */
+    --canvas-empty:#FFFFFF; /* transparent bg -> white drawing surface */
+    --grid-line:#C4C2B8;    /* grey grid on the white canvas */
+  }
+  /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
+  .logo.logo-light{display:none;}
+  :root[data-theme="light"] .logo.logo-dark{display:none;}
+  :root[data-theme="light"] .logo.logo-light{display:block;}
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
@@ -68,16 +101,16 @@
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
-  .btn:hover{border-color:#3a3a44;}
+  .btn:hover{border-color:var(--stroke-hover);}
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   .btn.alert{background:rgba(203,64,54,.15);border-color:var(--alert);color:var(--alert);}
-  .btn.green{background:rgba(92,228,34,.1);border-color:var(--green);color:var(--green);}
+  .btn.green{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
   /* active + coloured buttons get a hover too: the stroke drops to 0.5 opacity */
-  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:rgba(103,232,249,.5);}
-  .btn.alert:hover{border-color:rgba(203,64,54,.5);}
-  .btn.green:hover{border-color:rgba(92,228,34,.5);}
+  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);}
+  .btn.alert:hover{border-color:color-mix(in srgb,var(--alert) 50%,transparent);}
+  .btn.green:hover{border-color:color-mix(in srgb,var(--green) 50%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
@@ -104,7 +137,7 @@
   .tab.on{border-color:var(--accent);color:var(--accent);}
   .tab .x{display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;}
-  .tab .x:hover{color:var(--main-text);background:rgba(255,255,255,.08);}
+  .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
   .tab .x svg{width:12px;height:12px;display:block;}
 
   /* ---------------- paint pills ---------------- */
@@ -114,14 +147,14 @@
          padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .paint.on{border-color:var(--accent);color:var(--accent);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
-          border:1px solid rgba(255,255,255,.15);overflow:hidden;flex:none;}
+          border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
   .swatch input[type=color]{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
           padding:0;border:0;opacity:0;cursor:pointer;background:none;}
 
   /* ---------------- stage ---------------- */
   /* stage grows with the canvas up to a cap (1280x600); past that the canvas scrolls
      INSIDE the frame. Controls stay docked to the frame corners (outside the scroll). */
-  .stage{position:relative;background:var(--page);
+  .stage{position:relative;background:var(--stage-bg);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
   .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
@@ -161,18 +194,18 @@
   .fspanel .paints{flex-wrap:nowrap;}
 
   /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
-  .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--stroke);border-radius:2px;overflow:hidden;background:#000;}
-  .grid{display:inline-block;background:#000;cursor:crosshair;white-space:pre;
+  .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--grid-line);border-radius:2px;overflow:hidden;background:var(--canvas-empty);}
+  .grid{display:inline-block;background:var(--canvas-empty);cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);touch-action:none;}  /* single-finger draws, no page scroll */
   /* left+top edges come from the gradient line at 0; right+bottom from the border — all 1px --stroke */
   .grid.show-grid{background-image:
-        linear-gradient(to right, var(--stroke) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--stroke) 1px, transparent 1px);
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
         background-size:var(--cw) var(--ch);
         background-position:0 0;
         border-right:1px solid var(--stroke);border-bottom:1px solid var(--stroke);}
   .cell{background:transparent;}
-  .cell:hover{background:rgba(103,232,249,.28);}
+  .cell:hover{background:color-mix(in srgb,var(--accent) 28%,transparent);}
 
   /* ---------------- hint banner ---------------- */
   .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
@@ -206,9 +239,9 @@
           white-space:nowrap;line-height:32px;width:var(--plabel-w,auto);flex:none;}
   /* every label uses the shared 48px column — including the paired Shades/Slash groups */
   .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
-  .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:#cfd2c4;
-        background:#000;border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
-  .gbtn:hover{border-color:#3a3a44;}
+  .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
+        background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
+  .gbtn:hover{border-color:var(--stroke-hover);}
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
@@ -240,7 +273,7 @@
   .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
-             box-shadow:inset 0 0 0 1px rgba(255,255,255,.3);}
+             box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--main-text) 30%,transparent);}
 
   /* ---------------- canvas size inputs (57px, auto-grow when long) ---------------- */
   #cw,#ch{width:57px;}
@@ -267,8 +300,8 @@
   .canvas-frame{position:relative;}                 /* anchor for the selection rect */
   .grid.selmode{cursor:default;}
   .sel-rect{position:absolute;z-index:4;border:1px solid var(--accent);
-            background:rgba(103,232,249,.12);pointer-events:none;box-sizing:border-box;}
-  .sel-rect.moving{background:rgba(103,232,249,.20);border-style:dashed;}
+            background:color-mix(in srgb,var(--accent) 12%,transparent);pointer-events:none;box-sizing:border-box;}
+  .sel-rect.moving{background:color-mix(in srgb,var(--accent) 20%,transparent);border-style:dashed;}
 
   /* ---------------- custom glyph cells (editable) ---------------- */
   .gbtn.custom{color:var(--main-text);caret-color:var(--accent);overflow:hidden;
@@ -309,7 +342,8 @@
 <div class="wrap">
   <header>
     <div class="brand">
-      <img class="logo" src="favicon.png" width="56" height="56" alt="Blockmode logo">
+      <img class="logo logo-dark" src="favicon.png" width="56" height="56" alt="Blockmode logo">
+      <img class="logo logo-light" src="logo-light.svg" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
     <p class="sub">Draw block-ASCII sprites in Blockmode, to use it in your projects. Choose a paint and glyph to draw. Right-click to erase. Background and Grid will be included in the export if they're active at the time of export. Export or load JSON to save your sprites and edit them in the next session. Export your art in SVG, PNG, or MP4 formats with up to ×16 upscale. Tell your friends about Blockmode ( n_n)b.</p>
@@ -326,6 +360,11 @@
         <span class="tool-label">Tabs</span>
         <div class="tabs" id="tabs"></div>
         <button class="btn icon" id="addtab" title="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+      </div>
+      <div class="tool">
+        <span class="tool-label">Theme</span>
+        <button class="btn" data-theme-btn="light">Light</button>
+        <button class="btn on" data-theme-btn="dark">Dark</button>
       </div>
     </div>
 
@@ -624,7 +663,7 @@
     var d=D();
     var g=ui.playing?d.frames[ui.playIdx]:curGrid();
     paintCells(ui.selBuf?overlayBuf(g):g);     /* show the floating selection on top while moving */
-    gridEl.style.backgroundColor=d.bgOn?d.bgColor:'#000';
+    gridEl.style.backgroundColor=d.bgOn?d.bgColor:'var(--canvas-empty)';
     $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');
     positionSelRect();
     if(!ui.drawing&&!ui.playing&&!ui.selMoving&&!ui.sideDrag)updateOut();   /* keep the JSON box in sync (skip mid-gesture/playback) */
@@ -962,7 +1001,7 @@
       version:3,id:d.id||'sprite',width:d.w,height:d.h,
       body_color:d.body,accent_color:d.accent,decoration_color:d.decoration,extra_color:d.extra,
       background_color:d.bgOn?d.bgColor:null,fps:d.fps,active:d.active,
-      custom_glyphs:(d.custom||[]).filter(function(c){return c;}),
+      custom_glyphs:(function(){var a=(d.custom||[]).slice(0,16),last=-1,i;for(i=0;i<a.length;i++)if(a[i])last=i;var out=[];for(i=0;i<=last;i++)out.push(a[i]||'');return out;})(),  /* keep cell positions (internal gaps as ''), trim trailing empties */
       frames:frames,
       glyphs:top.glyphs,colors:top.colors,accent_mask:top.accent_mask   /* legacy single-frame consumers */
     },null,2);
@@ -978,10 +1017,12 @@
     d.custom=Array.isArray(o.custom_glyphs)?o.custom_glyphs.slice(0,16):(d.custom||[]);
     if(o.fps)d.fps=o.fps;
     if(o.frames&&o.frames.length){
-      var w=o.width||((o.frames[0].glyphs[0]||'').length),h=o.height||o.frames[0].glyphs.length;
+      var f0=o.frames[0]||{},w=o.width||((f0.glyphs&&f0.glyphs[0])||'').length,h=o.height||(f0.glyphs?f0.glyphs.length:0);
+      if(!(w>=1&&h>=1)||w>512||h>512)throw new Error('bad dimensions');
       d.w=w;d.h=h;d.frames=o.frames.map(function(f){return stringsToGrid(f.glyphs,f.colors,f.accent_mask,w,h);});
     }else if(o.glyphs&&o.glyphs.length){
       var w2=o.width||o.glyphs[0].length,h2=o.height||o.glyphs.length;
+      if(!(w2>=1&&h2>=1)||w2>512||h2>512)throw new Error('bad dimensions');
       d.w=w2;d.h=h2;d.frames=[stringsToGrid(o.glyphs,o.colors,o.accent_mask,w2,h2)];
     }else throw new Error('no glyphs');
     d.active=Math.min(o.active||0,d.frames.length-1);
@@ -1241,7 +1282,16 @@
 
   /* document / tabs */
   $('addtab').onclick=addTab;
-  $('sid').addEventListener('input',function(){D().id=$('sid').value;renderTabs();});
+  $('sid').addEventListener('input',function(){D().id=$('sid').value;renderTabs();updateOut();});
+
+  /* theme (light / dark) — persisted; the <head> script sets data-theme pre-paint to avoid a flash */
+  function applyTheme(t){
+    document.documentElement.setAttribute('data-theme',t);
+    [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.classList.toggle('on',b.dataset.themeBtn===t);});
+    try{localStorage.setItem('blockmode:theme',t);}catch(e){}
+  }
+  [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.onclick=function(){applyTheme(b.dataset.themeBtn);};});
+  applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
 
   /* paint layers + colors */
   document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
@@ -1312,7 +1362,7 @@
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
   $('play').onclick=play;$('stop').onclick=stop;
   $('fps').addEventListener('change',function(){var v=Math.max(1,Math.min(60,Math.round(+$('fps').value)||D().fps));
-    D().fps=v;$('fps').value=v;if(ui.playing){stop();play();}});
+    D().fps=v;$('fps').value=v;if(ui.playing){stop();play();}scheduleSave();});
 
   /* export */
   document.querySelectorAll('[data-type]').forEach(function(b){b.onclick=function(){setExportType(b.dataset.type);};});
@@ -1322,7 +1372,7 @@
 
   /* import / copy — the box mirrors the live sprite JSON (copy anytime); paste different JSON
      over it to import, or hit the button (file picker) while it still shows the current sprite */
-  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();refreshLoadBtn();}
+  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();refreshLoadBtn();scheduleSave();}
   function refreshLoadBtn(){var v=$('out').value.trim();$('load').textContent=(v&&v!==exportJSON())?'Load JSON':'Import JSON';}
   $('out').addEventListener('input',refreshLoadBtn);
   $('load').onclick=function(){var v=$('out').value.trim();
@@ -1333,8 +1383,45 @@
   $('copy').onclick=function(){var t=exportJSON();$('out').value=t;refreshLoadBtn();if(navigator.clipboard)navigator.clipboard.writeText(t);};
 
   /* ============================================================
+     14b. Autosave — persist ALL tabs to localStorage; survives reload/close.
+          Manual JSON export/import stays the explicit save/share path.
+          undo/redo stacks are intentionally NOT persisted.
+     ============================================================ */
+  var LS_KEY='blockmode:v1', saveTimer=null;
+  function serializeState(){
+    return JSON.stringify({v:1,active:activeDoc,docs:docs.map(function(d){
+      return {name:d.name,id:d.id,w:d.w,h:d.h,body:d.body,accent:d.accent,decoration:d.decoration,
+        extra:d.extra,bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,frames:d.frames,active:d.active,fps:d.fps};
+    })});
+  }
+  function saveState(){try{localStorage.setItem(LS_KEY,serializeState());}catch(e){}}   /* ignore quota / private mode */
+  function scheduleSave(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(saveState,400);}
+  function restoreState(){
+    var raw;try{raw=localStorage.getItem(LS_KEY);}catch(e){return false;}
+    if(!raw)return false;
+    try{
+      var o=JSON.parse(raw);
+      if(!o||o.v!==1||!Array.isArray(o.docs)||!o.docs.length)return false;
+      var built=o.docs.map(function(s){
+        if(!(s.w>=1&&s.h>=1)||!Array.isArray(s.frames)||!s.frames.length)throw 0;   /* corrupt -> bail to default */
+        var d=newDoc(s.name,s.w,s.h);
+        d.id=s.id||'';d.body=s.body||d.body;d.accent=s.accent||d.accent;d.decoration=s.decoration||d.decoration;
+        d.extra=s.extra||d.extra;d.bgOn=s.bgOn!==false;d.bgColor=s.bgColor||d.bgColor;
+        d.custom=Array.isArray(s.custom)?s.custom.slice(0,16):[];
+        d.fps=s.fps||d.fps;d.frames=s.frames;d.active=Math.min(s.active||0,s.frames.length-1);
+        return d;
+      });
+      docs=built;activeDoc=Math.min(o.active||0,docs.length-1);
+      return true;
+    }catch(e){return false;}
+  }
+  window.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')saveState();});
+  window.addEventListener('pagehide',saveState);
+
+  /* ============================================================
      15. Init
      ============================================================ */
+  restoreState();
   buildPalette();
   setExportType('json');
   selectLayer('b');
