@@ -288,6 +288,7 @@
            opacity:0;transition:opacity .1s;pointer-events:none;}
   .shandle.show{opacity:1;pointer-events:auto;}
   .shandle svg{width:14px;height:14px;display:block;}
+  :root[data-theme="light"] .shandle svg{filter:invert(1);}   /* stretch-handle chip/chevron are literal colours -> invert for the light theme */
   /* handles sit 8px OUTSIDE the field (14px handle + 8px gap); reveal zone (JS Z=40) unchanged */
   .sh-l{left:-22px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
   .sh-r{right:-22px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
