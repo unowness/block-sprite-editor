@@ -28,7 +28,7 @@
     --canvas:#0D0D0F;
     --glyph:#cfd2c4;   /* glyph-preview colour on palette tiles */
     --stage-bg:#070708;    /* editing-window fill (= page in dark) */
-    --canvas-empty:var(--stage-bg);   /* transparent bg -> blends into the field/stage colour (reads as see-through) */
+    --canvas-empty:var(--page);   /* transparent bg -> the page colour shows "through" the canvas */
     --grid-line:#2A2A30;   /* grid lines + canvas frame (= --stroke in dark) */
 
     /* type */
@@ -65,7 +65,7 @@
     --canvas:#EFF1F3;       /* cool light palette tiles */
     --glyph:#34373D;
     --stage-bg:#FBFCFD;     /* editing window = tool panels */
-    --canvas-empty:var(--stage-bg); /* transparent bg -> blends into the field colour (reads as see-through) */
+    --canvas-empty:var(--page); /* transparent bg -> the page colour (#F4F5F6) shows "through" the canvas */
     --grid-line:#B4B8BD;    /* cool grey grid on white — leans toward #ADADAD, never darker */
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
