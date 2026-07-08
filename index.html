@@ -50,23 +50,23 @@
      deeper accent for WCAG-AA text, everything else re-tuned. Toggled via
      data-theme on <html>; absence = dark (default). */
   :root[data-theme="light"]{
-    --page:#F2F1EC;
-    --tool-background:#F7F6F2;
+    --page:#F4F5F6;         /* cool near-white (not warm paper) */
+    --tool-background:#FBFCFD;
     --input-background:#FFFFFF;
-    --stroke:#D9D7CF;
-    --stroke-focus:#A7A59B;
-    --stroke-hover:#C4C2B8;
-    --main-text:#1F1F1A;
-    --main-text-05:rgba(31,31,26,.5);
-    --tool-text-id:#62625A;
+    --stroke:#DADDE1;       /* cool light border */
+    --stroke-focus:#ABAFB4; /* darkest UI grey ~#ADADAD (focus) */
+    --stroke-hover:#C7CACE;
+    --main-text:#20232A;    /* cool dark ink (readable — not a "grey shade") */
+    --main-text-05:rgba(32,35,42,.5);
+    --tool-text-id:#6B6F75; /* cool dim label, kept AA-readable */
     --accent:#6f74c0;   /* = Main paint default (brand periwinkle); light theme. Dark stays cyan. */
     --alert:#BE3B2F;
     --green:#2E8B1E;
-    --canvas:#F2F1EC;
-    --glyph:#33332C;
-    --stage-bg:#F7F6F2;    /* editing window = tool panels (operator's ask) */
+    --canvas:#EFF1F3;       /* cool light palette tiles */
+    --glyph:#34373D;
+    --stage-bg:#FBFCFD;     /* editing window = tool panels */
     --canvas-empty:#FFFFFF; /* transparent bg -> white drawing surface */
-    --grid-line:#C4C2B8;    /* grey grid on the white canvas */
+    --grid-line:#B4B8BD;    /* cool grey grid on white — leans toward #ADADAD, never darker */
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
