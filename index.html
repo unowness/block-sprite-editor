@@ -1067,28 +1067,40 @@
     downloadBlob(new Blob([out],{type:'image/svg+xml'}),spriteName()+'.svg');
   }
 
-  function pickMime(){var o=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+  function mimeFor(kind){var o=kind==='mp4'?['video/mp4;codecs=avc1.42E01E','video/mp4']:['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
     for(var i=0;i<o.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(o[i]))return o[i];}return '';}
   function exportVideo(){
     var d=D();
     if(d.frames.length<2){alert('Add more than one frame (Animation view) to export a video.');return;}
     if(!window.MediaRecorder){alert('This browser cannot record video.');return;}
-    var mime=pickMime();if(!mime){alert('No supported video codec in this browser.');return;}
+    var mp4=mimeFor('mp4'),webm=mimeFor('webm');
+    if(!mp4&&!webm){alert('No supported video codec in this browser.');return;}
+    var fps=Math.max(1,Math.min(30,d.fps));
     var px=IMG_PX*ui.scale,bases=d.frames.map(function(g){return renderSprite(g,true,px);});
     var w=bases[0].width,h=bases[0].height;
     var cv=document.createElement('canvas');cv.width=w;cv.height=h;var ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
     function draw(i){ctx.clearRect(0,0,w,h);ctx.drawImage(bases[i],0,0);}
-    draw(0);
-    var stream=cv.captureStream(Math.max(8,d.fps)),rec=new MediaRecorder(stream,{mimeType:mime}),chunks=[];
-    rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
-    rec.onstop=function(){downloadBlob(new Blob(chunks,{type:mime}),spriteName()+'.'+(mime.indexOf('mp4')>=0?'mp4':'webm'));};
-    rec.start();
-    var i=0,total=d.frames.length*3,step=Math.round(1000/d.fps);
-    var iv=setInterval(function(){draw(i%d.frames.length);i++;if(i>=total){clearInterval(iv);setTimeout(function(){rec.stop();},step);}},step);
+    /* record the frame loop into `mime`; cb(blob | null). start(100) gives periodic
+       chunks; the watchdog + empty-guard mean we never hang or save a 0kb file. */
+    function record(mime,cb){
+      var done=false,chunks=[],rec,iv,wd;
+      function finish(b){if(done)return;done=true;clearTimeout(wd);clearInterval(iv);cb(b);}
+      try{rec=new MediaRecorder(cv.captureStream(fps),{mimeType:mime});}catch(e){finish(null);return;}
+      rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
+      rec.onstop=function(){var b=new Blob(chunks,{type:mime});finish(b.size?b:null);};
+      var i=0,total=d.frames.length*3,step=Math.round(1000/fps);
+      wd=setTimeout(function(){try{if(rec.state!=='inactive')rec.stop();}catch(e){}finish(chunks.length?new Blob(chunks,{type:mime}):null);},total*step+3000);
+      draw(0);rec.start(100);
+      iv=setInterval(function(){draw(i%d.frames.length);i++;if(i>=total){clearInterval(iv);setTimeout(function(){if(rec.state!=='inactive')rec.stop();},step*2);}},step);
+    }
+    /* mp4 first (portable); fall back to webm if mp4 recording produced nothing */
+    function tryWebm(){if(!webm){alert('Video export failed in this browser.');return;}record(webm,function(b){b?downloadBlob(b,spriteName()+'.webm'):alert('Video export failed in this browser.');});}
+    if(mp4)record(mp4,function(b){b?downloadBlob(b,spriteName()+'.mp4'):tryWebm();});
+    else tryWebm();
   }
 
   function doExport(){
-    if(ui.exportType==='json'){$('out').value=exportJSON();refreshLoadBtn();}
+    if(ui.exportType==='json'){var t=exportJSON();$('out').value=t;refreshLoadBtn();downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');}
     else if(ui.exportType==='svg')exportSVG();
     else if(ui.exportType==='png')exportPNG();
     else if(ui.exportType==='mp4')exportVideo();
