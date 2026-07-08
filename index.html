@@ -1099,11 +1099,48 @@
     else tryWebm();
   }
 
+  /* ---------------- MP4 via WebCodecs + a vendored mp4 muxer (real .mp4, no CDN/worker) ----------------
+     Native H.264 encoding (Chromium, Safari 16.4+). mp4-muxer.min.js is a small same-origin
+     script, lazy-loaded on the first MP4 export. Falls back to the WebM path where WebCodecs /
+     H.264 isn't available (e.g. Firefox). */
+  function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.onload=res;s.onerror=function(){rej(new Error(src));};document.head.appendChild(s);});}
+  var muxerLoad=null;
+  function ensureMuxer(){if(window.Mp4Muxer)return Promise.resolve();if(!muxerLoad)muxerLoad=loadScript('mp4-muxer.min.js');return muxerLoad;}
+  var expLabel0=null;
+  function expStatus(t){var b=$('export');if(!b)return;if(t){if(expLabel0==null)expLabel0=b.innerHTML;b.textContent=t;b.disabled=true;}else{if(expLabel0!=null)b.innerHTML=expLabel0;b.disabled=false;expLabel0=null;}}
+  async function exportMp4(){
+    var d=D();
+    if(d.frames.length<2){alert('Add more than one frame (Animation view) to export a video.');return;}
+    if(typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'){exportVideo();return;}   /* no WebCodecs -> webm */
+    var px=IMG_PX*ui.scale,fps=Math.max(1,Math.min(30,d.fps));
+    var M=imgMetrics(px),W=d.w*M.cw,H=d.h*M.ch;W+=W%2;H+=H%2;                                        /* even dims for H.264 */
+    var cfg={codec:'avc1.42001f',width:W,height:H,bitrate:Math.max(1000000,Math.round(W*H*fps*0.12)),framerate:fps};
+    var sup;try{sup=await VideoEncoder.isConfigSupported(cfg);}catch(e){sup=null;}
+    if(!sup||!sup.supported){exportVideo();return;}                                                  /* H.264 unavailable -> webm */
+    expStatus('Encoding MP4…');
+    try{
+      await ensureMuxer();
+      var muxer=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),video:{codec:'avc',width:W,height:H},fastStart:'in-memory'});
+      var encErr=null;
+      var encoder=new VideoEncoder({output:function(chunk,meta){muxer.addVideoChunk(chunk,meta);},error:function(e){encErr=e;}});
+      encoder.configure(cfg);
+      var fc=document.createElement('canvas');fc.width=W;fc.height=H;var fx=fc.getContext('2d');fx.imageSmoothingEnabled=false;
+      function drawFrame(g){fx.fillStyle=d.bgOn?d.bgColor:'#000';fx.fillRect(0,0,W,H);fx.font=px+'px '+getComputedStyle(gridEl).fontFamily;fx.textBaseline='alphabetic';fx.textAlign='left';for(var y=0;y<d.h;y++)for(var x=0;x<d.w;x++){var cell=g[y][x];if(cell.g===' ')continue;fx.fillStyle=colorOf(cell.l);fx.fillText(cell.g,x*M.cw,y*M.ch+M.asc);}}
+      var loops=Math.max(2,Math.ceil(2*fps/d.frames.length)),n=0,us=Math.round(1e6/fps);              /* >=2s clip */
+      for(var L=0;L<loops;L++)for(var f=0;f<d.frames.length;f++){drawFrame(d.frames[f]);var vf=new VideoFrame(fc,{timestamp:n*us,duration:us});encoder.encode(vf,{keyFrame:f===0});vf.close();n++;}
+      await encoder.flush();
+      if(encErr)throw encErr;
+      muxer.finalize();
+      downloadBlob(new Blob([muxer.target.buffer],{type:'video/mp4'}),spriteName()+'.mp4');
+      expStatus('');
+    }catch(e){expStatus('');alert('MP4 encoding failed here — exporting WebM instead. ('+((e&&e.message)||e)+')');exportVideo();}
+  }
+
   function doExport(){
     if(ui.exportType==='json'){var t=exportJSON();$('out').value=t;refreshLoadBtn();downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');}
     else if(ui.exportType==='svg')exportSVG();
     else if(ui.exportType==='png')exportPNG();
-    else if(ui.exportType==='mp4')exportVideo();
+    else if(ui.exportType==='mp4')exportMp4();
   }
   function setExportType(t){
     ui.exportType=t;
