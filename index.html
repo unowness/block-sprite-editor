@@ -842,22 +842,33 @@
   }
   function customCommit(b){
     var i=+b.dataset.idx,ch=firstGlyph(b.textContent);
-    D().custom[i]=ch;syncCustomCell(i,ch);
+    putCustom(i,ch);                             /* safety net; every path already commits immediately */
     if(ch)setGlyph(ch);                          /* a filled cell becomes the active drawing glyph */
-    refreshCustomActive();updateOut();
   }
+  /* store / clear one custom cell — updates both grids, the doc and the autosave */
+  function putCustom(i,ch){D().custom[i]=ch;syncCustomCell(i,ch);refreshCustomActive();updateOut();}
+  function clearCustom(i){D().custom[i]='';syncCustomCell(i,'');refreshCustomActive();updateOut();}
   function customMouseDown(e){
     var b=e.currentTarget,i=+b.dataset.idx,ch=D().custom[i]||'';
-    if(isCoarse()){       /* touch: no soft keyboard. tap empty -> paste from clipboard; tap filled -> draw (tap again to clear) */
-      e.preventDefault();
-      if(ch){ if(ui.curGlyph===ch){D().custom[i]='';syncCustomCell(i,'');refreshCustomActive();updateOut();} else setGlyph(ch); }
-      else if(navigator.clipboard&&navigator.clipboard.readText){
-        navigator.clipboard.readText().then(function(t){var g=firstGlyph((t||'').replace(/\s/g,''))||firstGlyph(t||'');
-          if(g){D().custom[i]=g;syncCustomCell(i,g);setGlyph(g);refreshCustomActive();updateOut();}}).catch(function(){});
-      }
+    var cur=(ui.curGlyph&&ui.curGlyph!==' ')?ui.curGlyph:'';
+    if(ch){                                  /* filled -> draw with it (touch: tap again clears) */
+      if(isCoarse()){e.preventDefault();if(ui.curGlyph===ch)clearCustom(i);else setGlyph(ch);return;}
+      setGlyph(ch);return;
+    }
+    if(cur){                                 /* empty + a palette glyph selected -> store it. Mouse AND touch, no clipboard. */
+      if(isCoarse())e.preventDefault();
+      putCustom(i,cur);
+      if(!isCoarse())setTimeout(function(){placeCaretEnd(b);},0);   /* caret after the glyph so typing replaces it */
       return;
     }
-    if(ch)setGlyph(ch);   /* desktop: filled -> draw with it. empty -> just focus for Ctrl+V (no auto-bind) */
+    if(isCoarse()){                          /* touch with nothing selected -> fall back to the clipboard */
+      e.preventDefault();
+      if(navigator.clipboard&&navigator.clipboard.readText){
+        navigator.clipboard.readText().then(function(t){var g=firstGlyph((t||'').replace(/\s/g,''))||firstGlyph(t||'');
+          if(g){putCustom(i,g);setGlyph(g);}}).catch(function(){});
+      }
+    }
+    /* desktop with nothing selected: just focus the cell for typing / Ctrl+V */
   }
   function customBlur(e){customCommit(e.currentTarget);}
   function customKey(e){
@@ -865,15 +876,17 @@
     if(e.key==='Enter'){e.preventDefault();b.blur();}
     else if(e.key==='Backspace'||e.key==='Delete'){
       e.preventDefault();
-      D().custom[i]='';b.textContent='';syncCustomCell(i,'');refreshCustomActive();updateOut();
+      clearCustom(i);
     }
   }
-  function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||'');if(a.length>1){b.textContent=a[a.length-1];placeCaretEnd(b);}}
+  function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||''),ch=a.length?a[a.length-1]:'';
+    if(a.length>1){b.textContent=ch;placeCaretEnd(b);}
+    putCustom(+b.dataset.idx,ch);}                            /* commit on every keystroke, never rely on blur */
   function customPaste(e){e.preventDefault();
     var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';
     var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);
     if(!ch&&ui.curGlyph&&ui.curGlyph!==' ')ch=ui.curGlyph;   /* empty clipboard -> drop in the selected palette glyph */
-    var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);}}
+    var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);putCustom(+b.dataset.idx,ch);}}   /* commit immediately */
   function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
   function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
