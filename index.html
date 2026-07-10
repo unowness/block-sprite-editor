@@ -840,11 +840,9 @@
   function syncCustomCell(i,ch){
     [].forEach.call(document.querySelectorAll('.gbtn.custom[data-idx="'+i+'"]'),function(c){if(c.textContent!==ch)c.textContent=ch;});
   }
-  function customCommit(b){
-    var i=+b.dataset.idx,ch=firstGlyph(b.textContent);
-    putCustom(i,ch);                             /* safety net; every path already commits immediately */
-    if(ch)setGlyph(ch);                          /* a filled cell becomes the active drawing glyph */
-  }
+  /* blur: commit only. NEVER re-select the glyph here — doing so stole the selection back
+     when the blur was caused by clicking a neighbouring custom cell. */
+  function customCommit(b){putCustom(+b.dataset.idx,firstGlyph(b.textContent));}
   /* store / clear one custom cell — updates both grids, the doc and the autosave */
   function putCustom(i,ch){D().custom[i]=ch;syncCustomCell(i,ch);refreshCustomActive();updateOut();}
   function clearCustom(i){D().custom[i]='';syncCustomCell(i,'');refreshCustomActive();updateOut();}
@@ -856,9 +854,8 @@
       setGlyph(ch);return;
     }
     if(cur){                                 /* empty + a palette glyph selected -> store it. Mouse AND touch, no clipboard. */
-      if(isCoarse())e.preventDefault();
+      e.preventDefault();                    /* no focus/caret: the next cell stays clickable right away */
       putCustom(i,cur);
-      if(!isCoarse())setTimeout(function(){placeCaretEnd(b);},0);   /* caret after the glyph so typing replaces it */
       return;
     }
     if(isCoarse()){                          /* touch with nothing selected -> fall back to the clipboard */
@@ -881,12 +878,13 @@
   }
   function customInput(e){var b=e.currentTarget,a=Array.from(b.textContent||''),ch=a.length?a[a.length-1]:'';
     if(a.length>1){b.textContent=ch;placeCaretEnd(b);}
-    putCustom(+b.dataset.idx,ch);}                            /* commit on every keystroke, never rely on blur */
+    putCustom(+b.dataset.idx,ch);                             /* commit on every keystroke, never rely on blur */
+    if(ch)setGlyph(ch);}                                      /* a typed glyph becomes the active one right away */
   function customPaste(e){e.preventDefault();
     var t=((e.clipboardData||window.clipboardData)||{}).getData?((e.clipboardData||window.clipboardData).getData('text')||''):'';
     var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);
     if(!ch&&ui.curGlyph&&ui.curGlyph!==' ')ch=ui.curGlyph;   /* empty clipboard -> drop in the selected palette glyph */
-    var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);putCustom(+b.dataset.idx,ch);}}   /* commit immediately */
+    var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);putCustom(+b.dataset.idx,ch);setGlyph(ch);}}   /* commit + select immediately */
   function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
   function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
