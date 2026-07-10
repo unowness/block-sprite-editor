@@ -66,7 +66,7 @@
     --glyph:#34373D;
     --stage-bg:#FBFCFD;     /* editing window = tool panels */
     --canvas-empty:var(--page); /* transparent bg -> the page colour (#F4F5F6) shows "through" the canvas */
-    --grid-line:#B4B8BD;    /* cool grey grid on white — leans toward #ADADAD, never darker */
+    --grid-line:rgba(180,184,189,.5);   /* cool grey grid, 50% alpha (half the weight of the old solid #B4B8BD) */
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -571,6 +571,7 @@
   function curGrid(){return D().frames[D().active];}
   function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:layer==='e'?d.extra:d.body;}
   var gridEl=$('grid');
+  var frameEl=document.querySelector('.canvas-frame');   /* its 1px border IS the grid's right/bottom edge */
 
   /* ============================================================
      3. History — per-document snapshots
@@ -665,6 +666,9 @@
     var g=ui.playing?d.frames[ui.playIdx]:curGrid();
     paintCells(ui.selBuf?overlayBuf(g):g);     /* show the floating selection on top while moving */
     gridEl.style.backgroundColor=d.bgOn?d.bgColor:'var(--canvas-empty)';
+    /* the frame's background sits under its 1px border; keep it equal to the grid's so a
+       semi-transparent --grid-line blends the same on the outer edge as on the inner lines */
+    if(frameEl)frameEl.style.backgroundColor=gridEl.style.backgroundColor;
     $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');
     positionSelRect();
     if(!ui.drawing&&!ui.playing&&!ui.selMoving&&!ui.sideDrag)updateOut();   /* keep the JSON box in sync (skip mid-gesture/playback) */
