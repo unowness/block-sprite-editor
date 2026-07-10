@@ -457,7 +457,7 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>Custom panel: click a cell, then Ctrl+V to drop or paste a glyph; Backspace clears. Right-click erases. Select: arrow keys move the box.</span>
+    <span>Custom panel: pick a glyph, then click an empty cell to store it; Backspace clears. Right-click erases. Select: arrow keys move the box.</span>
     <button class="hint-x" id="hintx" title="Dismiss"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
   </div>
 
@@ -696,6 +696,7 @@
   function setCell(g,x,y,glyph,layer){var d=D();if(x<0||x>=d.w||y<0||y>=d.h)return;g[y][x]={g:glyph,l:layer};}
   function paint(x,y,erase){
     if(ui.curLayer==='bg')return;                 /* background is a global fill, not a per-cell layer */
+    if(!erase&&!ui.curGlyph)return;               /* no glyph selected -> nothing to draw (right-click still erases) */
     var d=D(),g=curGrid(),glyph=erase?' ':ui.curGlyph,layer=ui.curLayer;
     setCell(g,x,y,glyph,layer);
     if(ui.mirror){var mx=d.w-1-x;if(mx!==x)setCell(g,mx,y,glyph===' '?' ':mir(glyph),layer);}
@@ -856,6 +857,7 @@
     if(cur){                                 /* empty + a palette glyph selected -> store it. Mouse AND touch, no clipboard. */
       e.preventDefault();                    /* no focus/caret: the next cell stays clickable right away */
       putCustom(i,cur);
+      deselectGlyph();                       /* one pick = one insert; the selection resets so it's obvious */
       return;
     }
     if(isCoarse()){                          /* touch with nothing selected -> fall back to the clipboard */
@@ -929,6 +931,13 @@
     [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.toggle('on',b.dataset.g===g);});
     refreshCustomActive();
     $('erase').classList.toggle('on',g===' ');
+  }
+  /* Drop the glyph selection entirely: nothing stays highlighted in the palette or the Custom row,
+     and clicking another empty Custom cell inserts nothing until a glyph is picked again. */
+  function deselectGlyph(){
+    ui.curGlyph='';
+    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.remove('on');});
+    $('erase').classList.remove('on');
   }
   function buildPalette(){
     var pal=$('palette');pal.innerHTML='';
