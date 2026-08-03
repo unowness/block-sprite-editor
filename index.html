@@ -78,11 +78,12 @@
   .wrap{max-width:1040px;margin:0 auto;padding:var(--space-page) 40px 48px;}  /* 1040 - 2*40 = 960 content (Figma 42:363) */
 
   /* ---------------- header ---------------- */
-  header{margin-bottom:var(--space-frame);}
-  .brand{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  /* brand left, Import/Save right; both top-aligned against the 56px logo (Figma 42:363) */
+  header{margin-bottom:var(--space-frame);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:12px;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
-  .sub{color:var(--tool-text-id);opacity:.75;font-size:13px;line-height:1.3;margin:0;max-width:880px;}
+  .head-actions{display:flex;align-items:center;gap:8px;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
@@ -208,7 +209,8 @@
   .cell:hover{background:color-mix(in srgb,var(--accent) 28%,transparent);}
 
   /* ---------------- hint banner ---------------- */
-  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
+  /* the hint belongs to the Custom panel, not to the stage: section gap above, cluster gap below (Figma 42:363) */
+  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-section);
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
@@ -229,7 +231,7 @@
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
-  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-section);}
+  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -256,8 +258,7 @@
   textarea:focus{outline:none;}
   textarea::placeholder{color:var(--tool-text-id);}
   .iobox:focus-within{border-color:var(--stroke-focus);}
-  .iobox .btn{position:absolute;bottom:8px;}
-  #load{left:8px;} #copy{right:8px;}
+  .iobox-actions{position:absolute;right:8px;bottom:8px;display:flex;gap:8px;}
 
   /* ---------------- footer ---------------- */
   footer{margin-top:var(--space-section);}   /* 40px above footer; the 56px sits BELOW it (page bottom padding) */
@@ -269,7 +270,8 @@
   .copy-note{color:var(--main-text);font-size:13px;}
 
   /* stage-control icons — icon + label on desktop, icon-only on mobile (8px icon→label gap, per Figma) */
-  .stage-tl .btn,.stage-tr .btn,.stage-bl .btn,.stage-br .btn{gap:8px;}
+  .stage-tl .btn,.stage-tr .btn,.stage-bl .btn,.stage-br .btn,
+  .head-actions .btn,#export,.iobox-actions .btn{gap:8px;}
   .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
@@ -347,7 +349,10 @@
       <img class="logo logo-light" src="logo-light.svg" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
-    <p class="sub">Draw block-ASCII sprites in Blockmode, to use it in your projects. Choose a paint and glyph to draw. Right-click to erase. Background will be included in the export if it's active at the time of export; the Grid never is. Export or load JSON to save your sprites and edit them in the next session. Export your art in SVG, PNG, or MP4 formats with up to ×16 upscale. Tell your friends about Blockmode ( n_n)b.</p>
+    <div class="head-actions">
+      <button class="btn" id="himport" title="Open a sprite JSON file from your computer"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span>Import</button>
+      <button class="btn" id="hsave" title="Save this sprite as a JSON file"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Save</button>
+    </div>
   </header>
 
   <div class="bars">
@@ -479,16 +484,18 @@
       <button class="btn on" data-s="4">4×</button>
       <button class="btn"    data-s="8">8×</button>
       <button class="btn"    data-s="16">16×</button>
-      <button class="btn green" id="export">Export</button>
+      <button class="btn green" id="export"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Export</button>
     </div>
   </div>
 
   <!-- Import / output -->
   <div class="iobox">
     <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
-    <button class="btn" id="load">Import JSON</button>
     <input type="file" id="loadfile" accept="application/json,.json" hidden>
-    <button class="btn" id="copy">Copy</button>
+    <div class="iobox-actions">
+      <button class="btn" id="copy" title="Copy this sprite's JSON to the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="2" y="1" width="7" height="9"/><path d="M8.5 4H12V13H5V10"/></svg></span>Copy</button>
+      <button class="btn" id="load" title="Load sprite JSON from the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span>Paste</button>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -1161,7 +1168,7 @@
   }
 
   function doExport(){
-    if(ui.exportType==='json'){var t=exportJSON();$('out').value=t;refreshLoadBtn();downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');}
+    if(ui.exportType==='json'){var t=exportJSON();$('out').value=t;downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');}
     else if(ui.exportType==='svg')exportSVG();
     else if(ui.exportType==='png')exportPNG();
     else if(ui.exportType==='mp4')exportMp4();
@@ -1444,17 +1451,25 @@
     document.querySelectorAll('[data-s]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');};});
   $('export').onclick=doExport;
 
-  /* import / copy — the box mirrors the live sprite JSON (copy anytime); paste different JSON
-     over it to import, or hit the button (file picker) while it still shows the current sprite */
-  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();refreshLoadBtn();scheduleSave();}
-  function refreshLoadBtn(){var v=$('out').value.trim();$('load').textContent=(v&&v!==exportJSON())?'Load JSON':'Import JSON';}
-  $('out').addEventListener('input',refreshLoadBtn);
-  $('load').onclick=function(){var v=$('out').value.trim();
-    if(v&&v!==exportJSON()){try{loadJSON(v);}catch(e){alert('Invalid sprite JSON');}}else $('loadfile').click();};
+  /* Copy / Paste — the box mirrors the live sprite JSON (copy anytime); Paste pulls JSON from
+     the clipboard, falling back to whatever is already typed in the box. Files go through the
+     header's Import/Save buttons. */
+  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();scheduleSave();}
+  function applyJSON(t){t=(t||'').trim();
+    if(!t){alert('Nothing to paste — put sprite JSON on the clipboard or type it into the box.');return;}
+    $('out').value=t;try{loadJSON(t);}catch(e){alert('Invalid sprite JSON');}}
+  $('load').onclick=function(){var typed=$('out').value.trim();
+    if(navigator.clipboard&&navigator.clipboard.readText)
+      navigator.clipboard.readText().then(function(t){applyJSON((t||'').trim()||typed);},function(){applyJSON(typed);});
+    else applyJSON(typed);};
   $('loadfile').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;
-    var r=new FileReader();r.onload=function(){$('out').value=r.result;refreshLoadBtn();try{loadJSON(r.result);}catch(err){alert('Invalid sprite JSON');}};
+    var r=new FileReader();r.onload=function(){$('out').value=r.result;try{loadJSON(r.result);}catch(err){alert('Invalid sprite JSON');}};
     r.readAsText(f);e.target.value='';});
-  $('copy').onclick=function(){var t=exportJSON();$('out').value=t;refreshLoadBtn();if(navigator.clipboard)navigator.clipboard.writeText(t);};
+  /* header: Import = pick a .json from disk; Save = download this sprite as <id>.json */
+  $('himport').onclick=function(){$('loadfile').click();};
+  $('hsave').onclick=function(){var t=exportJSON();$('out').value=t;
+    downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');};
+  $('copy').onclick=function(){var t=exportJSON();$('out').value=t;if(navigator.clipboard)navigator.clipboard.writeText(t);};
 
   /* ============================================================
      14b. Autosave — persist ALL tabs to localStorage; survives reload/close.
