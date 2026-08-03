@@ -536,19 +536,20 @@
   };
   function mir(g){return MIRROR[g]||g;}
 
-  /* palette groups — order follows the mockup; "Joins" is the old Junctions, Squares is new */
+  /* palette groups — top-to-bottom order set by the operator; CUSTOM is prepended by buildPalette.
+     Marks/Signs/Pairs are the old Glyph+Decor, re-sorted by what the character does rather than
+     by its Unicode block: bare marks, operators/signs, and things that come in open/close pairs. */
   var GROUPS=[
     {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇','░','▒','▓']},
     {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
     {label:'Lines',    g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋','╱','╲','╳']},
     {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
+    {label:'Marks',    g:['o','O','#','~',':',';','.',',','-','_','/','\\','|']},
+    {label:'Signs',    g:['*','+','=','±','×','÷','?','!','¿','¡','@','%','&','$','¤','§','¶','†','‡','…']},
+    {label:'Pairs',    g:['<','>','^','v','(',')','[',']','{','}','‹','›','«','»']},
     {label:'Joins',    g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Double',    g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
     {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
-    /* the old Glyph(32) + Decor(28) split into four groups that each fit one row */
-    {label:'Marks',    g:['o','O','#','~',':',';','.',',','-','_','*','+','=','/','\\','|']},
-    {label:'Text',     g:['<','>','^','v','?','!','@','%','&','$','(',')','[',']','{','}']},
-    {label:'Signs',    g:['§','¶','¤','±','×','÷','¿','¡','‹','›','«','»','†','‡','…']},
     {label:'Shapes',   g:['●','○','◍','◉','◦','•','◆','◇','◈','★','☆','✦','✧']}
   ];
 
