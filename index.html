@@ -538,9 +538,8 @@
 
   /* palette groups — order follows the mockup; "Joins" is the old Junctions, Squares is new */
   var GROUPS=[
-    {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇']},
+    {label:'Block',    g:['█','▉','▊','▋','▌','▍','▎','▏','▀','▄','▐','▔','▕','▁','▂','▃','▅','▆','▇','░','▒','▓']},
     {label:'Quad', g:['▖','▗','▘','▝','▙','▟','▛','▜','▚','▞']},
-    {label:'Shades',   tight:true, g:['░','▒','▓']},
     {label:'Lines',    g:['─','│','━','┃','┄','┅','┆','┇','┈','┉','┊','┋','╱','╲','╳']},
     {label:'Corner',   g:['┌','┐','└','┘','╭','╮','╰','╯','┏','┓','┗','┛','┍','┎','┑','┒','┕','┖','┙','┚']},
     {label:'Joins',    g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
@@ -962,7 +961,7 @@
     var cgrid=document.createElement('div');cgrid.className='pgrid';cgrid.id='customgrid';cbox.appendChild(cgrid);
     pal.appendChild(cbox);
     GROUPS.forEach(function(grp){
-      var box=document.createElement('div');box.className='pgroup'+(grp.tight?' tight':'');
+      var box=document.createElement('div');box.className='pgroup';
       var lab=document.createElement('div');lab.className='plabel';lab.textContent=grp.label;box.appendChild(lab);
       var pg=document.createElement('div');pg.className='pgrid';
       grp.g.forEach(function(g){
