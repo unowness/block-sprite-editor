@@ -254,8 +254,11 @@
   /* ---------------- import / output box ---------------- */
   .iobox{position:relative;margin-top:8px;background:var(--page);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
-  textarea{display:block;width:100%;height:133px;resize:none;background:transparent;color:var(--tool-text-id);
-           border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:40px;}
+  /* no bottom reserve for the buttons: that left a dead band across the box once the JSON ran out.
+     The text fills the full height and Copy/Paste float over the bottom-right, which the JSON's
+     short lines never reach. */
+  textarea{display:block;width:100%;height:173px;resize:none;background:transparent;color:var(--tool-text-id);
+           border:none;padding:0;font-family:var(--font-mono);font-size:12px;margin-bottom:0;}
   textarea:focus{outline:none;}
   textarea::placeholder{color:var(--tool-text-id);}
   .iobox:focus-within{border-color:var(--stroke-focus);}
