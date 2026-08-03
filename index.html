@@ -6,7 +6,10 @@
 <title>Blockmode — ASCII Sprite Editor</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<script>try{if(localStorage.getItem('blockmode:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
+<!-- Pre-paint theme script is on hold with the THEME toggle: a stored 'light' must NOT be applied,
+     or anyone who picked Light before would be stranded in the unfinished theme with no way back.
+     The preference itself is left in localStorage. Restore alongside the toggle:
+     <script>try{if(localStorage.getItem('blockmode:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script> -->
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -78,12 +81,11 @@
   .wrap{max-width:1040px;margin:0 auto;padding:var(--space-page) 40px 48px;}  /* 1040 - 2*40 = 960 content (Figma 42:363) */
 
   /* ---------------- header ---------------- */
-  /* brand left, Import/Save right; actions centred against the 56px logo block (Figma 42:363) */
-  header{margin-bottom:var(--space-frame);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  /* header is brand-only again — Import/Save moved into the Row A "File" tool (Figma 42:363) */
+  header{margin-bottom:var(--space-frame);}
   .brand{display:flex;align-items:center;gap:12px;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
-  .head-actions{display:flex;align-items:center;gap:8px;}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
@@ -123,7 +125,7 @@
   .input.num{width:48px;text-align:left;-moz-appearance:textfield;}
   .input.num::-webkit-outer-spin-button,
   .input.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-  #sid{width:200px;}
+  #sid{width:116px;}   /* shorter ID field — Row A now also carries the File tool (Figma 42:363) */
 
   /* focus states — design-system, not native */
   .input:focus{outline:none;border-color:var(--stroke-focus);}
@@ -248,11 +250,12 @@
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-section);}
+  /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);}
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:8px;background:var(--page);
+  .iobox{position:relative;margin-top:var(--space-section);background:var(--page);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   /* no bottom reserve for the buttons: that left a dead band across the box once the JSON ran out.
      The text fills the full height and Copy/Paste float over the bottom-right, which the JSON's
@@ -262,20 +265,21 @@
   textarea:focus{outline:none;}
   textarea::placeholder{color:var(--tool-text-id);}
   .iobox:focus-within{border-color:var(--stroke-focus);}
-  .iobox-actions{position:absolute;right:8px;bottom:8px;display:flex;gap:8px;}
+  .iobox-actions{position:absolute;right:8px;top:8px;display:flex;gap:8px;}
 
   /* ---------------- footer ---------------- */
   footer{margin-top:var(--space-section);}   /* 40px above footer; the 56px sits BELOW it (page bottom padding) */
-  .note{color:var(--tool-text-id);opacity:.75;font-size:13px;line-height:1.3;margin:0 0 12px;max-width:880px;}
+  .note{color:var(--tool-text-id);opacity:.75;font-size:13px;line-height:1.3;margin:0 0 16px;max-width:880px;}
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
-  .links a{color:var(--main-text);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
+  /* footer text all sits on --tool-text-id now: links at full strength, byline dimmed like .note */
+  .links a{color:var(--tool-text-id);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
   .links a:hover{color:var(--accent);}
-  .copy-note{color:var(--main-text);font-size:13px;}
+  .copy-note{color:var(--tool-text-id);opacity:.75;font-size:13px;}
 
   /* stage-control icons — icon + label on desktop, icon-only on mobile (8px icon→label gap, per Figma) */
   .stage-tl .btn,.stage-tr .btn,.stage-bl .btn,.stage-br .btn,
-  .head-actions .btn,#export,.iobox-actions .btn{gap:8px;}
+  #himport,#hsave,#export,.iobox-actions .btn{gap:8px;}
   .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
@@ -353,18 +357,14 @@
       <img class="logo logo-light" src="logo-blockmode-white-56x56.svg" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
-    <div class="head-actions">
-      <button class="btn icon" id="himport" title="Open a sprite JSON file from your computer"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></button>
-      <button class="btn green" id="hsave" title="Save this sprite as a JSON file"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Save</button>
-    </div>
   </header>
 
   <div class="bars">
-    <!-- Row A — document: id + tabs -->
+    <!-- Row A — document: id + tabs + file -->
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
-        <input class="input" type="text" id="sid" placeholder="Name your sprite">
+        <input class="input" type="text" id="sid" placeholder="File name">
       </div>
       <div class="tool">
         <span class="tool-label">Tabs</span>
@@ -372,10 +372,15 @@
         <button class="btn icon" id="addtab" title="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
       </div>
       <div class="tool">
-        <span class="tool-label">Theme</span>
-        <button class="btn on" data-theme-btn="dark">Dark</button>
-        <button class="btn" data-theme-btn="light">Light</button>
+        <span class="tool-label">File</span>
+        <button class="btn" id="himport" title="Open a sprite JSON file from your computer"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span>Import</button>
+        <button class="btn" id="hsave" title="Save this sprite as a JSON file"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Save</button>
       </div>
+      <!-- THEME toggle temporarily removed while the light theme is finished (operator, 2026-08-03).
+           To restore: put back the .tool below and re-enable the <head> pre-paint script.
+           <div class="tool"><span class="tool-label">Theme</span>
+             <button class="btn on" data-theme-btn="dark">Dark</button>
+             <button class="btn" data-theme-btn="light">Light</button></div> -->
     </div>
 
     <!-- Row B — paint + view + canvas -->
@@ -473,6 +478,16 @@
   <!-- Glyph palette -->
   <div class="palette" id="palette"></div>
 
+  <!-- Sprite JSON — box first, export bar under it (Figma 42:363) -->
+  <div class="iobox">
+    <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
+    <input type="file" id="loadfile" accept="application/json,.json" hidden>
+    <div class="iobox-actions">
+      <button class="btn" id="copy" title="Copy this sprite's JSON to the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="2" y="1" width="7" height="9"/><path d="M8.5 4H12V13H5V10"/></svg></span>Copy</button>
+      <button class="btn" id="load"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span><span class="lbl">Import</span></button>
+    </div>
+  </div>
+
   <!-- Export bar -->
   <div class="exportbar">
     <div class="tool">
@@ -489,16 +504,6 @@
       <button class="btn"    data-s="8">8×</button>
       <button class="btn"    data-s="16">16×</button>
       <button class="btn green" id="export"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Export</button>
-    </div>
-  </div>
-
-  <!-- Import / output -->
-  <div class="iobox">
-    <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
-    <input type="file" id="loadfile" accept="application/json,.json" hidden>
-    <div class="iobox-actions">
-      <button class="btn" id="copy" title="Copy this sprite's JSON to the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="2" y="1" width="7" height="9"/><path d="M8.5 4H12V13H5V10"/></svg></span>Copy</button>
-      <button class="btn" id="load" title="Load sprite JSON from the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span>Paste</button>
     </div>
   </div>
 
@@ -610,7 +615,9 @@
     var box=$('tabs');box.innerHTML='';
     docs.forEach(function(d,i){
       var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
-      var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:(d.name||'untitled');
+      /* unnamed tabs read as their position — 1 2 3 4 5 — so closing one renumbers the rest;
+         typing a file name into ID takes over the label (operator, Figma 42:363). */
+      var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
       name.onclick=function(){selectTab(i);};t.appendChild(name);
       if(docs.length>1){
         var x=document.createElement('span');x.className='x';x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';x.title='Close';
@@ -851,7 +858,7 @@
     b.addEventListener('mousedown',customMouseDown);
     return b;
   }
-  function fillCustomGrid(grid){if(!grid)return;grid.innerHTML='';for(var i=0;i<16;i++)grid.appendChild(makeCustomCell(i));}
+  function fillCustomGrid(grid){if(!grid)return;grid.innerHTML='';for(var i=0;i<20;i++)grid.appendChild(makeCustomCell(i));}
   /* the palette CUSTOM row and the fullscreen Custom panel mirror the same d.custom data */
   function buildCustomRow(){var d=D();if(!d.custom)d.custom=[];fillCustomGrid($('customgrid'));}
   function firstGlyph(s){s=(s||'').replace(/[\r\n\t]/g,'');var a=Array.from(s);return a.length?a[0]:'';}
@@ -1040,7 +1047,7 @@
       version:3,id:d.id||'sprite',width:d.w,height:d.h,
       body_color:d.body,accent_color:d.accent,decoration_color:d.decoration,extra_color:d.extra,
       background_color:d.bgOn?d.bgColor:null,fps:d.fps,active:d.active,
-      custom_glyphs:(function(){var a=(d.custom||[]).slice(0,16),last=-1,i;for(i=0;i<a.length;i++)if(a[i])last=i;var out=[];for(i=0;i<=last;i++)out.push(a[i]||'');return out;})(),  /* keep cell positions (internal gaps as ''), trim trailing empties */
+      custom_glyphs:(function(){var a=(d.custom||[]).slice(0,20),last=-1,i;for(i=0;i<a.length;i++)if(a[i])last=i;var out=[];for(i=0;i<=last;i++)out.push(a[i]||'');return out;})(),  /* keep cell positions (internal gaps as ''), trim trailing empties */
       frames:frames,
       glyphs:top.glyphs,colors:top.colors,accent_mask:top.accent_mask   /* legacy single-frame consumers */
     },null,2);
@@ -1053,7 +1060,7 @@
     if(o.decoration_color)d.decoration=o.decoration_color;
     if(o.extra_color)d.extra=o.extra_color;
     d.bgOn=!!o.background_color;d.bgColor=o.background_color||d.bgColor;
-    d.custom=Array.isArray(o.custom_glyphs)?o.custom_glyphs.slice(0,16):(d.custom||[]);
+    d.custom=Array.isArray(o.custom_glyphs)?o.custom_glyphs.slice(0,20):(d.custom||[]);
     if(o.fps)d.fps=o.fps;
     if(o.frames&&o.frames.length){
       var f0=o.frames[0]||{},w=o.width||((f0.glyphs&&f0.glyphs[0])||'').length,h=o.height||(f0.glyphs?f0.glyphs.length:0);
@@ -1379,7 +1386,9 @@
     try{localStorage.setItem('blockmode:theme',t);}catch(e){}
   }
   [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.onclick=function(){applyTheme(b.dataset.themeBtn);};});
-  applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
+  /* Toggle is hidden, so force dark WITHOUT persisting — applyTheme would overwrite the stored
+     preference, and it should survive until the light theme is finished and the toggle returns. */
+  document.documentElement.setAttribute('data-theme','dark');
 
   /* paint layers + colors */
   document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
@@ -1460,25 +1469,27 @@
     document.querySelectorAll('[data-s]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');};});
   $('export').onclick=doExport;
 
-  /* Copy / Paste — the box mirrors the live sprite JSON (copy anytime); Paste pulls JSON from
-     the clipboard, falling back to whatever is already typed in the box. Files go through the
-     header's Import/Save buttons. */
-  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();scheduleSave();}
-  function applyJSON(t){t=(t||'').trim();
-    if(!t){alert('Nothing to paste — put sprite JSON on the clipboard or type it into the box.');return;}
-    $('out').value=t;try{loadJSON(t);}catch(e){alert('Invalid sprite JSON');}}
-  $('load').onclick=function(){var typed=$('out').value.trim();
-    if(navigator.clipboard&&navigator.clipboard.readText)
-      navigator.clipboard.readText().then(function(t){applyJSON((t||'').trim()||typed);},function(){applyJSON(typed);});
-    else applyJSON(typed);};
+  /* The box mirrors the live sprite JSON, so Copy works at any time. Its second button is
+     "Import" (opens the file picker) until you paste something different into the box — then it
+     becomes "Update" and applies what you pasted. */
+  function updateOut(){if(ui.playing)return;$('out').value=exportJSON();refreshIoBtn();scheduleSave();}
+  function ioPasted(){var v=$('out').value.trim();return !!v&&v!==exportJSON();}
+  function refreshIoBtn(){var b=$('load'),pasted=ioPasted();
+    b.querySelector('.lbl').textContent=pasted?'Update':'Import';
+    b.title=pasted?'Load the JSON pasted into the box':'Open a sprite JSON file from your computer';}
+  $('out').addEventListener('input',refreshIoBtn);
+  $('load').onclick=function(){
+    if(!ioPasted()){$('loadfile').click();return;}
+    try{loadJSON($('out').value.trim());}catch(e){alert('Invalid sprite JSON');}};
   $('loadfile').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;
-    var r=new FileReader();r.onload=function(){$('out').value=r.result;try{loadJSON(r.result);}catch(err){alert('Invalid sprite JSON');}};
+    var r=new FileReader();r.onload=function(){$('out').value=r.result;
+      try{loadJSON(r.result);}catch(err){alert('Invalid sprite JSON');}refreshIoBtn();};
     r.readAsText(f);e.target.value='';});
-  /* header: Import = pick a .json from disk; Save = download this sprite as <id>.json */
+  /* Row A "File": Import = pick a .json from disk; Save = download this sprite as <id>.json */
   $('himport').onclick=function(){$('loadfile').click();};
   $('hsave').onclick=function(){var t=exportJSON();$('out').value=t;
     downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');};
-  $('copy').onclick=function(){var t=exportJSON();$('out').value=t;if(navigator.clipboard)navigator.clipboard.writeText(t);};
+  $('copy').onclick=function(){var t=exportJSON();$('out').value=t;refreshIoBtn();if(navigator.clipboard)navigator.clipboard.writeText(t);};
 
   /* ============================================================
      14b. Autosave — persist ALL tabs to localStorage; survives reload/close.
@@ -1505,7 +1516,7 @@
         var d=newDoc(s.name,s.w,s.h);
         d.id=s.id||'';d.body=s.body||d.body;d.accent=s.accent||d.accent;d.decoration=s.decoration||d.decoration;
         d.extra=s.extra||d.extra;d.bgOn=s.bgOn!==false;d.bgColor=s.bgColor||d.bgColor;
-        d.custom=Array.isArray(s.custom)?s.custom.slice(0,16):[];
+        d.custom=Array.isArray(s.custom)?s.custom.slice(0,20):[];
         d.fps=s.fps||d.fps;d.frames=s.frames;d.active=Math.min(s.active||0,s.frames.length-1);
         return d;
       });
