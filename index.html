@@ -104,16 +104,21 @@
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
-  .btn:hover{border-color:var(--stroke-hover);}
+  /* Hover = the button's own resting outline, 10% brighter. Mixing towards --main-text rather than
+     white keeps it correct in both themes: it lightens on dark, darkens (gains contrast) on light. */
+  .btn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   .btn.alert{background:rgba(203,64,54,.15);border-color:var(--alert);color:var(--alert);}
   .btn.green{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
-  /* active + coloured buttons get a hover too: the stroke drops to 0.5 opacity */
-  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);}
-  .btn.alert:hover{border-color:color-mix(in srgb,var(--alert) 50%,transparent);}
-  .btn.green:hover{border-color:color-mix(in srgb,var(--green) 50%,transparent);}
+  /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
+     read as the button going away under the cursor instead of lighting up. */
+  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
+  .btn.alert:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--alert));}
+  /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
+     together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
+  #export:hover{filter:brightness(1.2);}
   /* Save previews where it leads: hovering it takes on Export's green — fill, border, label and
      icon (the icon is stroke:currentColor, so it follows the colour on its own). */
   #hsave:hover{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
@@ -152,6 +157,8 @@
   .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
          background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
          padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
+  /* the paint pills had only a pressed state and no hover at all */
+  .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .paint.on{border-color:var(--accent);color:var(--accent);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
@@ -250,7 +257,7 @@
   .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
         background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
-  .gbtn:hover{border-color:var(--stroke-hover);}
+  .gbtn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .gbtn.on{border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
@@ -302,6 +309,12 @@
            opacity:0;transition:opacity .1s;pointer-events:none;}
   .shandle.show{opacity:1;pointer-events:auto;}
   .shandle svg{width:14px;height:14px;display:block;}
+  /* the 14px chip is too small to hit reliably, so an invisible ::before enlarges the grab area
+     without moving the chip. It grows freely along the drag axis, but only 8px towards the canvas
+     — exactly the gap to the field — so it never steals a click from the outermost cells. */
+  .shandle::before{content:'';position:absolute;}
+  .sh-l::before,.sh-r::before{inset:-17px -8px;}
+  .sh-t::before,.sh-b::before{inset:-8px -17px;}
   :root[data-theme="light"] .shandle svg{filter:invert(1);}   /* stretch-handle chip/chevron are literal colours -> invert for the light theme */
   /* handles sit 8px OUTSIDE the field (14px handle + 8px gap); reveal zone (JS Z=40) unchanged */
   .sh-l{left:-22px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
@@ -798,7 +811,6 @@
     gridEl.classList.toggle('selmode',t==='select');
     render();
   }
-  function inSel(x,y){var s=ui.sel;return !!s&&x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h;}
   function clearSelection(){ui.sel=null;ui.selBuf=null;ui.selPos=null;ui.selMoving=false;ui.selDragNew=false;ui.selAnchor=null;var el=$('selrect');if(el)el.style.display='none';}
   /* lift the selected cells into a floating buffer (source cleared); idempotent */
   function liftSelection(){
@@ -834,10 +846,17 @@
     var cw=ui.cellW||1,ch=ui.cellH||1;
     return {x:Math.floor((clientX-fr.left)/cw),y:Math.floor((clientY-fr.top)/ch)};
   }
+  /* A press always starts a NEW marquee — inside the old selection as well as outside it. Dragging
+     from inside used to LIFT the art and move it, so a second selection over the same area picked
+     the sprite up instead. Moving a selection is the arrow keys.
+     Only repaint the grid when a floating selection actually had to be stamped back down;
+     otherwise just move the marquee div, which keeps the drag smooth. */
   function selMouseDown(x,y){
-    if(inSel(x,y)){liftSelection();ui.selMoving=true;ui.selDragOff={x:x-ui.selPos.x,y:y-ui.selPos.y};}
-    else{commitSelection();ui.selAnchor={x:x,y:y};ui.sel={x:x,y:y,w:1,h:1};ui.selDragNew=true;}
-    render();
+    var wasFloating=!!ui.selBuf;
+    commitFloat();
+    ui.selMoving=false;ui.selDragOff=null;
+    ui.selAnchor={x:x,y:y};ui.sel={x:x,y:y,w:1,h:1};ui.selDragNew=true;
+    if(wasFloating)render(); else positionSelRect();
   }
 
   /* ============================================================
