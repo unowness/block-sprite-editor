@@ -394,7 +394,7 @@
      ============================================================ */
   .onb{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
   .onb[hidden]{display:none;}
-  .onb__scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);}   /* page dims behind the card (comment on 148:1733) */
+  .onb__scrim{position:fixed;inset:0;background:rgba(0,0,0,.9);}   /* page dims behind the card (comment on 148:1733) */
   /* asymmetric padding: 24 top/sides, larger 56 bottom below the CTA (Figma card 640x679) */
   .onb__card{position:relative;z-index:1;box-sizing:border-box;width:min(640px,100%);max-height:calc(100vh - 32px);
              overflow-y:auto;background:var(--tool-background);border:1px solid var(--stroke);
@@ -1215,7 +1215,7 @@
     for(var i=0;i<o.length;i++){if(window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(o[i]))return o[i];}return '';}
   function exportVideo(){
     var d=D();
-    if(d.frames.length<2){alert('Add more than one frame (Animation view) to export a video.');return;}
+    /* a single frame is fine — it exports as a still ~2s clip (the loop maths below pads it out) */
     if(!window.MediaRecorder){alert('This browser cannot record video.');return;}
     var mp4=mimeFor('mp4'),webm=mimeFor('webm');
     if(!mp4&&!webm){alert('No supported video codec in this browser.');return;}
@@ -1232,7 +1232,8 @@
       try{rec=new MediaRecorder(cv.captureStream(fps),{mimeType:mime});}catch(e){finish(null);return;}
       rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
       rec.onstop=function(){var b=new Blob(chunks,{type:mime});finish(b.size?b:null);};
-      var i=0,total=d.frames.length*3,step=Math.round(1000/fps);
+      /* >=2s of footage, so a 1-frame sprite still records a usable still clip (was frames*3 = 375ms) */
+      var i=0,total=Math.max(d.frames.length*3,Math.ceil(2*fps)),step=Math.round(1000/fps);
       wd=setTimeout(function(){try{if(rec.state!=='inactive')rec.stop();}catch(e){}finish(chunks.length?new Blob(chunks,{type:mime}):null);},total*step+3000);
       draw(0);rec.start(100);
       iv=setInterval(function(){draw(i%d.frames.length);i++;if(i>=total){clearInterval(iv);setTimeout(function(){if(rec.state!=='inactive')rec.stop();},step*2);}},step);
@@ -1254,7 +1255,7 @@
   function expStatus(t){var b=$('export');if(!b)return;if(t){if(expLabel0==null)expLabel0=b.innerHTML;b.textContent=t;b.disabled=true;}else{if(expLabel0!=null)b.innerHTML=expLabel0;b.disabled=false;expLabel0=null;}}
   async function exportMp4(){
     var d=D();
-    if(d.frames.length<2){alert('Add more than one frame (Animation view) to export a video.');return;}
+    /* a single frame is fine — it exports as a still ~2s clip (loops below pad it to >=2s) */
     if(typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'){exportVideo();return;}   /* no WebCodecs -> webm */
     var px=IMG_PX*ui.scale,fps=Math.max(1,Math.min(30,d.fps));
     var M=imgMetrics(px),W=d.w*M.cw,H=d.h*M.ch;W+=W%2;H+=H%2;                                        /* even dims for H.264 */
