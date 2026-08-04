@@ -4,8 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blockmode — ASCII Sprite Editor</title>
+<meta name="description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
+<!-- Open Graph / social preview -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://blockmode.app/">
+<meta property="og:title" content="Blockmode — ASCII Sprite Editor">
+<meta property="og:description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export.">
+<meta property="og:image" content="https://blockmode.app/blockmode-opengraph.png">
+<meta property="og:image:width" content="2560">
+<meta property="og:image:height" content="1440">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Blockmode — ASCII Sprite Editor">
+<meta name="twitter:description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export.">
+<meta name="twitter:image" content="https://blockmode.app/blockmode-opengraph.png">
 <!-- Pre-paint theme script is on hold with the THEME toggle: a stored 'light' must NOT be applied,
      or anyone who picked Light before would be stranded in the unfinished theme with no way back.
      The preference itself is left in localStorage. Restore alongside the toggle:
@@ -365,7 +378,49 @@
     body.fs-lock .fspanel .fscustom-label{display:none;}
     body.fs-lock .fspanel .pgrid{flex-wrap:wrap;justify-content:center;}
     body.fs-lock .fspanel .paints{flex-wrap:wrap;justify-content:center;}
+    /* onboarding: tighter card on phones */
+    .onb{padding:12px;}
+    .onb__card{padding:16px;}
+    .onb__head{margin-bottom:16px;}
+    .gif-frame{margin-bottom:16px;}
+    .onb__body{padding:0;}
   }
+
+  /* ============================================================
+     Onboarding modal (Figma 128:487 / onboarding-page-N 133:1561).
+     Card 640 wide, 24px padding -> 592 content. Header (dots+skip),
+     gap 24, gif-frame (full width, height follows the image), gap 24,
+     body (title / 12 / text) inset 12px, gap 36, CTA 200x36 centred.
+     ============================================================ */
+  .onb{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .onb[hidden]{display:none;}
+  .onb__scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);}   /* page dims behind the card (comment on 148:1733) */
+  .onb__card{position:relative;z-index:1;box-sizing:border-box;width:min(640px,100%);max-height:calc(100vh - 32px);
+             overflow-y:auto;background:var(--tool-background);border:1px solid var(--stroke);
+             border-radius:var(--r-tool);padding:24px;}
+  .onb__head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;}
+  .onb__dots{display:flex;align-items:center;gap:8px;}
+  .onb__dot{width:6px;height:6px;border-radius:50%;background:var(--stroke);transition:background .15s;}
+  .onb__dot.on{background:var(--accent);}
+  .onb__skip{display:inline-flex;align-items:center;gap:6px;background:none;border:none;padding:0;cursor:pointer;
+             color:var(--tool-text-id);font-family:var(--font-ui);font-size:10px;letter-spacing:.6px;
+             text-transform:uppercase;white-space:nowrap;}
+  .onb__skip:hover{color:var(--main-text);}
+  /* gif-frame: the image sets the height; the 1px inner stroke frames it (image sits inside the border-box) */
+  .gif-frame{box-sizing:border-box;width:100%;margin-bottom:24px;border:1px solid var(--stroke);
+             border-radius:var(--r-tool);overflow:hidden;background:var(--page);line-height:0;}
+  .gif-frame img{display:block;width:100%;height:auto;}
+  .onb__body{padding:0 12px;text-align:center;}
+  .onb__title{margin:0;font-size:18px;font-weight:500;line-height:1.2;color:var(--main-text);}
+  .onb__text{margin:12px 0 0;font-size:13px;line-height:1.5;color:var(--main-text);opacity:.68;}
+  .onb__cta{display:block;width:200px;max-width:100%;height:36px;margin:36px auto 0;box-sizing:border-box;
+            font-family:var(--font-ui);font-size:13px;line-height:1;cursor:pointer;
+            background:transparent;border:1px solid var(--accent);border-radius:var(--r-btn);color:var(--accent);}
+  /* hover: accent 12% fill + accent lifted 10% brighter on border+label (comment on 133:1437) */
+  .onb__cta:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);
+                  border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));
+                  color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
+  body.onb-lock{overflow:hidden;}
 </style>
 </head>
 <body>
@@ -539,6 +594,23 @@
       <span class="copy-note">Blockmode by Unowness · 2026</span>
     </div>
   </footer>
+</div>
+
+<!-- Onboarding modal (shown on first visit; re-openable via the footer "Show Onboarding" link) -->
+<div class="onb" id="onb" hidden>
+  <div class="onb__scrim" id="onbScrim"></div>
+  <div class="onb__card" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
+    <div class="onb__head">
+      <div class="onb__dots" id="onbDots"></div>
+      <button class="onb__skip" id="onbSkip" type="button">Skip onboarding<span aria-hidden="true">→</span></button>
+    </div>
+    <div class="gif-frame"><img id="onbImg" alt=""></div>
+    <div class="onb__body">
+      <h2 class="onb__title" id="onbTitle"></h2>
+      <p class="onb__text" id="onbText"></p>
+      <button class="onb__cta" id="onbCta" type="button">Continue</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1480,7 +1552,38 @@
   /* hint */
   $('hintx').onclick=function(){$('hint').style.display='none';};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
-  $('link-onboarding').onclick=function(e){e.preventDefault();};
+  /* ============================================================
+     Onboarding — 5 pages, shown once (remembered in localStorage).
+     Images are set lazily per page so the 5 gifs aren't all fetched up front.
+     ============================================================ */
+  var ONB_KEY='blockmode:onboarded';
+  var ONB=[
+    {img:'assets/onboarding/onboarding_1.png',title:'Blockmode — ASCII Sprite Editor',
+     text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid, so the result stays text — the kind of art that fits a terminal, a roguelike, or a title screen. Nothing installs and nothing uploads. It is one page in your browser.'},
+    {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
+     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. Right-click erases. So does the Eraser tool, if you prefer a mode over a second mouse button. Ctrl/Cmd+Z undoes, and every sprite keeps its own undo history.'},
+    {img:'assets/onboarding/onboarding_3.gif',title:'Keep glyphs close',
+     text:'The Custom row is twenty slots for the glyphs you actually use, so you stop hunting through the palette. Select a glyph in the palette, then click an empty slot to store it there. Click a filled slot to draw with it; Backspace clears it. You can also paste or type a character straight into a slot.'},
+    {img:'assets/onboarding/onboarding_4.gif',title:'Four paints and a backdrop',
+     text:'You draw in four paints — Main, Accent, Detail and Extra. Each is a colour you can change at any time, and every cell remembers which paint it uses, so recolouring a whole sprite is one click. Background is separate: switch it off and your PNG and SVG exports come out on a transparent background.'},
+    {img:'assets/onboarding/onboarding_5.gif',title:'Save your work',
+     text:'Every tab is saved in this browser automatically and will be waiting when you come back — but only in this browser, and it is not a backup. To really keep a sprite, hit Save to download its JSON, and Import to load it back. Found a bug or want a feature? unowness@protonmail.com'}
+  ];
+  var onbEl=$('onb'),onbImg=$('onbImg'),onbTitle=$('onbTitle'),onbText=$('onbText'),onbCta=$('onbCta'),onbDots=$('onbDots'),onbIdx=0;
+  ONB.forEach(function(){var d=document.createElement('span');d.className='onb__dot';onbDots.appendChild(d);});
+  function onbRender(){
+    var p=ONB[onbIdx];
+    if(onbImg.getAttribute('src')!==p.img)onbImg.src=p.img;   /* lazy: only load the current page's image */
+    onbImg.alt=p.title;onbTitle.textContent=p.title;onbText.textContent=p.text;
+    onbCta.textContent=(onbIdx===ONB.length-1)?'Start drawing':'Continue';
+    [].forEach.call(onbDots.children,function(d,i){d.classList.toggle('on',i===onbIdx);});
+  }
+  function onbOpen(i){onbIdx=i||0;onbRender();onbEl.hidden=false;document.body.classList.add('onb-lock');onbCta.focus();}
+  function onbClose(){onbEl.hidden=true;document.body.classList.remove('onb-lock');try{localStorage.setItem(ONB_KEY,'1');}catch(e){}}
+  onbCta.onclick=function(){if(onbIdx<ONB.length-1){onbIdx++;onbRender();}else onbClose();};
+  $('onbSkip').onclick=onbClose;
+  document.addEventListener('keydown',function(e){if(!onbEl.hidden&&e.key==='Escape')onbClose();});
+  $('link-onboarding').onclick=function(e){e.preventDefault();onbOpen(0);};   /* footer link re-opens it */
 
   /* animation */
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
@@ -1567,6 +1670,8 @@
   renderFrames();
   updateHist();
   updateScrollbars();
+  /* first visit only — once Skip or Start drawing is pressed, the flag keeps it from returning */
+  try{if(localStorage.getItem(ONB_KEY)!=='1')onbOpen(0);}catch(e){}
 })();
 </script>
 </body>
