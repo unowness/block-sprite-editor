@@ -124,9 +124,6 @@
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   #export:hover{filter:brightness(1.2);}
-  /* Save previews where it leads: hovering it takes on Export's green — fill, border, label and
-     icon (the icon is stroke:currentColor, so it follows the colour on its own). */
-  #hsave:hover{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
