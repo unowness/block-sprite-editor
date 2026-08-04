@@ -1246,9 +1246,15 @@
       draw(0);rec.start(100);
       iv=setInterval(function(){draw(i%d.frames.length);i++;if(i>=total){clearInterval(iv);setTimeout(function(){if(rec.state!=='inactive')rec.stop();},step*2);}},step);
     }
-    /* mp4 first (portable); fall back to webm if mp4 recording produced nothing */
-    function tryWebm(){if(!webm){alert('Video export failed in this browser.');return;}record(webm,function(b){b?downloadBlob(b,spriteName()+'.webm'):alert('Video export failed in this browser.');});}
-    if(mp4)record(mp4,function(b){b?downloadBlob(b,spriteName()+'.mp4'):tryWebm();});
+    /* mp4 first (portable); fall back to webm if mp4 recording produced nothing.
+       The button shows progress here too — recording takes seconds and used to look frozen. */
+    function fail(){expStatus('');alert('Video export failed in this browser.');}
+    function tryWebm(){
+      if(!webm){fail();return;}
+      expStatus('Recording WebM…');
+      record(webm,function(b){expStatus('');b?downloadBlob(b,spriteName()+'.webm'):fail();});
+    }
+    if(mp4){expStatus('Recording MP4…');record(mp4,function(b){expStatus('');b?downloadBlob(b,spriteName()+'.mp4'):tryWebm();});}
     else tryWebm();
   }
 
@@ -1266,21 +1272,39 @@
      asks for 3488x3520 — 12.3MP, 13x over Baseline 3.1's 1280x720 — and the encoder never
      finishes, leaving the button stuck on "Encoding MP4…". */
   var VID_MAX=1920;
-  function vidMetrics(d){
+  function vidMetrics(d,cap){
+    cap=cap||VID_MAX;
     var px=IMG_PX*ui.scale,M=imgMetrics(px),W=d.w*M.cw,H=d.h*M.ch;
-    var k=Math.min(1,VID_MAX/W,VID_MAX/H);
+    var k=Math.min(1,cap/W,cap/H);
     if(k<1){px=Math.max(4,Math.floor(px*k));M=imgMetrics(px);W=d.w*M.cw;H=d.h*M.ch;}
     return {px:px,M:M,W:W+(W%2),H:H+(H%2)};                                                          /* even dims for H.264 */
+  }
+  /* Browsers differ in how high an H.264 LEVEL they will encode: 1904x1920 needs level 5.1+, and a
+     build that stops at 4.2 supports no candidate at that size — which silently dropped the export
+     to WebM. So step the frame down until some level accepts it; MP4 beats a bigger WebM. */
+  var VID_CAPS=[1920,1280,1024,800,640,480];
+  async function planVideo(d,fps){
+    for(var i=0;i<VID_CAPS.length;i++){
+      var vm=vidMetrics(d,VID_CAPS[i]);
+      var cfg=await pickH264(vm.W,vm.H,fps,Math.max(1000000,Math.round(vm.W*vm.H*fps*0.12)));
+      if(cfg)return {cfg:cfg,px:vm.px,M:vm.M,W:vm.W,H:vm.H};
+    }
+    return null;
   }
   /* Pick a codec level that actually fits this frame size. Main profile is interleaved with High
      because Safari's hardware encoder is happier with Main. avc.format='avc' asks for AVCC-framed
      chunks, which is what mp4-muxer expects — without it Safari can emit Annex B and the mux fails. */
   async function pickH264(W,H,fps,bitrate){
     var cands=['avc1.4d0034','avc1.640034','avc1.4d0033','avc1.640033','avc1.4d002a','avc1.64002a',
-               'avc1.4d0028','avc1.640028','avc1.420028','avc1.42001f'];
+               'avc1.4d0028','avc1.640028','avc1.4d001f','avc1.42E01E','avc1.420028','avc1.42001f'];
     for(var i=0;i<cands.length;i++){
-      var cfg={codec:cands[i],width:W,height:H,bitrate:bitrate,framerate:fps,avc:{format:'avc'}};
-      try{var s=await VideoEncoder.isConfigSupported(cfg);if(s&&s.supported)return cfg;}catch(e){}
+      var base={codec:cands[i],width:W,height:H,bitrate:bitrate,framerate:fps};
+      /* ask with the AVCC hint first (mp4-muxer wants it), then bare — some builds reject the
+         extra member outright, and skipping the codec there is what silently dropped us to WebM */
+      var variants=[{codec:base.codec,width:W,height:H,bitrate:bitrate,framerate:fps,avc:{format:'avc'}},base];
+      for(var v=0;v<variants.length;v++){
+        try{var s=await VideoEncoder.isConfigSupported(variants[v]);if(s&&s.supported)return variants[v];}catch(e){}
+      }
     }
     return null;
   }
@@ -1289,9 +1313,10 @@
     /* a single frame is fine — it exports as a still ~2s clip (loops below pad it to >=2s) */
     if(typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'){exportVideo();return;}   /* no WebCodecs -> webm */
     var fps=Math.max(1,Math.min(30,d.fps));
-    var vm=vidMetrics(d),px=vm.px,M=vm.M,W=vm.W,H=vm.H;
-    var cfg=await pickH264(W,H,fps,Math.max(1000000,Math.round(W*H*fps*0.12)));
-    if(!cfg){exportVideo();return;}                                                                  /* no usable H.264 -> webm */
+    expStatus('Preparing MP4…');
+    var plan=await planVideo(d,fps);
+    if(!plan){expStatus('');exportVideo();return;}                                                   /* no usable H.264 -> webm */
+    var cfg=plan.cfg,px=plan.px,M=plan.M,W=plan.W,H=plan.H;
     expStatus('Encoding MP4…');
     try{
       await ensureMuxer();
