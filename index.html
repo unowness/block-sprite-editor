@@ -134,9 +134,10 @@
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  .tab{display:inline-flex;align-items:center;gap:6px;height:32px;
+  /* same metrics as .fbtn so a numbered tab is exactly as compact as a frame button */
+  .tab{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:32px;height:32px;
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
+       padding:0 8px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .tab.on{border-color:var(--accent);color:var(--accent);}
   .tab .x{display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;}
