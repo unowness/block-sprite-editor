@@ -1174,7 +1174,14 @@
     clearSelection();syncInputs();build();renderFrames();renderTabs();
   }
 
-  function downloadBlob(blob,fname){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1500);}
+  /* the anchor MUST be in the document: Safari ignores .click() on a detached element, which
+     silently killed every export there (JSON/SVG/PNG/MP4 alike). */
+  function downloadBlob(blob,fname){
+    var url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=fname;a.rel='noopener';a.style.display='none';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);if(a.parentNode)a.parentNode.removeChild(a);},1500);
+  }
   function spriteName(){return D().id||'sprite';}
 
   /* raster metrics for a given font px */
@@ -1265,11 +1272,14 @@
     if(k<1){px=Math.max(4,Math.floor(px*k));M=imgMetrics(px);W=d.w*M.cw;H=d.h*M.ch;}
     return {px:px,M:M,W:W+(W%2),H:H+(H%2)};                                                          /* even dims for H.264 */
   }
-  /* pick the lowest codec level that actually fits this frame size, best-supported first */
+  /* Pick a codec level that actually fits this frame size. Main profile is interleaved with High
+     because Safari's hardware encoder is happier with Main. avc.format='avc' asks for AVCC-framed
+     chunks, which is what mp4-muxer expects — without it Safari can emit Annex B and the mux fails. */
   async function pickH264(W,H,fps,bitrate){
-    var cands=['avc1.640034','avc1.640033','avc1.64002a','avc1.640028','avc1.4d0028','avc1.42001f'];
+    var cands=['avc1.4d0034','avc1.640034','avc1.4d0033','avc1.640033','avc1.4d002a','avc1.64002a',
+               'avc1.4d0028','avc1.640028','avc1.420028','avc1.42001f'];
     for(var i=0;i<cands.length;i++){
-      var cfg={codec:cands[i],width:W,height:H,bitrate:bitrate,framerate:fps};
+      var cfg={codec:cands[i],width:W,height:H,bitrate:bitrate,framerate:fps,avc:{format:'avc'}};
       try{var s=await VideoEncoder.isConfigSupported(cfg);if(s&&s.supported)return cfg;}catch(e){}
     }
     return null;
