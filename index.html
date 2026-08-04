@@ -378,9 +378,9 @@
     body.fs-lock .fspanel .fscustom-label{display:none;}
     body.fs-lock .fspanel .pgrid{flex-wrap:wrap;justify-content:center;}
     body.fs-lock .fspanel .paints{flex-wrap:wrap;justify-content:center;}
-    /* onboarding: tighter card on phones */
+    /* onboarding: tighter card on phones (keeps the larger bottom gap, scaled down) */
     .onb{padding:12px;}
-    .onb__card{padding:16px;}
+    .onb__card{padding:16px 16px 40px;}
     .onb__head{margin-bottom:16px;}
     .gif-frame{margin-bottom:16px;}
     .onb__body{padding:0;}
@@ -395,9 +395,10 @@
   .onb{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
   .onb[hidden]{display:none;}
   .onb__scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);}   /* page dims behind the card (comment on 148:1733) */
+  /* asymmetric padding: 24 top/sides, larger 56 bottom below the CTA (Figma card 640x679) */
   .onb__card{position:relative;z-index:1;box-sizing:border-box;width:min(640px,100%);max-height:calc(100vh - 32px);
              overflow-y:auto;background:var(--tool-background);border:1px solid var(--stroke);
-             border-radius:var(--r-tool);padding:24px;}
+             border-radius:var(--r-tool);padding:24px 24px 56px;}
   .onb__head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;}
   .onb__dots{display:flex;align-items:center;gap:8px;}
   .onb__dot{width:6px;height:6px;border-radius:50%;background:var(--stroke);transition:background .15s;}
@@ -409,7 +410,8 @@
   /* gif-frame: the image sets the height; the 1px inner stroke frames it (image sits inside the border-box) */
   .gif-frame{box-sizing:border-box;width:100%;margin-bottom:24px;border:1px solid var(--stroke);
              border-radius:var(--r-tool);overflow:hidden;background:var(--page);line-height:0;}
-  .gif-frame img{display:block;width:100%;height:auto;}
+  .onb__img{width:100%;height:auto;display:none;}   /* only the active page's image is in flow */
+  .onb__img.on{display:block;}
   .onb__body{padding:0 12px;text-align:center;}
   .onb__title{margin:0;font-size:18px;font-weight:500;line-height:1.2;color:var(--main-text);}
   .onb__text{margin:12px 0 0;font-size:13px;line-height:1.5;color:var(--main-text);opacity:.68;}
@@ -604,7 +606,7 @@
       <div class="onb__dots" id="onbDots"></div>
       <button class="onb__skip" id="onbSkip" type="button">Skip onboarding<span aria-hidden="true">→</span></button>
     </div>
-    <div class="gif-frame"><img id="onbImg" alt=""></div>
+    <div class="gif-frame" id="onbFrame"></div>
     <div class="onb__body">
       <h2 class="onb__title" id="onbTitle"></h2>
       <p class="onb__text" id="onbText"></p>
@@ -1553,35 +1555,54 @@
   $('hintx').onclick=function(){$('hint').style.display='none';};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
-     Onboarding — 5 pages, shown once (remembered in localStorage).
-     Images are set lazily per page so the 5 gifs aren't all fetched up front.
+     Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.
+     Each page has its own <img>; all srcs are loaded IN ORDER as soon as the modal opens, so by
+     the time you page forward the gif is already decoded and the swap is instant (no lingering of
+     the previous frame). The current page is always forced to load first if the queue hasn't
+     reached it yet.
      ============================================================ */
   var ONB_KEY='blockmode:onboarded';
   var ONB=[
     {img:'assets/onboarding/onboarding_1.png',title:'Blockmode — ASCII Sprite Editor',
-     text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid, so the result stays text — the kind of art that fits a terminal, a roguelike, or a title screen. Nothing installs and nothing uploads. It is one page in your browser.'},
+     text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid. Pick a glyph from the palette, choose a paint, then draw on the grid. Nothing installs and nothing uploads. It is one page in your browser.'},
     {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
      text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. Right-click erases. So does the Eraser tool, if you prefer a mode over a second mouse button. Ctrl/Cmd+Z undoes, and every sprite keeps its own undo history.'},
-    {img:'assets/onboarding/onboarding_3.gif',title:'Keep glyphs close',
-     text:'The Custom row is twenty slots for the glyphs you actually use, so you stop hunting through the palette. Select a glyph in the palette, then click an empty slot to store it there. Click a filled slot to draw with it; Backspace clears it. You can also paste or type a character straight into a slot.'},
-    {img:'assets/onboarding/onboarding_4.gif',title:'Four paints and a backdrop',
-     text:'You draw in four paints — Main, Accent, Detail and Extra. Each is a colour you can change at any time, and every cell remembers which paint it uses, so recolouring a whole sprite is one click. Background is separate: switch it off and your PNG and SVG exports come out on a transparent background.'},
-    {img:'assets/onboarding/onboarding_5.gif',title:'Save your work',
-     text:'Every tab is saved in this browser automatically and will be waiting when you come back — but only in this browser, and it is not a backup. To really keep a sprite, hit Save to download its JSON, and Import to load it back. Found a bug or want a feature? unowness@protonmail.com'}
+    {img:'assets/onboarding/onboarding_3.gif',title:'Color and Background',
+     text:'You draw in four colors — Main, Accent, Detail and Extra. Each one is a color you can change at any time, and every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
+    {img:'assets/onboarding/onboarding_4.gif',title:'Select and Mirror',
+     text:'Use Select to move or remove part of a sprite. Drag a box, drag it to reposition, use the arrow keys to nudge it, or press Delete to remove it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
+    {img:'assets/onboarding/onboarding_5.gif',title:'Save and Export',
+     text:'Blockmode keeps your tabs, frames and Custom glyphs in this browser between sessions. But browser storage is not a backup: clear it, open Blockmode in another browser or device, and your work will be gone. Export JSON often to save your sprites properly and load them again whenever you want to continue.'}
   ];
-  var onbEl=$('onb'),onbImg=$('onbImg'),onbTitle=$('onbTitle'),onbText=$('onbText'),onbCta=$('onbCta'),onbDots=$('onbDots'),onbIdx=0;
-  ONB.forEach(function(){var d=document.createElement('span');d.className='onb__dot';onbDots.appendChild(d);});
+  var onbEl=$('onb'),onbFrame=$('onbFrame'),onbTitle=$('onbTitle'),onbText=$('onbText'),onbCta=$('onbCta'),
+      onbSkip=$('onbSkip'),onbDots=$('onbDots'),onbIdx=0,onbImgs=[],onbStarted=false;
+  ONB.forEach(function(p){
+    var d=document.createElement('span');d.className='onb__dot';onbDots.appendChild(d);
+    var im=document.createElement('img');im.className='onb__img';im.alt=p.title;onbFrame.appendChild(im);onbImgs.push(im);
+  });
+  function onbLoad(i){if(i<onbImgs.length&&!onbImgs[i].getAttribute('src'))onbImgs[i].src=ONB[i].img;}
+  function onbPreload(i){        /* walk the pages in order, loading the next once the current is in */
+    if(i>=onbImgs.length)return;
+    if(onbImgs[i].getAttribute('src')){onbPreload(i+1);return;}
+    onbImgs[i].onload=onbImgs[i].onerror=function(){onbPreload(i+1);};
+    onbImgs[i].src=ONB[i].img;
+  }
   function onbRender(){
-    var p=ONB[onbIdx];
-    if(onbImg.getAttribute('src')!==p.img)onbImg.src=p.img;   /* lazy: only load the current page's image */
-    onbImg.alt=p.title;onbTitle.textContent=p.title;onbText.textContent=p.text;
-    onbCta.textContent=(onbIdx===ONB.length-1)?'Start drawing':'Continue';
+    var p=ONB[onbIdx],last=onbIdx===ONB.length-1;
+    onbLoad(onbIdx);   /* current page must be loaded even if the preloader hasn't reached it */
+    onbImgs.forEach(function(im,i){im.classList.toggle('on',i===onbIdx);});
+    onbTitle.textContent=p.title;onbText.textContent=p.text;
+    onbCta.textContent=last?'Start drawing':'Continue';
+    onbSkip.innerHTML=last?'Onboarding Complete!':'Skip onboarding<span aria-hidden="true"> →</span>';
     [].forEach.call(onbDots.children,function(d,i){d.classList.toggle('on',i===onbIdx);});
   }
-  function onbOpen(i){onbIdx=i||0;onbRender();onbEl.hidden=false;document.body.classList.add('onb-lock');onbCta.focus();}
+  function onbOpen(i){
+    onbIdx=i||0;onbRender();onbEl.hidden=false;document.body.classList.add('onb-lock');onbCta.focus();
+    if(!onbStarted){onbStarted=true;onbPreload(0);}   /* start pulling every gif the moment we open */
+  }
   function onbClose(){onbEl.hidden=true;document.body.classList.remove('onb-lock');try{localStorage.setItem(ONB_KEY,'1');}catch(e){}}
   onbCta.onclick=function(){if(onbIdx<ONB.length-1){onbIdx++;onbRender();}else onbClose();};
-  $('onbSkip').onclick=onbClose;
+  onbSkip.onclick=onbClose;
   document.addEventListener('keydown',function(e){if(!onbEl.hidden&&e.key==='Escape')onbClose();});
   $('link-onboarding').onclick=function(e){e.preventDefault();onbOpen(0);};   /* footer link re-opens it */
 
