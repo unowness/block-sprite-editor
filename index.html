@@ -1220,7 +1220,8 @@
     var mp4=mimeFor('mp4'),webm=mimeFor('webm');
     if(!mp4&&!webm){alert('No supported video codec in this browser.');return;}
     var fps=Math.max(1,Math.min(30,d.fps));
-    var px=IMG_PX*ui.scale,bases=d.frames.map(function(g){return renderSprite(g,true,px);});
+    var px=vidMetrics(d).px;                                   /* same cap as MP4 — a 12MP canvas stalls the recorder too */
+    var bases=d.frames.map(function(g){return renderSprite(g,true,px);});
     var w=bases[0].width,h=bases[0].height;
     var cv=document.createElement('canvas');cv.width=w;cv.height=h;var ctx=cv.getContext('2d');ctx.imageSmoothingEnabled=false;
     function draw(i){ctx.clearRect(0,0,w,h);ctx.drawImage(bases[i],0,0);}
@@ -1253,15 +1254,34 @@
   function ensureMuxer(){if(window.Mp4Muxer)return Promise.resolve();if(!muxerLoad)muxerLoad=loadScript('mp4-muxer.min.js');return muxerLoad;}
   var expLabel0=null;
   function expStatus(t){var b=$('export');if(!b)return;if(t){if(expLabel0==null)expLabel0=b.innerHTML;b.textContent=t;b.disabled=true;}else{if(expLabel0!=null)b.innerHTML=expLabel0;b.disabled=false;expLabel0=null;}}
+  /* H.264 has hard per-level frame-size limits, so the video render is capped independently of
+     the export SCALE (which still applies in full to PNG). Without this a 16x10 sprite at 16x
+     asks for 3488x3520 — 12.3MP, 13x over Baseline 3.1's 1280x720 — and the encoder never
+     finishes, leaving the button stuck on "Encoding MP4…". */
+  var VID_MAX=1920;
+  function vidMetrics(d){
+    var px=IMG_PX*ui.scale,M=imgMetrics(px),W=d.w*M.cw,H=d.h*M.ch;
+    var k=Math.min(1,VID_MAX/W,VID_MAX/H);
+    if(k<1){px=Math.max(4,Math.floor(px*k));M=imgMetrics(px);W=d.w*M.cw;H=d.h*M.ch;}
+    return {px:px,M:M,W:W+(W%2),H:H+(H%2)};                                                          /* even dims for H.264 */
+  }
+  /* pick the lowest codec level that actually fits this frame size, best-supported first */
+  async function pickH264(W,H,fps,bitrate){
+    var cands=['avc1.640034','avc1.640033','avc1.64002a','avc1.640028','avc1.4d0028','avc1.42001f'];
+    for(var i=0;i<cands.length;i++){
+      var cfg={codec:cands[i],width:W,height:H,bitrate:bitrate,framerate:fps};
+      try{var s=await VideoEncoder.isConfigSupported(cfg);if(s&&s.supported)return cfg;}catch(e){}
+    }
+    return null;
+  }
   async function exportMp4(){
     var d=D();
     /* a single frame is fine — it exports as a still ~2s clip (loops below pad it to >=2s) */
     if(typeof VideoEncoder==='undefined'||typeof VideoFrame==='undefined'){exportVideo();return;}   /* no WebCodecs -> webm */
-    var px=IMG_PX*ui.scale,fps=Math.max(1,Math.min(30,d.fps));
-    var M=imgMetrics(px),W=d.w*M.cw,H=d.h*M.ch;W+=W%2;H+=H%2;                                        /* even dims for H.264 */
-    var cfg={codec:'avc1.42001f',width:W,height:H,bitrate:Math.max(1000000,Math.round(W*H*fps*0.12)),framerate:fps};
-    var sup;try{sup=await VideoEncoder.isConfigSupported(cfg);}catch(e){sup=null;}
-    if(!sup||!sup.supported){exportVideo();return;}                                                  /* H.264 unavailable -> webm */
+    var fps=Math.max(1,Math.min(30,d.fps));
+    var vm=vidMetrics(d),px=vm.px,M=vm.M,W=vm.W,H=vm.H;
+    var cfg=await pickH264(W,H,fps,Math.max(1000000,Math.round(W*H*fps*0.12)));
+    if(!cfg){exportVideo();return;}                                                                  /* no usable H.264 -> webm */
     expStatus('Encoding MP4…');
     try{
       await ensureMuxer();
@@ -1273,7 +1293,8 @@
       function drawFrame(g){fx.fillStyle=d.bgOn?d.bgColor:'#000';fx.fillRect(0,0,W,H);fx.font=px+'px '+getComputedStyle(gridEl).fontFamily;fx.textBaseline='alphabetic';fx.textAlign='left';for(var y=0;y<d.h;y++)for(var x=0;x<d.w;x++){var cell=g[y][x];if(cell.g===' ')continue;fx.fillStyle=colorOf(cell.l);fx.fillText(cell.g,x*M.cw,y*M.ch+M.asc);}}
       var loops=Math.max(2,Math.ceil(2*fps/d.frames.length)),n=0,us=Math.round(1e6/fps);              /* >=2s clip */
       for(var L=0;L<loops;L++)for(var f=0;f<d.frames.length;f++){drawFrame(d.frames[f]);var vf=new VideoFrame(fc,{timestamp:n*us,duration:us});encoder.encode(vf,{keyFrame:f===0});vf.close();n++;}
-      await encoder.flush();
+      /* never let a wedged encoder strand the button on "Encoding MP4…" */
+      await Promise.race([encoder.flush(),new Promise(function(_,rej){setTimeout(function(){rej(new Error('encoding timed out'));},45000);})]);
       if(encErr)throw encErr;
       muxer.finalize();
       downloadBlob(new Blob([muxer.target.buffer],{type:'video/mp4'}),spriteName()+'.mp4');
