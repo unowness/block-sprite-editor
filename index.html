@@ -107,6 +107,11 @@
   /* Hover = the button's own resting outline, 10% brighter. Mixing towards --main-text rather than
      white keeps it correct in both themes: it lightens on dark, darkens (gains contrast) on light. */
   .btn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
+  /* ...plus a 5% fill lift, layered over the base colour (as a flat gradient) so it stacks on every
+     button variant without replacing its background-color. Export brightens via its own filter, and
+     disabled buttons opt out. */
+  .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(color-mix(in srgb,var(--main-text) 5%,transparent),color-mix(in srgb,var(--main-text) 5%,transparent));}
+  #export:hover,.btn:disabled:hover{background-image:none;}
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
