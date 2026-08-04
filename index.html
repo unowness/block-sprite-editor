@@ -114,6 +114,9 @@
   .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);}
   .btn.alert:hover{border-color:color-mix(in srgb,var(--alert) 50%,transparent);}
   .btn.green:hover{border-color:color-mix(in srgb,var(--green) 50%,transparent);}
+  /* Save previews where it leads: hovering it takes on Export's green — fill, border, label and
+     icon (the icon is stroke:currentColor, so it follows the colour on its own). */
+  #hsave:hover{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
