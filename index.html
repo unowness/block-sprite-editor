@@ -887,6 +887,7 @@
     gridEl.classList.toggle('selmode',t==='select');
     render();
   }
+  function inSel(x,y){var s=ui.sel;return !!s&&x>=s.x&&x<s.x+s.w&&y>=s.y&&y<s.y+s.h;}
   function clearSelection(){ui.sel=null;ui.selBuf=null;ui.selPos=null;ui.selMoving=false;ui.selDragNew=false;ui.selAnchor=null;var el=$('selrect');if(el)el.style.display='none';}
   /* lift the selected cells into a floating buffer (source cleared); idempotent */
   function liftSelection(){
@@ -927,7 +928,16 @@
      the sprite up instead. Moving a selection is the arrow keys.
      Only repaint the grid when a floating selection actually had to be stamped back down;
      otherwise just move the marquee div, which keeps the drag smooth. */
-  function selMouseDown(x,y){
+  /* Moving a selection is split by input type, because each device has the better tool for it:
+     TOUCH — a press inside the marquee drags it (there is no keyboard on a phone).
+     MOUSE — a drag always starts a NEW marquee; the arrow keys move the selection instead. */
+  function selMouseDown(x,y,touch){
+    if(touch&&inSel(x,y)){
+      liftSelection();
+      ui.selDragNew=false;ui.selAnchor=null;
+      ui.selMoving=true;ui.selDragOff={x:x-ui.selPos.x,y:y-ui.selPos.y};
+      render();return;
+    }
     var wasFloating=!!ui.selBuf;
     commitFloat();
     ui.selMoving=false;ui.selDragOff=null;
@@ -1440,7 +1450,7 @@
     if(ui.playing)return;
     var t=e.changedTouches[0],cell=touchCellAt(t);if(!cell)return;
     var x=+cell.dataset.x,y=+cell.dataset.y;
-    if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y);ui.touchSel=true;return;}
+    if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y,true);ui.touchSel=true;return;}
     if(ui.curLayer==='bg')return;
     e.preventDefault();pushUndo();ui.drawing=true;ui.erasing=false;paint(x,y,false);
   },{passive:false});
