@@ -162,8 +162,9 @@
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .tab.on{border-color:var(--accent);color:var(--accent);}
-  .tab .x{display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
-          border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;}
+  .tab .x{position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
+          border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;cursor:pointer;}
+  .tab .x::before{content:'';position:absolute;inset:-6px;}   /* 25px grab area, chip stays 13px */
   .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
   .tab .x svg{width:12px;height:12px;display:block;}
 
@@ -299,7 +300,9 @@
   .foot-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .links{display:flex;gap:12px;}
   /* footer text all sits on --tool-text-id now: links at full strength, byline dimmed like .note */
-  .links a{color:var(--tool-text-id);font-size:13px;text-decoration:underline;text-underline-offset:2px;}
+  /* padding+negative margin grows the hit area to ~25px tall without moving the row */
+  .links a{color:var(--tool-text-id);font-size:13px;text-decoration:underline;text-underline-offset:2px;
+           padding:5px 0;margin:-5px 0;}
   .links a:hover{color:var(--accent);}
   .copy-note{color:var(--tool-text-id);opacity:.75;font-size:13px;}
 
@@ -341,7 +344,7 @@
 
   /* ---------------- selection (Select tool) ---------------- */
   .canvas-frame{position:relative;}                 /* anchor for the selection rect */
-  .grid.selmode{cursor:default;}
+  .grid.selmode{cursor:cell;}   /* the canvas is a work surface in every tool — never a plain arrow */
   .sel-rect{position:absolute;z-index:4;border:1px solid var(--accent);
             background:color-mix(in srgb,var(--accent) 12%,transparent);pointer-events:none;box-sizing:border-box;}
   .sel-rect.moving{background:color-mix(in srgb,var(--accent) 20%,transparent);border-style:dashed;}
@@ -423,6 +426,17 @@
                   border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));
                   color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
   body.onb-lock{overflow:hidden;}
+
+  /* ---------------- pointer hygiene ----------------
+     The chrome is controls, not prose. With selection allowed, any press-and-drag over a button,
+     label or the canvas started a text selection — that half-selection is what made the cursor
+     flicker between arrow and I-beam and made things feel "not quite clickable". Turn it off for
+     the UI and hand it back only to text that is genuinely worth copying. */
+  .wrap,.onb__card{-webkit-user-select:none;user-select:none;}
+  textarea,.note,.copy-note,.hint span,.onb__title,.onb__text,.title{-webkit-user-select:text;user-select:text;}
+  /* a drag that begins on a control must never paint a selection highlight across the page */
+  .btn,.tab,.paint,.gbtn,.ccell,.shandle,.onb__cta,.onb__skip,.plabel,.tool-label{-webkit-user-drag:none;}
+  img,svg{-webkit-user-drag:none;user-select:none;}
 </style>
 </head>
 <body>
