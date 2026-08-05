@@ -446,6 +446,14 @@
   /* a drag that begins on a control must never paint a selection highlight across the page */
   .btn,.tab,.paint,.gbtn,.ccell,.shandle,.onb__cta,.onb__skip,.plabel,.tool-label{-webkit-user-drag:none;}
   img,svg{-webkit-user-drag:none;user-select:none;}
+  /* A control's own icon/label must not be a hit target of its own. Crossing from the button onto
+     its child changes the hit target, and the browser re-resolves the cursor at that moment —
+     which is the arrow/hand blink you get moving over a button's edge and then its icon. Making
+     the decoration transparent to the pointer leaves the control as the single, stable target.
+     The tab's close X and the colour <input> inside a swatch stay clickable on purpose. */
+  .btn .iw,.btn>svg,.btn .lbl,.hint-x>svg,.fbtn>*,
+  .tab>span:not(.x),.tab .x>svg,
+  .onb__cta>*,.onb__skip>*{pointer-events:none;}
 </style>
 </head>
 <body>
