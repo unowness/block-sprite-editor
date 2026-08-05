@@ -1801,5 +1801,9 @@
   try{if(localStorage.getItem(ONB_KEY)!=='1')onbOpen(0);}catch(e){}
 })();
 </script>
+<!-- Cloudflare Web Analytics — cookieless, no consent banner needed. Installed by hand because the
+     DNS is deliberately DNS-only (grey cloud): traffic goes straight to GitHub Pages, so Cloudflare
+     never sees it and cannot auto-inject. The token is public by design — it ships in this HTML. -->
+<script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "f51f65c45e8b494a9a94c3eb356e9162"}'></script>
 </body>
 </html>
