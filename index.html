@@ -153,7 +153,16 @@
   /* focus states — design-system, not native */
   .input:focus{outline:none;border-color:var(--stroke-focus);}
   button:focus,input:focus{outline:none;}
-  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible{border-color:var(--accent);}
+  /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
+  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
+  .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
+    border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;}
+  /* pressed state — the click gets an immediate answer instead of only a hover tint */
+  .btn:not(:disabled):active,.tab:active,.paint:active,.gbtn:active,.ccell:active,
+  .onb__cta:active,.hint-x:active,.tab .x:active{
+    background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
+                                     color-mix(in srgb,var(--main-text) 12%,transparent));}
+  #export:not(:disabled):active{filter:brightness(1.34);}   /* Export lifts instead, matching its hover */
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -1488,10 +1497,18 @@
       if(ui.sideDrag)return;
       if(ui.tool==='select'||ui.playing){hideAll();return;}
       var fr=document.querySelector('.canvas-frame').getBoundingClientRect(),Z=40,X=e.clientX,Y=e.clientY;
-      hmap.l.classList.toggle('show',Math.abs(X-fr.left)<=Z&&Y>fr.top-Z&&Y<fr.bottom+Z);
-      hmap.r.classList.toggle('show',Math.abs(X-fr.right)<=Z&&Y>fr.top-Z&&Y<fr.bottom+Z);
-      hmap.t.classList.toggle('show',Math.abs(Y-fr.top)<=Z&&X>fr.left-Z&&X<fr.right+Z);
-      hmap.b.classList.toggle('show',Math.abs(Y-fr.bottom)<=Z&&X>fr.left-Z&&X<fr.right+Z);
+      /* Hysteresis: a handle needs Z to appear but Z+16 to disappear. Without it the condition
+         flips on and off with sub-pixel moves at the edge of the zone, and because .show also
+         flips pointer-events the element under the cursor alternates between the handle and the
+         canvas — which reads as the cursor stuttering between resize and crosshair. */
+      function reveal(h,dist,along){
+        var Zi=h.classList.contains('show')?Z+16:Z;
+        h.classList.toggle('show',dist<=Zi&&along);
+      }
+      reveal(hmap.l,Math.abs(X-fr.left),Y>fr.top-Z&&Y<fr.bottom+Z);
+      reveal(hmap.r,Math.abs(X-fr.right),Y>fr.top-Z&&Y<fr.bottom+Z);
+      reveal(hmap.t,Math.abs(Y-fr.top),X>fr.left-Z&&X<fr.right+Z);
+      reveal(hmap.b,Math.abs(Y-fr.bottom),X>fr.left-Z&&X<fr.right+Z);
     });
     sc.addEventListener('mouseleave',hideAll);
     function sideStart(side,cx,cy){
