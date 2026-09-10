@@ -36,11 +36,12 @@
        an outline at 13:1. Nothing is filled and nothing is tinted.
        The one colour left in the chrome is the alert, and the only other colour on the page is the
        drawing. That is the whole rule: an interface in grey, a picture in colour. */
-    /* One hue for both themes, held as an invariant: OKLCH H 263.9 here, 264.0 in light.
-       It is the sRGB blue-primary axis — #0000FF is oklch(45.2% .313 264.05) — which is where the
-       screen keeps its own pigment, and where the gamut still gives an edge: maxC .309 at L45
-       against .184 five degrees away. Measured, not chosen by eye. */
-    --accent:#5388FF;
+    /* Wii U's own pair, taken from the console's palette rather than invented: #009AC7 for the
+       light theme and #4EBCFF for this one. One hue family, both sides of it, and neither is a
+       terminal cyan — a phosphor cyan is pure and hard, these are drawn towards blue and sit where
+       a designer put them. */
+    --accent:#4EBCFF;
+    --accent-bg:color-mix(in srgb,var(--accent) 40%,transparent);
     /* Both coloured buttons are soft-filled: 40% of the colour, its own vivid edge, and the
        theme's own text as the label. The colour itself cannot be the label on a fill this
        strong — measured 2.6:1 — so the fill carries the hue and the label carries the reading. */
@@ -104,9 +105,9 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    --page:#EDEFF1;              /* the grey ground — L* 94.4 */
-    --stage-bg:#F8FAFB;          /* L* 98.2 */
-    --tool-background:#F8FAFB;
+    --page:#F1F2F4;              /* silver-white, near-neutral — L* 95.5, blue over red only 3 */
+    --stage-bg:#FAFBFC;          /* L* 98.6 */
+    --tool-background:#FAFBFC;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
     --input-background:#FFFFFF;
     --canvas:#FFFFFF;
@@ -115,28 +116,35 @@
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
-    --stroke:#DADEE2;       /* 1.31:1 on a control — a line you notice only when you look for it */
-    --stroke-focus:#6B7079;
-    --stroke-hover:#BCC1C7;
-    --main-text:#15171B;    /* cool ink, half the cast it had */
-    --main-text-05:rgba(21,23,27,.5);
-    --tool-text-id:#5E636A;
+    --stroke:#E2E5E8;
+    --stroke-focus:#8A9199;
+    --stroke-hover:#C9CED3;
+    --main-text:#2A2E33;    /* soft ink — this family never reaches for black */
+    --main-text-05:rgba(42,46,51,.5);
+    --tool-text-id:#61676F;   /* 4.21:1 on the ground was under AA; 5.10 now */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
        0.66 against the old 0.57), and the two coloured BUTTONS become filled — a vivid fill with a
        contrasting label is bright and legible at the same time, which coloured text on a tint can
        never be here. Dark needs none of this: on black a bright colour simply is the text. */
-    --accent:#154DE9;   /* same hue, the lightness the light surfaces demand */
+    /* The real Wii U cyan, kept at full strength: as TEXT it measures 3.26:1 on white and would
+       have to be darkened to #00809F to pass, which costs a fifth of its chroma — the exact drain
+       that made every earlier light accent look dull. So the accent is never text here. It is a
+       soft chip: 40% fill, the ink as its label (8.59:1), and the colour itself as the edge
+       (3.26:1, which is what a non-text indicator needs). Soft and readable at once, which is how
+       the console did it too. */
+    --accent:#009AC7;
+    --accent-bg:color-mix(in srgb,var(--accent) 40%,transparent);
     --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
     --alert-label:var(--main-text);
     --green:#12B76A;
     --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
     --green-label:var(--main-text);
-    --alert:#CE2318;        /* vivid, not darkened — 5.42:1 against its white label */
-    --glyph:#272A30;
+    --alert:#DC4B41;        /* softened with the rest; the ink on its 40% fill reads 7.71:1 */
+    --glyph:#3A4048;
     --canvas-empty:var(--page);
-    --grid-line:rgba(152,158,168,.42);
+    --grid-line:rgba(160,168,178,.40);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -198,7 +206,7 @@
      pushes it under the section, which is the direction the operator asked for. */
   .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(var(--hover-veil),var(--hover-veil));}
   #export:hover,.btn:disabled:hover{background-image:none;}
-  .btn.on{border-color:var(--accent);color:var(--accent);}
+  .btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
@@ -235,7 +243,7 @@
   /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
   .btn:focus-visible,.tab-name:focus-visible,.tab .x:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
   .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
-    border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 75%,transparent);outline-offset:2px;}
+    border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px;}
   /* pressed state — the click gets an immediate answer instead of only a hover tint */
   .btn:not(:disabled):active,.tab-name:active,.paint:active,.gbtn:active,.ccell:active,
   .onb__cta:active,.hint-x:active,.tab .x:active{
@@ -252,7 +260,7 @@
   .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
-  .tab.on{border-color:var(--accent);color:var(--accent);}
+  .tab.on{background:var(--accent-bg);border-color:var(--accent);}
   /* the label button carries what used to be the chip's left padding and the 6px gap, so every
      pixel that is not the close X selects the sprite */
   .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
@@ -276,7 +284,7 @@
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   /* the paint pills had only a pressed state and no hover at all */
   .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .paint.on{border-color:var(--accent);color:var(--accent);}
+  .paint.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
   .swatch input[type=color]{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
@@ -365,7 +373,7 @@
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
         font-size:13px;color:var(--main-text);
         background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
-  .fbtn.on{border-color:var(--accent);color:var(--accent);}
+  .fbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
@@ -392,7 +400,7 @@
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
         background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
   .gbtn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .gbtn.on{border-color:var(--accent);color:var(--accent);}
+  .gbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
 
   /* ---------------- export bar ---------------- */
   /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
@@ -479,7 +487,7 @@
      the keyboard. */
   .gbtn.custom:focus{border-color:var(--stroke-focus);}
   .gbtn.custom:focus:not(:focus-visible){outline:none;}
-  .gbtn.custom.on{color:var(--accent);border-color:var(--accent);}
+  .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
 
   /* ============================================================
      Mobile (<=600px): icon controls, stacked tools/palette, common label column
