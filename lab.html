@@ -295,6 +295,11 @@
   /* .hint sets display:flex, which outranks the browser's own [hidden]{display:none} — same
      specificity, author sheet wins — so hiding it needs to be said here, not left to the UA. */
   .hint[hidden]{display:none;}
+  /* CUSTOM is the row you fill yourself; everything under it is built in. That break was carried
+     entirely by the caption's own margin, so dismissing the caption collapsed 84px to 8px and
+     CUSTOM merged into the glyph stack. With the caption gone the first glyph group holds the gap
+     open itself, at the same 40px that separates the stage from Paint. */
+  .hint[hidden]+.pgroup{margin-top:32px;}   /* + the palette's own 8px gap = 40 */
   /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
   .paintbar{margin-top:var(--space-section);}
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
