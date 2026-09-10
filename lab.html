@@ -1729,9 +1729,14 @@
      around it — 30px of room the fit has to leave, or the handles push a scrollbar into a stage
      whose drawing already fits. Plus 2px of slack, because the cell size is floored and the
      per-cell measurement is fractional. */
-  var HANDLE_ROOM=30, FIT_SLACK=2;
+  var HANDLE_ROOM=30, FIT_SLACK=2, MIN_MEASURABLE=120;
   function fitCanvas(){
     var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
+    /* A page loaded in a background tab reports a zero-size window, and the stage collapses with
+       it. Fitting against that would lock the drawing to the 10px floor and leave it there once
+       the tab is finally opened — so refuse to measure a stage that has no room to measure. The
+       ResizeObserver below calls back the moment it gets one. */
+    if(sc.clientWidth<MIN_MEASURABLE||sc.clientHeight<MIN_MEASURABLE)return;
     function room(a,b){return Math.max(parseFloat(a),HANDLE_ROOM)+Math.max(parseFloat(b),HANDLE_ROOM)+FIT_SLACK;}
     var availW=Math.max(60,sc.clientWidth-room(cs.paddingLeft,cs.paddingRight));
     var availH=Math.max(60,sc.clientHeight-room(cs.paddingTop,cs.paddingBottom));
@@ -1773,6 +1778,22 @@
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
   window.addEventListener('resize',function(){autoFit();updateScrollbars();});
+  /* A window resize is not the only way the stage changes size — a background tab that finally
+     becomes visible never fires one. Watch the element itself, which is true in every case.
+     fitCanvas only rebuilds the grid inside the stage and never changes the stage's own box, so
+     this cannot feed back on itself; the flag is belt and braces. */
+  if(window.ResizeObserver){
+    var fitting=false;
+    new ResizeObserver(function(){
+      if(fitting)return;
+      fitting=true;autoFit();updateScrollbars();fitting=false;
+    }).observe(document.querySelector('.stage-canvas'));
+  }
+  /* A hidden document gets no rendering opportunities, so its ResizeObserver stays quiet however
+     much the stage changes underneath. Fit again the moment the tab is actually looked at. */
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'){autoFit();updateScrollbars();}
+  });
   document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
   wireScrollThumb($('fsthumb-h'),'x');
   wireScrollThumb($('fsthumb-v'),'y');
