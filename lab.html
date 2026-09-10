@@ -16,28 +16,28 @@
      ============================================================ */
   :root{
     /* color */
-    --page:#070708;
-    --tool-background:#16161A;
-    --input-background:#1D1D22;
-    --stroke:#2A2A30;
-    --stroke-focus:#5A5A64;
-    --stroke-hover:#3A3A44;
-    --main-text:#E6E6DF;
-    --main-text-05:rgba(230,230,223,.5);
-    --tool-text-id:#9AA0A6;
-    --accent:#67E8F9;
-    /* Clear was the least readable control in the interface at 3.74:1 — under AA — while being the
-       only one that destroys work. Same red family, raised to 4.82:1. */
+    --page:#0A0A0B;
+    --tool-background:#17171A;
+    --input-background:#1F1F22;
+    --stroke:#2F2F33;
+    --stroke-focus:#70707A;
+    --stroke-hover:#43434A;
+    --main-text:#E9E9E6;
+    --main-text-05:rgba(233,233,230,.5);
+    --tool-text-id:#9B9B97;
+    /* The accent IS the text. A monochrome interface has no spare hue to spend on "this one is
+       on" — the pressed control says so by value: a hairline at 1.3:1 against its own fill becomes
+       an outline at 13:1. Nothing is filled and nothing is tinted.
+       The one colour left in the chrome is the alert, and the only other colour on the page is the
+       drawing. That is the whole rule: an interface in grey, a picture in colour. */
+    --accent:#E9E9E6;
+    /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
-    /* was #5CE422, the exact hex of the default Extra paint: the Export button and one of the
-       user's four brushes were the same colour, so chrome and artwork could not be told apart.
-       Moved the chrome, not the palette. 9.44:1 on its own tint. */
-    --green:#3DDC84;
-    --canvas:#0D0D0F;
-    --glyph:#cfd2c4;   /* glyph-preview colour on palette tiles */
-    --stage-bg:#070708;    /* editing-window fill (= page in dark) */
+    --canvas:#0F0F11;
+    --glyph:#D2D2CE;   /* glyph-preview colour on palette tiles */
+    --stage-bg:#0A0A0B;    /* editing-window fill (= page in dark) */
     --canvas-empty:var(--page);   /* transparent bg -> the page colour shows "through" the canvas */
-    --grid-line:#2A2A30;   /* grid lines + canvas frame (= --stroke in dark) */
+    --grid-line:#2F2F33;   /* grid lines + canvas frame (= --stroke in dark) */
 
     /* type */
     --font-ui:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -62,26 +62,22 @@
      boxes you could not see — the structure was there in the markup and absent on screen.
      The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    --page:#EDEFF2;         /* grey ground, so a white panel can read as a panel */
-    --tool-background:#FFFFFF;   /* 1.15:1 against the ground, up from 1.06 */
-    --input-background:#F5F7F9;  /* recessed inside the panel, 1.07:1 */
-    --stroke:#B4BAC3;       /* 1.95:1 against a panel, up from 1.33 */
-    --stroke-focus:#6E7681;
-    --stroke-hover:#9AA1AC;
-    --main-text:#1B1E24;    /* cool dark ink (readable — not a "grey shade") */
-    --main-text-05:rgba(27,30,36,.5);
-    --tool-text-id:#5F646B; /* cool dim label, 5.96:1 on a panel */
-    /* was #4F46E5 indigo against the dark theme's #67E8F9 cyan — 69.9 degrees apart, so the
-       product changed identity with the theme for no reason anyone chose. One hue family now:
-       both sit near 190 degrees, 6 degrees apart. 5.07:1 on the ground, 6.05:1 on a panel. */
-    --accent:#116C7E;
-    --alert:#AE2E23;        /* 4.72:1 on its tint, was 4.02 */
-    --green:#166534;        /* 5.47:1 on its tint, was 3.44 — Export failed AA in light */
-    --canvas:#E4E7EB;       /* palette tiles, readable against a white panel */
-    --glyph:#34373D;
+    --page:#EAEAE7;         /* paper the panels sit on */
+    --tool-background:#FFFFFF;
+    --input-background:#F5F5F2;  /* recessed inside the panel */
+    --stroke:#C6C6C1;
+    --stroke-focus:#70706A;
+    --stroke-hover:#A6A6A0;
+    --main-text:#17171A;    /* ink */
+    --main-text-05:rgba(23,23,26,.5);
+    --tool-text-id:#5C5C57;
+    --accent:#17171A;       /* the accent is the ink, exactly as it is the paper in dark */
+    --alert:#A8271C;
+    --canvas:#E2E2DE;       /* palette tiles, readable against a white panel */
+    --glyph:#33333A;
     --stage-bg:#FFFFFF;     /* editing window = tool panels */
     --canvas-empty:var(--page); /* transparent bg -> the page colour shows "through" the canvas */
-    --grid-line:rgba(150,157,167,.5);
+    --grid-line:rgba(150,150,145,.5);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -133,14 +129,20 @@
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
      dark theme's colour and stopped following the token entirely */
   .btn.alert{background:color-mix(in srgb,var(--alert) 15%,transparent);border-color:var(--alert);color:var(--alert);}
-  .btn.green{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
+  /* Export is the primary action, and in a monochrome interface the primary is the only FILLED
+     control: weight instead of hue. It is the one solid shape on the page, so it is found the way
+     a full stop is found in a paragraph — by mass, not by colour. */
+  .btn.green{background:var(--main-text);border-color:var(--main-text);color:var(--page);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
   .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
   .btn.alert:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--alert));}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
-  #export:hover{filter:brightness(1.2);}
+  /* hover and press move the fill TOWARDS the page, so the same rule reads as "lighter" on dark
+     and "darker" on light without asking which theme is on */
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--page) 10%,var(--main-text));
+                              border-color:color-mix(in srgb,var(--page) 10%,var(--main-text));}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
@@ -166,7 +168,8 @@
   .onb__cta:active,.hint-x:active,.tab .x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{filter:brightness(1.34);}   /* Export lifts instead, matching its hover */
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--page) 22%,var(--main-text));
+                               border-color:color-mix(in srgb,var(--page) 22%,var(--main-text));}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
