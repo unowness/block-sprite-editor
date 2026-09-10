@@ -40,7 +40,7 @@
        light theme and #4EBCFF for this one. One hue family, both sides of it, and neither is a
        terminal cyan — a phosphor cyan is pure and hard, these are drawn towards blue and sit where
        a designer put them. */
-    --accent:#4EBCFF;
+    --accent:#7FD1FF;
     --accent-bg:color-mix(in srgb,var(--accent) 40%,transparent);
     /* Both coloured buttons are soft-filled: 40% of the colour, its own vivid edge, and the
        theme's own text as the label. The colour itself cannot be the label on a fill this
@@ -105,9 +105,12 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    --page:#F1F2F4;              /* silver-white, near-neutral — L* 95.5, blue over red only 3 */
-    --stage-bg:#FAFBFC;          /* L* 98.6 */
-    --tool-background:#FAFBFC;
+    /* Neutral, not cool. The cool cast was tried at +12, +6 and +3 blue over red and read as a
+       tint each time; at 0 the grey stops having an opinion and the only colour left in the light
+       theme is the accent and the two buttons — which is the point. */
+    --page:#F1F1F1;              /* L* 95.1 */
+    --stage-bg:#FAFAFA;          /* L* 98.3 */
+    --tool-background:#FAFAFA;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
     --input-background:#FFFFFF;
     --canvas:#FFFFFF;
@@ -116,12 +119,12 @@
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
-    --stroke:#E2E5E8;
-    --stroke-focus:#8A9199;
-    --stroke-hover:#C9CED3;
-    --main-text:#2A2E33;    /* soft ink — this family never reaches for black */
-    --main-text-05:rgba(42,46,51,.5);
-    --tool-text-id:#61676F;   /* 4.21:1 on the ground was under AA; 5.10 now */
+    --stroke:#E4E4E4;
+    --stroke-focus:#8E8E8E;
+    --stroke-hover:#CCCCCC;
+    --main-text:#2C2C2E;    /* soft ink — this family never reaches for black */
+    --main-text-05:rgba(44,44,46,.5);
+    --tool-text-id:#636363;   /* 5.32:1 on the ground */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
@@ -142,9 +145,9 @@
     --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
     --green-label:var(--main-text);
     --alert:#DC4B41;        /* softened with the rest; the ink on its 40% fill reads 7.71:1 */
-    --glyph:#3A4048;
+    --glyph:#3C3C3E;
     --canvas-empty:var(--page);
-    --grid-line:rgba(160,168,178,.40);
+    --grid-line:rgba(168,168,168,.40);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -211,19 +214,22 @@
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
      dark theme's colour and stopped following the token entirely */
-  .btn.alert{background:var(--alert-bg);border-color:var(--alert);color:var(--alert-label);}
+  .btn.alert{background:var(--alert-bg);border-color:color-mix(in srgb,var(--alert) 55%,transparent);color:var(--alert-label);}
   /* Export is the primary action and it is filled, so its colour can be as bright as it likes —
      the label contrasts against the fill, not against the page. */
-  .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
+  /* A 40% fill with a FULL-strength outline says the same thing twice, and the outline is what
+     made these read as crude — measured 3.85:1 against their own fill in dark. The edge steps down
+     to 55%, which is 1.47:1: enough to close the shape, not enough to ring it. */
+  .btn.green{background:var(--green-bg);border-color:color-mix(in srgb,var(--green) 55%,transparent);color:var(--green-label);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
   .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
-  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 55%,transparent);}
+  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 55%,transparent);border-color:color-mix(in srgb,var(--alert) 70%,transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 55%,transparent);}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 55%,transparent);border-color:color-mix(in srgb,var(--green) 70%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
