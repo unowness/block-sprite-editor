@@ -39,7 +39,9 @@
     --accent:#E9E9E6;
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
-    --canvas:#1F1F22;  /* glyph tiles read as inputs, because that is what they are */
+    --btn-background:#1F1F22;   /* controls */
+    --canvas:#1F1F22;  /* glyph tiles are controls too */
+    --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
     --glyph:#D2D2CE;   /* glyph-preview colour on palette tiles */
     /* the one surface that stays at page value on purpose: "no background" should read as a hole
        cut through the stage, not as another panel */
@@ -69,12 +71,18 @@
      boxes you could not see — the structure was there in the markup and absent on screen.
      The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    /* the same ramp, inverted: the paper is the top and every surface presses into it */
-    --page:#F5F5F2;         /* paper */
-    --stage-bg:#ECECE8;
-    --tool-background:#E9E9E5;
-    --input-background:#DFDFDA;
-    --canvas:#DFDFDA;       /* glyph tiles read as inputs here too */
+    /* Light does not mirror dark; it has its own order, and the operator set it: the page is the
+       middle. Sections rise a step off it, the controls on them rise another, and the fields you
+       type into sink below it — so a control reads as something placed ON the page and a field as
+       something cut INTO it. Hover then drops a control below its own section, which is the one
+       move that cannot be mistaken for anything else on the ramp. */
+    --page:#F5F5F2;              /* paper — the middle of the ramp, not the top */
+    --stage-bg:#FAFAF8;          /* sections rise off the page */
+    --tool-background:#FAFAF8;
+    --btn-background:#FFFFFF;    /* controls rise off the sections */
+    --input-background:#EBEBE7;  /* fields sink below the page */
+    --canvas:#FFFFFF;            /* glyph tiles are controls */
+    --hover-veil:color-mix(in srgb,var(--main-text) 8%,transparent);
     --stroke:#BCBCB6;
     --stroke-focus:#6A6A64;
     --stroke-hover:#9E9E98;
@@ -131,7 +139,7 @@
      border is a colour swap only — never a size change. */
   .btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 9px;
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
-       background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
+       background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
   /* Hover = the button's own resting outline, 10% brighter. Mixing towards --main-text rather than
      white keeps it correct in both themes: it lightens on dark, darkens (gains contrast) on light. */
@@ -139,7 +147,9 @@
   /* ...plus a 5% fill lift, layered over the base colour (as a flat gradient) so it stacks on every
      button variant without replacing its background-color. Export brightens via its own filter, and
      disabled buttons opt out. */
-  .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(color-mix(in srgb,var(--main-text) 5%,transparent),color-mix(in srgb,var(--main-text) 5%,transparent));}
+  /* Hover veils the control towards the ink. In dark that lifts it off its panel; in light it
+     pushes it under the section, which is the direction the operator asked for. */
+  .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(var(--hover-veil),var(--hover-veil));}
   #export:hover,.btn:disabled:hover{background-image:none;}
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
@@ -196,7 +206,7 @@
      As a <span> with a click handler the tab was mouse-only — nothing in the strip could be
      reached by Tab, so a keyboard user could open sprites and never switch between them. */
   .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
-       background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
+       background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
   .tab.on{border-color:var(--accent);color:var(--accent);}
   /* the label button carries what used to be the chip's left padding and the 6px gap, so every
@@ -218,7 +228,7 @@
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
   .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
-         background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
+         background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   /* the paint pills had only a pressed state and no hover at all */
   .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
@@ -298,7 +308,7 @@
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
-          background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
+          background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
   .hint-x:hover{color:var(--main-text);}
   .hint-x svg{width:14px;height:14px;display:block;}
@@ -310,7 +320,7 @@
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
         font-size:13px;color:var(--main-text);
-        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
+        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
   .fbtn.on{border-color:var(--accent);color:var(--accent);}
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
