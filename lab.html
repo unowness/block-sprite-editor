@@ -48,6 +48,7 @@
     --accent-edge:var(--accent);    /* dark states its selection in colour */
     --accent-label:var(--accent);
     --accent-bg:transparent;
+    --accent-wash:color-mix(in srgb,var(--accent) 12%,transparent);
     /* Nothing coloured is filled. The three colours exist only as an outline and the word inside
        it, so each one has to clear AA as TEXT on the surface it sits on — which is what sets its
        lightness, and the chroma is then whatever the hue can still hold there.
@@ -128,9 +129,18 @@
        So: one grey, and it is only the ground. Every surface a coloured control can sit on —
        sections, the stage, the controls themselves, the fields, the glyph tiles — is white, and
        the trio below is computed to clear AA against exactly that. */
-    --page:#FFFFFF;              /* white, like the reference: the hairlines do the separating */
-    --stage-bg:#FFFFFF;
-    --tool-background:#FFFFFF;
+    /* Radix Colors' gray scale, taken whole — values and the role each step is published for:
+       1 app background, 2 subtle background, 3 UI element background, 4 hovered, 5 active/selected,
+       6 subtle borders, 7 UI element border and focus rings, 8 hovered border, 11 low-contrast
+       text, 12 high-contrast text.
+       Which rungs, though, is ours. Their 1/2/3 sit at 1.03 and 1.08 against each other because
+       their model separates a card with a border, not with a fill — and that adjacency is exactly
+       the flatness this theme kept being sent back for. So the page drops to step 3, the panels
+       rise to step 1, and the controls go to white: the same ladder, three rungs apart instead of
+       one, with the controls still the brightest thing on screen. */
+    --page:#F0F0F0;              /* gray-3 */
+    --stage-bg:#FCFCFC;          /* gray-1 */
+    --tool-background:#FCFCFC;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
     --input-background:#FFFFFF;
     --canvas:#FFFFFF;
@@ -139,12 +149,12 @@
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
-    --stroke:#E6E6E6;
-    --stroke-focus:#8A8A8A;
-    --stroke-hover:#D0D0D0;
-    --main-text:#1A1A1A;    /* 17.01:1 on white */
-    --main-text-05:rgba(28,28,30,.5);
-    --tool-text-id:#717171;   /* 4.88:1 on white — the value both references agree on */
+    --stroke:#CECECE;            /* gray-7, their border step */
+    --stroke-focus:#8D8D8D;      /* gray-9 */
+    --stroke-hover:#BBBBBB;      /* gray-8, their hovered border */
+    --main-text:#202020;         /* gray-12 */    /* 17.01:1 on white */
+    --main-text-05:rgba(32,32,32,.5);
+    --tool-text-id:#646464;      /* gray-11, their low-contrast text */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
@@ -163,10 +173,11 @@
        estimated by eye off the screenshot, not sampled, with one exception: the muted grey came
        out at 3.36:1 by eye, under AA, and #717171 both fixes it and happens to be Marathon's own
        --foreground-muted. Two references landing on the same value is worth taking. */
-    --accent:#EDEDED;
+    --accent:#E0E0E0;            /* gray-5, their active/selected background */
     --accent-edge:var(--stroke);       /* the hairline stays; the fill does the talking */
     --accent-label:var(--main-text);
     --accent-bg:var(--accent);   /* light selects with the grey fill itself */
+    --accent-wash:#D9D9D9;       /* gray-6 — selected, hovered */
     --alert-bg:transparent;
     --alert-label:var(--alert);
     /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
@@ -177,9 +188,9 @@
     --green-bg:transparent;
     --green-label:var(--green);
     --alert:#C40F09;        /* same fix as dark: 4.00:1 on hover became 5.15 */
-    --glyph:#2A2A2C;
+    --glyph:#202020;
     --canvas-empty:var(--page);
-    --grid-line:rgba(176,176,176,.40);
+    --grid-line:rgba(187,187,187,.45);   /* gray-8 */
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -253,7 +264,10 @@
   .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
-  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
+  /* A selected control answers the pointer the same way Clear and Export do: a wash of its own
+     colour behind it, not a change of outline. --accent-wash lets light opt out, since its
+     selection is already a grey fill. */
+  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover,.fbtn.on:hover{background:var(--accent-wash);}
   .btn.alert:hover{background:color-mix(in srgb,var(--alert) 10%,transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
