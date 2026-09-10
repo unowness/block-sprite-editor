@@ -62,8 +62,11 @@
     --green-bg:transparent;
     --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
-    --alert:#F24723;   /* Marathon's --error — hue 10, chroma .81, 4.62:1 */
-    --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
+    /* Marathon's --error, lifted until it survives its own hover. At #F24723 the label sat at
+       4.15:1 the moment you pointed at it — the wash and the label are the same colour and move
+       together. L 64.2 -> 68.0 keeps the hue and the chroma and buys the margin back. */
+    --alert:#FF5634;
+    --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
@@ -170,10 +173,10 @@
        bright — #A8E10C measures 1.5:1 against white — so on this ground it has to come down to
        L* 48 to be readable at all, and at that depth the hue reads as olive rather than acid.
        Hue 75 against dark's 76: the same green, not a different one. */
-    --green:#5E7C00;   /* chroma .49, 4.82:1 on white */
+    --green:#546E03;   /* 4.24:1 on hover became 5.07 */
     --green-bg:transparent;
     --green-label:var(--green);
-    --alert:#DC3226;        /* L* 49.1, chroma .71, 4.64:1 on white */
+    --alert:#C40F09;        /* same fix as dark: 4.00:1 on hover became 5.15 */
     --glyph:#2A2A2C;
     --canvas-empty:var(--page);
     --grid-line:rgba(176,176,176,.40);
