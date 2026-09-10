@@ -267,10 +267,11 @@
 
   /* ---------------- hint banner ---------------- */
   /* The hint lives INSIDE the palette, on its own full-width row directly under CUSTOM. The
-     palette's own 8px gap sets it off from CUSTOM above; the extra margin below opens a wider
-     gap before BLOCK, so the caption reads as belonging to Custom and not to the glyph groups. */
+     palette's own 8px gap sets it off from CUSTOM above; the margin below brings the distance to
+     BLOCK to the same 40px the glyph groups get when the caption is dismissed, so closing it moves
+     nothing but itself. */
   .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-        width:100%;margin:0 0 16px;
+        width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
@@ -1655,6 +1656,41 @@
     document.addEventListener('touchend',sideEnd);
   })();
 
+  /* ---------------- stuck drags ----------------
+     Every drag here ends on mouseup. A mouseup does not always arrive: release the button outside
+     the window, or switch app mid-gesture, and the browser never delivers it. The gesture stays
+     live, and because the movement handlers sit on document, every later mouse move keeps driving
+     it with nothing pressed — brush a stretch handle, alt-tab, come back, and the canvas grows row
+     by row under the cursor until it fills the stage. Reproduced 2026-09-10: 16 rows to 26 on plain
+     movement, no button held.
+     Like letting go of a drawer handle while your hand is out of the room — the drawer keeps
+     following you until something tells it the hand is gone. `buttons` is that something: a move
+     carrying 0 is proof no button is down. Losing focus says the same thing, and says it without
+     waiting for a move.
+     Capture phase, so it lands before the handlers it is cancelling; the synthetic mouseup reuses
+     every existing ender, including the ones living inside closures. */
+  /* ---------------- a clicked button stays armed ----------------
+     A mouse click leaves a button focused, and a focused button answers Space and Enter. Nothing
+     on screen says so: :focus-visible deliberately does not match a pointer click, so the ring
+     that would warn you is absent by design. Click Zoom once and the next Space — the key you
+     press to scroll a page — zooms the drawing instead; hold it and the canvas runs to the top of
+     its range with no visible cause. Clear and Undo carry the same loaded gun.
+     Like leaving a power tool plugged in with the trigger taped down: it looks idle and is not.
+     Verified 2026-09-10: after a real click, document.activeElement is the Zoom button and
+     :focus-visible is false.
+     A keyboard activation reports detail === 0 and keeps its focus, so tabbing and repeating by
+     keyboard are untouched — only the pointer hands the control back. */
+  document.addEventListener('click',function(e){
+    if(!e.detail)return;                                   /* keyboard-driven click: leave focus be */
+    var b=e.target&&e.target.closest&&e.target.closest('.btn');
+    if(b&&document.activeElement===b)b.blur();
+  });
+
+  function dragInFlight(){return !!(ui.sideDrag||ui.drawing||ui.selMoving||ui.selDragNew);}
+  function endStuckDrag(){if(dragInFlight())document.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));}
+  document.addEventListener('mousemove',function(e){if(e.buttons===0)endStuckDrag();},true);
+  window.addEventListener('blur',endStuckDrag);
+
   /* keyboard */
   document.addEventListener('keydown',function(e){
     var t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||e.target.isContentEditable)return;
@@ -1721,8 +1757,15 @@
   $('select').onclick=function(){setTool(ui.tool==='select'?'draw':'select');};
   $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;setOn($('gridtog'),ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;setOn($('mirror'),ui.mirror);};
+  /* A flat +4 made every press mean something different: from 10 that is a 40% jump, from 190 it
+     is 2%, and crossing the whole 10-200 range took 42 clicks. A step in PROPORTION feels the same
+     everywhere and crosses the range in nine — the way a camera lens steps, not a ruler. */
+  var ZOOM_STEP=1.25;
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
-    ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();updateScrollbars();};});
+    var dir=+b.dataset.zoom, next=dir>0?ui.fs*ZOOM_STEP:ui.fs/ZOOM_STEP;
+    next=Math.round(next);
+    if(next===ui.fs)next=ui.fs+dir;   /* rounding must never leave the button doing nothing */
+    ui.fs=Math.max(10,Math.min(200,next));build();updateScrollbars();};});
 
   /* ---------------- fullscreen popup ---------------- */
   var FS_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg>';
