@@ -211,10 +211,7 @@
      INSIDE the frame. Controls stay docked to the frame corners (outside the scroll). */
   .stage{position:relative;background:var(--stage-bg);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
-  /* The stage was a fixed 346px letterbox on every screen. On a 1440x900 desktop that gave the
-     drawing surface 2.37% of the viewport while the panel around it stayed 65% empty. It now takes
-     a share of the window, still floored and still capped. */
-  .stage-canvas{position:relative;height:clamp(346px,58vh,600px);max-width:1280px;
+  .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
                 padding:54px 12px;overflow:auto;scrollbar-width:none;}
   .stage-canvas::-webkit-scrollbar{width:0;height:0;display:none;}   /* hide native — custom bar below */
@@ -236,7 +233,7 @@
      Esc or the X closes it. */
   body.fs-lock{overflow:hidden;position:fixed;left:0;right:0;width:100%;}  /* scroll-lock (top offset set in JS to avoid jump) */
   .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:110px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
-  .stage.fullscreen .stage-canvas{position:absolute;inset:0;height:auto;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
+  .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
   /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
   body.fs-lock .wrap>*:not(.stage):not(.fsbottom){visibility:hidden;}
   /* Fullscreen bottom bar: Paint panel (left) + Custom panel (right), in the backdrop below the stage.
@@ -269,11 +266,11 @@
   .cell:hover{background:color-mix(in srgb,var(--main-text) 22%,transparent);}
 
   /* ---------------- hint banner ---------------- */
-  /* The hint describes the Custom row, so it belongs to the block below, not to the stage above:
-     the 40px section gap opens above it and it sits a cluster gap from Paint and the palette.
-     Dismissing it hands that section gap to the paint bar, so the stage never ends up 8px from
-     the palette. */
-  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-section);
+  /* The hint lives INSIDE the palette, on its own full-width row directly under CUSTOM. The
+     palette's own 8px gap sets it off from CUSTOM above; the extra margin below opens a wider
+     gap before BLOCK, so the caption reads as belonging to Custom and not to the glyph groups. */
+  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+        width:100%;margin:0 0 16px;
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
@@ -284,7 +281,8 @@
   .hint-x svg{width:14px;height:14px;display:block;}
 
   /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0 0 var(--space-cluster);}
+  /* a row of .bars now, so the column's own 8px gap spaces it and it carries no margin of its own */
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;}
   .animbar-right{display:flex;flex-wrap:wrap;gap:8px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
@@ -297,9 +295,8 @@
   /* .hint sets display:flex, which outranks the browser's own [hidden]{display:none} — same
      specificity, author sheet wins — so hiding it needs to be said here, not left to the UA. */
   .hint[hidden]{display:none;}
-  /* hint -> Paint -> palette is one block: cluster gaps inside it, the section gap above it */
-  .paintbar{margin-top:var(--space-cluster);}
-  .hint[hidden]+.paintbar{margin-top:var(--space-section);}
+  /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
+  .paintbar{margin-top:var(--space-section);}
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
@@ -409,7 +406,7 @@
     .wrap{padding:var(--space-page) 16px 48px;}      /* 48px below the footer to page end */
     /* tools HUG their content (don't stretch full-width) and wrap as needed — Figma mobile */
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}   /* paint -> swatch-only */
-    .stage-tl .tw, .stage-tr .zw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only */
+    .stage-tl .tw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only (Zoom already is) */
     .animbar,.exportbar{justify-content:flex-start;}        /* hug-left instead of space-between */
     /* A .tool never wrapped its own controls, so the Scale tool stayed a rigid 364px row: at
        320px the Export button hung 51px past the screen edge and the whole page scrolled
@@ -547,25 +544,29 @@
         <input class="input num" type="number" id="ch" min="3" max="128" title="Height in cells (3-128)" aria-label="Canvas height in cells">
       </div>
     </div>
-  </div>
 
-  <!-- Animation timeline (shown above the stage in Animation view): Frames | FPS + Preview -->
-  <div class="animbar" id="animbar" style="display:none">
-    <div class="tool">
-      <span class="tool-label">Frames</span>
-      <div class="frames" id="frames" role="group" aria-label="Frames"></div>
-      <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
-      <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
-    </div>
-    <div class="animbar-right">
+    <!-- Row C — animation: Frames | FPS | Preview.
+         It belongs to the tool group, not to the stage: it is the same kind of thing as Row A and
+         Row B, it just only exists while Editor is on Animation. Sitting outside the group it read
+         as a floating strip pinned to the artboard; sitting inside it, the group simply grows a
+         third line and the 40px to the stage stays where it was. -->
+    <div class="animbar" id="animbar" style="display:none">
       <div class="tool">
-        <span class="tool-label">FPS</span>
-        <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second (1-60)" aria-label="Frames per second">
+        <span class="tool-label">Frames</span>
+        <div class="frames" id="frames" role="group" aria-label="Frames"></div>
+        <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
       </div>
-      <div class="tool">
-        <span class="tool-label">Preview</span>
-        <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
-        <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
+      <div class="animbar-right">
+        <div class="tool">
+          <span class="tool-label">FPS</span>
+          <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second (1-60)" aria-label="Frames per second">
+        </div>
+        <div class="tool">
+          <span class="tool-label">Preview</span>
+          <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
+          <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -578,8 +579,10 @@
       <button class="btn on" id="mirror" aria-pressed="true"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 0.5V13.5" stroke-dasharray="3 2.4"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1" title="Zoom out" aria-label="Zoom out"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 7H10" stroke-linecap="square"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom out</span></button>
-      <button class="btn" data-zoom="1" title="Zoom in" aria-label="Zoom in"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 7C6.62419 7 7.37581 7 10.5 7"/><path d="M7 3.5C7 6.62419 7 7.37581 7 10.5"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom in</span></button>
+      <!-- Remix Icon subtract-line / add-line, redrawn at the house size: Remix's bars run 5->19 of
+           a 24 box, which is 3->11 of a 14 box, and its 2/24 bar weight is this set's 1px stroke. -->
+      <button class="btn icon" data-zoom="-1" title="Zoom out" aria-label="Zoom out"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3 7H11"/></svg></button>
+      <button class="btn icon" data-zoom="1" title="Zoom in" aria-label="Zoom in"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3 7H11"/><path d="M7 3V11"/></svg></button>
       <button class="btn icon" id="fs" title="Fullscreen" aria-label="Fullscreen" aria-pressed="false"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
     </div>
     <div class="stage-canvas">
@@ -611,12 +614,6 @@
     <div class="fspanel" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
   </div>
 
-  <!-- Hint -->
-  <div class="hint" id="hint">
-    <span id="hinttext"></span>
-    <button class="hint-x" id="hintx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
-  </div>
-
   <!-- Paint + glyph palette: one block.
        Choosing a colour and choosing a glyph are the same decision — "what does this stroke lay
        down" — and they were on opposite sides of the canvas, one in Row B and one below the stage.
@@ -635,6 +632,14 @@
 
   <!-- Glyph palette -->
   <div class="palette" id="palette"></div>
+
+  <!-- The hint explains the Custom row, so buildPalette() lifts it INTO the palette and drops it
+       directly under CUSTOM — a caption sits under the thing it captions, not above the panel
+       before it. It lives out here in the source only because the palette itself is JS-built. -->
+  <div class="hint" id="hint">
+    <span id="hinttext"></span>
+    <button class="hint-x" id="hintx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
+  </div>
 
   <!-- Sprite JSON — box first, export bar under it (Figma 42:363) -->
   <div class="iobox">
@@ -753,7 +758,6 @@
   var docs=[ newDoc('Current') ];
   var activeDoc=0;
   var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
-           zoomedByHand:false,                   /* set by the Zoom buttons; suppresses auto-fit */
            view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
            drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null,
            cellW:0, cellH:0,
@@ -816,8 +820,8 @@
       box.appendChild(t);
     });
   }
-  function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();releaseFit();updateScrollbars();}
-  function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();releaseFit();updateScrollbars();}
+  function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
+  function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
   /* a tab holds a sprite and its own undo stack, and closing was the one action that destroyed
      work with no confirm and no way back. Ask only when there IS work — an untouched scratch tab
      closes silently, so the prompt stays meaningful. */
@@ -965,7 +969,7 @@
       var add=target-d.w,la=Math.floor(add/2),ra=add-la,j;
       pushUndo();clearSelection();for(j=0;j<la;j++)addColLeft();for(j=0;j<ra;j++)addColRight();
     }
-    build();renderFrames();$('cw').value=d.w;sizeNumInput($('cw'));releaseFit();updateScrollbars();
+    build();renderFrames();$('cw').value=d.w;sizeNumInput($('cw'));
   }
   function resizeHeight(target){
     var d=D();target=Math.max(3,Math.min(128,target|0));
@@ -978,7 +982,7 @@
       var add=target-d.h,ta=Math.floor(add/2),ba=add-ta,j;
       pushUndo();clearSelection();for(j=0;j<ta;j++)addRowTop();for(j=0;j<ba;j++)addRowBottom();
     }
-    build();renderFrames();$('ch').value=d.h;sizeNumInput($('ch'));releaseFit();updateScrollbars();
+    build();renderFrames();$('ch').value=d.h;sizeNumInput($('ch'));
   }
   /* one cell on a single side, no undo push (the drag handler snapshots once at gesture start) */
   function sideStep(side,grow){
@@ -1203,6 +1207,7 @@
     var clab=document.createElement('div');clab.className='plabel';clab.textContent='CUSTOM';cbox.appendChild(clab);
     var cgrid=document.createElement('div');cgrid.className='pgrid';cgrid.id='customgrid';cbox.appendChild(cgrid);
     pal.appendChild(cbox);
+    var hint=$('hint');if(hint)pal.appendChild(hint);   /* caption goes under the panel it captions */
     GROUPS.forEach(function(grp){
       var box=document.createElement('div');box.className='pgroup';
       var lab=document.createElement('div');lab.className='plabel';lab.textContent=grp.label;box.appendChild(lab);
@@ -1634,9 +1639,7 @@
       while(sd.applied>want){if(!sideStep(sd.side,false))break;sd.applied--;changed=true;}
       if(changed){build();renderFrames();syncInputs();hmap[sd.side].classList.add('show');}
     }
-    /* refit once the drag settles, not on every step: resizing by handle is the same "reflow this"
-       signal as typing a new W/H, but doing it mid-gesture would fight the hand that is dragging. */
-    function sideEnd(){if(ui.sideDrag){ui.sideDrag=null;document.body.style.cursor='';hideAll();updateOut();releaseFit();updateScrollbars();}}
+    function sideEnd(){if(ui.sideDrag){ui.sideDrag=null;document.body.style.cursor='';hideAll();updateOut();}}
     Object.keys(hmap).forEach(function(side){
       hmap[side].addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();sideStart(side,e.clientX,e.clientY);});
       hmap[side].addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();var t=e.changedTouches[0];sideStart(side,t.clientX,t.clientY);},{passive:false});
@@ -1714,44 +1717,21 @@
   $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;setOn($('gridtog'),ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;setOn($('mirror'),ui.mirror);};
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
-    ui.zoomedByHand=true;   /* from here on this sprite keeps the size you chose */
     ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();updateScrollbars();};});
 
   /* ---------------- fullscreen popup ---------------- */
   var FS_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg>';
   var CLOSE_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
-  /* fitCanvas() was written and then never called from anywhere, so the drawing stayed at whatever
-     cell size ui.fs happened to hold — 32px — no matter how much room the stage had. Measured on a
-     1440x900 desktop: a 958x346 stage holding a 159x193 drawing, 2.37% of the screen.
-     Think of it as a picture in a mount: the mount was being cut to a fixed size and the picture
-     left small in the middle of it, instead of the picture being printed to fill the mount. */
-  /* A stretch handle is a 14px chip sitting 22px outside the field, with an 8px invisible grab pad
-     around it — 30px of room the fit has to leave, or the handles push a scrollbar into a stage
-     whose drawing already fits. Plus 2px of slack, because the cell size is floored and the
-     per-cell measurement is fractional. */
-  var HANDLE_ROOM=30, FIT_SLACK=2, MIN_MEASURABLE=120;
+  /* Kept, still unused. Auto-fitting the drawing to the stage was built and then rejected by the
+     operator on 2026-09-10 — "увеличивать поле не нужно точно" — so the canvas stays at the cell
+     size ui.fs holds and the Zoom buttons are the only thing that changes it. */
   function fitCanvas(){
     var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
-    /* A page loaded in a background tab reports a zero-size window, and the stage collapses with
-       it. Fitting against that would lock the drawing to the 10px floor and leave it there once
-       the tab is finally opened — so refuse to measure a stage that has no room to measure. The
-       ResizeObserver below calls back the moment it gets one. */
-    if(sc.clientWidth<MIN_MEASURABLE||sc.clientHeight<MIN_MEASURABLE)return;
-    function room(a,b){return Math.max(parseFloat(a),HANDLE_ROOM)+Math.max(parseFloat(b),HANDLE_ROOM)+FIT_SLACK;}
-    var availW=Math.max(60,sc.clientWidth-room(cs.paddingLeft,cs.paddingRight));
-    var availH=Math.max(60,sc.clientHeight-room(cs.paddingTop,cs.paddingBottom));
+    var availW=Math.max(60,sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-8);
+    var availH=Math.max(60,sc.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-8);
     var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
-  /* Auto-fit is the default, not a rule: the moment you press Zoom, your zoom is the truth for
-     this sprite and the fit stops arguing with you. Changing the canvas size is a clear "reflow
-     this" and hands the fit back. */
-  function autoFit(){
-    if(ui.fsOpen)return;              /* fullscreen is deliberately 1:1 — large art scrolls */
-    if(ui.zoomedByHand)return;
-    fitCanvas();
-  }
-  function releaseFit(){ui.zoomedByHand=false;autoFit();}
   /* the REAL Paint pills + Custom row, moved into the fullscreen bottom bar and back (no duplicates) */
   function relocateFsPanels(toFs){
     var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);
@@ -1777,23 +1757,7 @@
     build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
-  window.addEventListener('resize',function(){autoFit();updateScrollbars();});
-  /* A window resize is not the only way the stage changes size — a background tab that finally
-     becomes visible never fires one. Watch the element itself, which is true in every case.
-     fitCanvas only rebuilds the grid inside the stage and never changes the stage's own box, so
-     this cannot feed back on itself; the flag is belt and braces. */
-  if(window.ResizeObserver){
-    var fitting=false;
-    new ResizeObserver(function(){
-      if(fitting)return;
-      fitting=true;autoFit();updateScrollbars();fitting=false;
-    }).observe(document.querySelector('.stage-canvas'));
-  }
-  /* A hidden document gets no rendering opportunities, so its ResizeObserver stays quiet however
-     much the stage changes underneath. Fit again the moment the tab is actually looked at. */
-  document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='visible'){autoFit();updateScrollbars();}
-  });
+  window.addEventListener('resize',updateScrollbars);
   document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
   wireScrollThumb($('fsthumb-h'),'x');
   wireScrollThumb($('fsthumb-v'),'y');
@@ -1952,7 +1916,6 @@
   build();
   renderFrames();
   updateHist();
-  autoFit();
   updateScrollbars();
   /* first visit only — once Skip or Start drawing is pressed, the flag keeps it from returning */
   try{if(localStorage.getItem(ONB_KEY)!=='1')onbOpen(0);}catch(e){}
