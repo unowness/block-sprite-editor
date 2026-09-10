@@ -71,30 +71,31 @@
      boxes you could not see — the structure was there in the markup and absent on screen.
      The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    /* One shape, drawn from both ends.
-       Dark measures page 2.8 / stage 6.4 / section 7.9 / control 11.9 in L*, and nobody complains
-       about it: each layer steps AWAY from the page, towards the ink. Light now uses those exact
-       distances from the opposite end — 98.2 / 94.6 / 93.1 / 89.1 — so the paper is the brightest
-       thing in the room and everything you can touch sits a measured step down into it. Fields go
-       one step deeper still, and hover takes a control down another. Depth reads as depth in both
-       themes; only the direction of "away" changes, because the ink is at the other end.
+    /* One shape, drawn from both ends — and the thing you touch is always at the top of it.
+       Dark measures page 2.8 / stage 6.4 / section 7.9 / control 11.9 in L*: every layer steps
+       AWAY from the page, and the controls end up the brightest things on screen. Light uses the
+       same distances and lands at 90.9 / 94.5 / 96.0 / 100, so the controls are white — the only
+       white in the interface — and everything else is a grey tray holding them up.
 
-       The earlier arrangement put the page in the MIDDLE, with sections and controls above it and
-       fields below. It is what macOS does and it is not wrong in the abstract, but here it made
-       the page a dark mat around bright cards, and it left empty text fields as the heaviest
-       objects on screen — a lot of visual weight spent on nothing.
+       Two arrangements were tried and both failed for the same reason. Putting the page in the
+       middle made it a dark mat around bright cards. Putting the paper on top and stepping DOWN
+       into the interface left every control greyer than its surroundings, and a grey control reads
+       as a disabled one — the whole page looked switched off. A control has to be the lightest
+       thing in a light theme, the way it is the lightest thing in the dark one.
 
-       Cool, not warm: every grey carries more blue than red, so the paper reads as daylight rather
-       than as aged stock. The greys hold the temperature on their own — the one warning colour
-       does NOT get cooled with them, because Clear has to read as the same signal in both themes,
-       and a hue that changes with the theme is a hue nobody chose. */
-    --page:#F8FAFC;              /* paper, the brightest thing — L* 98.2 */
-    --stage-bg:#EDF0F3;          /* L* 94.6 */
-    --tool-background:#E8ECF0;   /* L* 93.1 */
-    --btn-background:#DCE1E6;    /* controls — L* 89.1 */
-    --input-background:#D6DBE0;  /* fields are one step deeper than the controls — L* 87.0 */
-    --canvas:#DCE1E6;            /* glyph tiles are controls */
-    --hover-veil:color-mix(in srgb,var(--main-text) 8%,transparent);
+       Cool, not warm: every grey carries more blue than red, so the ground reads as daylight
+       rather than as aged stock. The greys hold the temperature on their own — the one warning
+       colour does NOT get cooled with them, because Clear has to read as the same signal in both
+       themes, and a hue that changes with the theme is a hue nobody chose. */
+    --page:#E0E6EC;              /* the grey ground — L* 90.9 */
+    --stage-bg:#EBF0F4;          /* L* 94.5 */
+    --tool-background:#F0F4F7;   /* the trays — L* 96.0 */
+    --btn-background:#FFFFFF;    /* controls, the only white — L* 100 */
+    --input-background:#FFFFFF;  /* a field is a control you type into; same height, own border */
+    --canvas:#FFFFFF;            /* glyph tiles are controls */
+    /* 6% takes a white control to L* 95.1, just under its tray at 96.0 — hovering presses it back
+       into the surface it came from, without ever making it look switched off */
+    --hover-veil:color-mix(in srgb,var(--main-text) 6%,transparent);
     --stroke:#C3CAD3;
     --stroke-focus:#5D6673;
     --stroke-hover:#A3ACB8;
