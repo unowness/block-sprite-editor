@@ -171,9 +171,14 @@
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px;font-size:13px;color:var(--main-text);cursor:pointer;}
   .tab.on{border-color:var(--accent);color:var(--accent);}
+  .tab-name{min-width:18px;text-align:center;}   /* a bare number still gets a label-sized target */
   .tab .x{position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;cursor:pointer;}
-  .tab .x::before{content:'';position:absolute;inset:-6px;}   /* 25px grab area, chip stays 13px */
+  /* The X keeps a comfortable grab area, but it grows away from the label, never back over it.
+     With a symmetric -6px it reached 6px left of the chip, and on a numbered tab (43px wide) that
+     put the tab's own visual centre inside the close target: aiming at the middle of a tab
+     destroyed it instead of selecting it. Measured 2026-09-10: 65% of a numbered tab was Close. */
+  .tab .x::before{content:'';position:absolute;inset:-6px -6px -6px 0;}
   .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
   .tab .x svg{width:12px;height:12px;display:block;}
 
@@ -452,7 +457,7 @@
      the decoration transparent to the pointer leaves the control as the single, stable target.
      The tab's close X and the colour <input> inside a swatch stay clickable on purpose. */
   .btn .iw,.btn>svg,.btn .lbl,.hint-x>svg,.fbtn>*,
-  .tab>span:not(.x),.tab .x>svg,
+  .tab-name,.tab .x>svg,
   .onb__cta>*,.onb__skip>*{pointer-events:none;}
 </style>
 </head>
@@ -741,8 +746,13 @@
       var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
       /* unnamed tabs read as their position — 1 2 3 4 5 — so closing one renumbers the rest;
          typing a file name into ID takes over the label (operator, Figma 42:363). */
-      var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
-      name.onclick=function(){selectTab(i);};t.appendChild(name);
+      var name=document.createElement('span');name.className='tab-name';
+      name.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
+      t.appendChild(name);
+      /* select on the chip, not on the label: the label is pointer-events:none decoration, so a
+         handler sitting on it never fired for a real mouse — the chip was selectable only by the
+         few pixels of padding the close target had not already claimed. */
+      t.onclick=function(){selectTab(i);};
       if(docs.length>1){
         var x=document.createElement('span');x.className='x';x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';x.title='Close';
         x.onclick=function(e){e.stopPropagation();closeTab(i);};t.appendChild(x);
