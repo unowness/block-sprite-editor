@@ -36,7 +36,11 @@
        an outline at 13:1. Nothing is filled and nothing is tinted.
        The one colour left in the chrome is the alert, and the only other colour on the page is the
        drawing. That is the whole rule: an interface in grey, a picture in colour. */
-    --accent:#67E8F9;
+    /* One hue for both themes, held as an invariant: OKLCH H 263.9 here, 264.0 in light.
+       It is the sRGB blue-primary axis — #0000FF is oklch(45.2% .313 264.05) — which is where the
+       screen keeps its own pigment, and where the gamut still gives an edge: maxC .309 at L45
+       against .184 five degrees away. Measured, not chosen by eye. */
+    --accent:#5388FF;
     /* Both coloured buttons are soft-filled: 40% of the colour, its own vivid edge, and the
        theme's own text as the label. The colour itself cannot be the label on a fill this
        strong — measured 2.6:1 — so the fill carries the hue and the label carries the reading. */
@@ -123,7 +127,7 @@
        0.66 against the old 0.57), and the two coloured BUTTONS become filled — a vivid fill with a
        contrasting label is bright and legible at the same time, which coloured text on a tint can
        never be here. Dark needs none of this: on black a bright colour simply is the text. */
-    --accent:#C81F63;
+    --accent:#154DE9;   /* same hue, the lightness the light surfaces demand */
     --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
     --alert-label:var(--main-text);
     --green:#12B76A;
@@ -231,7 +235,7 @@
   /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
   .btn:focus-visible,.tab-name:focus-visible,.tab .x:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
   .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
-    border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;}
+    border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 75%,transparent);outline-offset:2px;}
   /* pressed state — the click gets an immediate answer instead of only a hover tint */
   .btn:not(:disabled):active,.tab-name:active,.paint:active,.gbtn:active,.ccell:active,
   .onb__cta:active,.hint-x:active,.tab .x:active{
