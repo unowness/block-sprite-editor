@@ -40,19 +40,20 @@
        light theme and #4EBCFF for this one. One hue family, both sides of it, and neither is a
        terminal cyan — a phosphor cyan is pure and hard, these are drawn towards blue and sit where
        a designer put them. */
-    --accent:#7FD1FF;
-    --accent-bg:color-mix(in srgb,var(--accent) 50%,transparent);
-    /* Every coloured chip is 50% of its colour. On dark that lands mid-range, where the paper
-       ink (#E9E9E6) only reaches 4.35:1 — under AA. Pure white clears it at 5.29, so the chip
-       label is the one place this theme goes all the way to white. */
-    --chip-label:#FFFFFF;
-    --alert-bg:color-mix(in srgb,var(--alert) 50%,transparent);
-    --alert-label:var(--chip-label);
-    --green:#3DDC84;
-    --green-bg:color-mix(in srgb,var(--green) 50%,transparent);
-    --green-label:var(--chip-label);
+    --accent:#35D6C4;   /* turquoise, L* 77.8, chroma .63, 9.28:1 */
+    --accent-bg:transparent;
+    /* Nothing coloured is filled. The three colours exist only as an outline and the word inside
+       it, so each one has to clear AA as TEXT on the surface it sits on — which is what sets its
+       lightness, and the chroma is then whatever the hue can still hold there.
+       The trio is picked to sit at one brightness so it reads as a set: L* 77.8, 77.9 and 66.7.
+       Red is the outlier and always will be — a red cannot reach L* 78 without becoming pink. */
+    --alert-bg:transparent;
+    --alert-label:var(--alert);
+    --green:#4FD98A;   /* L* 77.9, chroma .54, 9.33:1 */
+    --green-bg:transparent;
+    --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
-    --alert:#E05A50;
+    --alert:#FF7A6B;   /* L* 66.7, chroma .58, 6.62:1 on a control */
     --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
     --canvas:#1C1D20;  /* glyph tiles are controls too */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
@@ -135,27 +136,24 @@
     --main-text:#1F1E1C;    /* the anchor the light theme never had — 16.66:1 on a control */
     --main-text-05:rgba(31,30,28,.5);
     --tool-text-id:#5A5854;   /* 6.28:1 on the ground */
-    --chip-label:var(--main-text);   /* light chips take the ink; 8.1-9.9:1 on a 50% fill */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
        0.66 against the old 0.57), and the two coloured BUTTONS become filled — a vivid fill with a
        contrasting label is bright and legible at the same time, which coloured text on a tint can
        never be here. Dark needs none of this: on black a bright colour simply is the text. */
-    /* The real Wii U cyan, kept at full strength: as TEXT it measures 3.26:1 on white and would
-       have to be darkened to #00809F to pass, which costs a fifth of its chroma — the exact drain
-       that made every earlier light accent look dull. So the accent is never text here. It is a
-       soft chip: 40% fill, the ink as its label (8.59:1), and the colour itself as the edge
-       (3.26:1, which is what a non-text indicator needs). Soft and readable at once, which is how
-       the console did it too. */
-    --accent:#009AC7;
-    --accent-bg:color-mix(in srgb,var(--accent) 50%,transparent);
-    --alert-bg:color-mix(in srgb,var(--alert) 50%,transparent);
-    --alert-label:var(--chip-label);
-    --green:#12B76A;
-    --green-bg:color-mix(in srgb,var(--green) 50%,transparent);
-    --green-label:var(--chip-label);
-    --alert:#DC4B41;        /* softened with the rest; the ink on its 40% fill reads 7.71:1 */
+    /* The same rule, read from the other end. On porcelain a colour has to be DARK to clear AA
+       as text, so this trio lives at L* 42-45 — jewel tones rather than the drained mid-greys that
+       darkening usually produces, because at that lightness these hues still hold chroma .40-.57.
+       One family, one brightness, and the warm ground gives all three something to push against. */
+    --accent:#0F766E;   /* turquoise, L* 44.5, 5.47:1 on a control, 4.85 on the ground */
+    --accent-bg:transparent;
+    --alert-bg:transparent;
+    --alert-label:var(--alert);
+    --green:#12784A;   /* L* 44.3, chroma .40, 5.51:1 / 4.88 */
+    --green-bg:transparent;
+    --green-label:var(--green);
+    --alert:#B93028;        /* L* 42.1, chroma .57, 5.97:1 / 5.29 */
     --glyph:#33322F;
     --canvas-empty:var(--page);
     --grid-line:rgba(170,166,158,.40);
@@ -220,27 +218,25 @@
      pushes it under the section, which is the direction the operator asked for. */
   .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(var(--hover-veil),var(--hover-veil));}
   #export:hover,.btn:disabled:hover{background-image:none;}
-  .btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
      dark theme's colour and stopped following the token entirely */
-  .btn.alert{background:var(--alert-bg);border-color:color-mix(in srgb,var(--alert) 55%,transparent);color:var(--alert-label);}
+  .btn.alert{background:var(--alert-bg);border-color:var(--alert);color:var(--alert-label);}
   /* Export is the primary action and it is filled, so its colour can be as bright as it likes —
      the label contrasts against the fill, not against the page. */
-  /* A 40% fill with a FULL-strength outline says the same thing twice, and the outline is what
-     made these read as crude — measured 3.85:1 against their own fill in dark. The edge steps down
-     to 55%, which is 1.47:1: enough to close the shape, not enough to ring it. */
-  .btn.green{background:var(--green-bg);border-color:color-mix(in srgb,var(--green) 55%,transparent);color:var(--green-label);}
+  /* Outline only: the background stays the surface, the contour and the word carry the colour. */
+  .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
   .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
-  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 55%,transparent);border-color:color-mix(in srgb,var(--alert) 70%,transparent);}
+  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 10%,transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 55%,transparent);border-color:color-mix(in srgb,var(--green) 70%,transparent);}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
@@ -266,7 +262,7 @@
   .onb__cta:active,.hint-x:active,.tab .x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 68%,transparent);}
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -277,7 +273,7 @@
   .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
-  .tab.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .tab.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   /* the label button carries what used to be the chip's left padding and the 6px gap, so every
      pixel that is not the close X selects the sprite */
   .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
@@ -301,7 +297,7 @@
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   /* the paint pills had only a pressed state and no hover at all */
   .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .paint.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .paint.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
   .swatch input[type=color]{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
@@ -390,7 +386,7 @@
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
         font-size:13px;color:var(--main-text);
         background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
-  .fbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .fbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
@@ -417,7 +413,7 @@
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
         background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
   .gbtn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .gbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .gbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
 
   /* ---------------- export bar ---------------- */
   /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
@@ -504,7 +500,7 @@
      the keyboard. */
   .gbtn.custom:focus{border-color:var(--stroke-focus);}
   .gbtn.custom:focus:not(:focus-visible){outline:none;}
-  .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
+  .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
 
   /* ============================================================
      Mobile (<=600px): icon controls, stacked tools/palette, common label column
