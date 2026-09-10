@@ -13,8 +13,9 @@ It is one self-contained HTML file with no build step and no backend — copy
 ## Drawing
 
 - Pick a **glyph** from the palette and a **paint** (Main, Accent, Detail, Extra),
-  then draw on the grid. **Right-click** erases.
-- **Custom panel** — 16 slots for glyphs you use often. Select a glyph in the
+  then draw on the grid. **Right-click** erases with a mouse; the **Eraser**
+  tool does the same thing on any device.
+- **Custom panel** — 20 slots for glyphs you use often. Select a glyph in the
   palette, then click an empty slot to store it there. Click a filled slot to
   draw with it; **Backspace** clears it. Pasting or typing into a slot also works.
 - **Mirror** keeps the left and right halves symmetric as you paint.
@@ -27,15 +28,15 @@ It is one self-contained HTML file with no build step and no backend — copy
 
 - Size from 3×3 to 128×128 — type into **W/H**, or drag any of the four edge
   handles to resize from that side.
-- **Zoom** presets: 1×, 4×, 8×, 16×.
-- **Frames** — add and delete frames, set **FPS** (1–60), and play the loop.
+- **Zoom in / Zoom out** step the drawing's cell size.
+- Export **scale** presets: 1×, 4×, 8×, 16×.
+- **Frames** — up to 16 per sprite; set **FPS** (1–60) and play the loop.
 - **Fullscreen** renders the sprite 1:1 with the paint and custom panels docked
   at the bottom.
 
 ## Interface
 
 - **Tabs** — several sprites open at once, each with its own undo history.
-- **Theme** — Light and Dark, remembered between visits.
 - **Autosave** — every open tab is written to `localStorage` and restored on the
   next visit. Nothing is sent anywhere; there is no backend.
 - Works with touch: drag to paint, and the resize handles stay visible on
