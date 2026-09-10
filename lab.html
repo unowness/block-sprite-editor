@@ -40,7 +40,8 @@
        light theme and #4EBCFF for this one. One hue family, both sides of it, and neither is a
        terminal cyan — a phosphor cyan is pure and hard, these are drawn towards blue and sit where
        a designer put them. */
-    --accent:#35D6C4;   /* turquoise, L* 77.8, chroma .63, 9.28:1 */
+    --accent:#5BD9F5;   /* back to the original's family — hue 191 against its 187, but bluer
+                           and with more chroma: L* 81, .60, 10.18:1 on a control */
     --accent-bg:transparent;
     /* Nothing coloured is filled. The three colours exist only as an outline and the word inside
        it, so each one has to clear AA as TEXT on the surface it sits on — which is what sets its
@@ -107,21 +108,18 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    /* Porcelain. Started over, and the diagnosis that started it: every light theme before this
-       one had a COOL ground and a COOL accent — cyan on blue-grey, blue on blue-grey. Same
-       temperature on both sides, so the accent had nothing to push against and the whole thing
-       read flat however the values were arranged. Grey at exactly 0 did not fix it either; a grey
-       with no opinion is still not an opposite.
-       So the ground is warm now — red over blue +4, the colour of unglazed porcelain — and the
-       accent stays the Wii cyan. Warm field, cool mark: the palette finally has an axis instead of
-       a ramp, and the accent is the only cold thing on the page, which is exactly what an accent
-       is for.
-       The second thing that was missing is weight. Nothing in the light theme was ever darker than
-       L* 37, so the composition floated. The ink drops to L* 11.3 (16.66:1 on a control) and
-       anchors it. */
-    --page:#F2F1EE;              /* L* 95.1 */
-    --stage-bg:#FBFAF8;          /* L* 98.3 */
-    --tool-background:#FBFAF8;
+    /* Everything a colour touches is WHITE.
+       The warm porcelain ground was the mistake: it read as brown, and a colour sitting on a warm
+       ground goes muddy by simultaneous contrast whatever its own numbers say. Worse, I was
+       spending the contrast budget against that darker ground, which let the colours be duller
+       than they had to be — measured, the same hues reach chroma .51-.71 when the budget is spent
+       against white instead of .40-.57 against porcelain.
+       So: one grey, and it is only the ground. Every surface a coloured control can sit on —
+       sections, the stage, the controls themselves, the fields, the glyph tiles — is white, and
+       the trio below is computed to clear AA against exactly that. */
+    --page:#F4F4F4;              /* the only grey — L* 96.2, dead neutral */
+    --stage-bg:#FFFFFF;
+    --tool-background:#FFFFFF;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
     --input-background:#FFFFFF;
     --canvas:#FFFFFF;
@@ -130,12 +128,12 @@
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
-    --stroke:#E0DED9;
-    --stroke-focus:#8B8780;
-    --stroke-hover:#C8C5BE;
-    --main-text:#1F1E1C;    /* the anchor the light theme never had — 16.66:1 on a control */
-    --main-text-05:rgba(31,30,28,.5);
-    --tool-text-id:#5A5854;   /* 6.28:1 on the ground */
+    --stroke:#E3E3E3;
+    --stroke-focus:#8C8C8C;
+    --stroke-hover:#CFCFCF;
+    --main-text:#1C1C1E;    /* 17.01:1 on white */
+    --main-text-05:rgba(28,28,30,.5);
+    --tool-text-id:#606060;   /* 5.72:1 on the ground, 6.13 on a surface */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
@@ -146,17 +144,17 @@
        as text, so this trio lives at L* 42-45 — jewel tones rather than the drained mid-greys that
        darkening usually produces, because at that lightness these hues still hold chroma .40-.57.
        One family, one brightness, and the warm ground gives all three something to push against. */
-    --accent:#0F766E;   /* turquoise, L* 44.5, 5.47:1 on a control, 4.85 on the ground */
+    --accent:#018480;   /* turquoise — L* 49.6, chroma .51 against the old .40, 4.55:1 on white */
     --accent-bg:transparent;
     --alert-bg:transparent;
     --alert-label:var(--alert);
-    --green:#12784A;   /* L* 44.3, chroma .40, 5.51:1 / 4.88 */
+    --green:#008750;   /* L* 49.4, chroma .53, 4.58:1 on white */
     --green-bg:transparent;
     --green-label:var(--green);
-    --alert:#B93028;        /* L* 42.1, chroma .57, 5.97:1 / 5.29 */
-    --glyph:#33322F;
+    --alert:#DC3226;        /* L* 49.1, chroma .71, 4.64:1 on white */
+    --glyph:#2A2A2C;
     --canvas-empty:var(--page);
-    --grid-line:rgba(170,166,158,.40);
+    --grid-line:rgba(176,176,176,.40);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
