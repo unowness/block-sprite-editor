@@ -41,15 +41,16 @@
        terminal cyan — a phosphor cyan is pure and hard, these are drawn towards blue and sit where
        a designer put them. */
     --accent:#7FD1FF;
-    --accent-bg:color-mix(in srgb,var(--accent) 40%,transparent);
-    /* Both coloured buttons are soft-filled: 40% of the colour, its own vivid edge, and the
-       theme's own text as the label. The colour itself cannot be the label on a fill this
-       strong — measured 2.6:1 — so the fill carries the hue and the label carries the reading. */
-    --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
-    --alert-label:var(--main-text);
+    --accent-bg:color-mix(in srgb,var(--accent) 50%,transparent);
+    /* Every coloured chip is 50% of its colour. On dark that lands mid-range, where the paper
+       ink (#E9E9E6) only reaches 4.35:1 — under AA. Pure white clears it at 5.29, so the chip
+       label is the one place this theme goes all the way to white. */
+    --chip-label:#FFFFFF;
+    --alert-bg:color-mix(in srgb,var(--alert) 50%,transparent);
+    --alert-label:var(--chip-label);
     --green:#3DDC84;
-    --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
-    --green-label:var(--main-text);
+    --green-bg:color-mix(in srgb,var(--green) 50%,transparent);
+    --green-label:var(--chip-label);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
     --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
@@ -105,12 +106,21 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    /* Neutral, not cool. The cool cast was tried at +12, +6 and +3 blue over red and read as a
-       tint each time; at 0 the grey stops having an opinion and the only colour left in the light
-       theme is the accent and the two buttons — which is the point. */
-    --page:#F1F1F1;              /* L* 95.1 */
-    --stage-bg:#FAFAFA;          /* L* 98.3 */
-    --tool-background:#FAFAFA;
+    /* Porcelain. Started over, and the diagnosis that started it: every light theme before this
+       one had a COOL ground and a COOL accent — cyan on blue-grey, blue on blue-grey. Same
+       temperature on both sides, so the accent had nothing to push against and the whole thing
+       read flat however the values were arranged. Grey at exactly 0 did not fix it either; a grey
+       with no opinion is still not an opposite.
+       So the ground is warm now — red over blue +4, the colour of unglazed porcelain — and the
+       accent stays the Wii cyan. Warm field, cool mark: the palette finally has an axis instead of
+       a ramp, and the accent is the only cold thing on the page, which is exactly what an accent
+       is for.
+       The second thing that was missing is weight. Nothing in the light theme was ever darker than
+       L* 37, so the composition floated. The ink drops to L* 11.3 (16.66:1 on a control) and
+       anchors it. */
+    --page:#F2F1EE;              /* L* 95.1 */
+    --stage-bg:#FBFAF8;          /* L* 98.3 */
+    --tool-background:#FBFAF8;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
     --input-background:#FFFFFF;
     --canvas:#FFFFFF;
@@ -119,12 +129,13 @@
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
-    --stroke:#E4E4E4;
-    --stroke-focus:#8E8E8E;
-    --stroke-hover:#CCCCCC;
-    --main-text:#2C2C2E;    /* soft ink — this family never reaches for black */
-    --main-text-05:rgba(44,44,46,.5);
-    --tool-text-id:#636363;   /* 5.32:1 on the ground */
+    --stroke:#E0DED9;
+    --stroke-focus:#8B8780;
+    --stroke-hover:#C8C5BE;
+    --main-text:#1F1E1C;    /* the anchor the light theme never had — 16.66:1 on a control */
+    --main-text-05:rgba(31,30,28,.5);
+    --tool-text-id:#5A5854;   /* 6.28:1 on the ground */
+    --chip-label:var(--main-text);   /* light chips take the ink; 8.1-9.9:1 on a 50% fill */
     /* A bright colour on a light ground can be TEXT only if it is dark, and dark is exactly what
        "dull" means. So light spends its brightness where the ground cannot eat it: the accent stays
        an outline and takes the brightest pink that still reads (#C81F63, 5.48:1 on white, chroma
@@ -138,16 +149,16 @@
        (3.26:1, which is what a non-text indicator needs). Soft and readable at once, which is how
        the console did it too. */
     --accent:#009AC7;
-    --accent-bg:color-mix(in srgb,var(--accent) 40%,transparent);
-    --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
-    --alert-label:var(--main-text);
+    --accent-bg:color-mix(in srgb,var(--accent) 50%,transparent);
+    --alert-bg:color-mix(in srgb,var(--alert) 50%,transparent);
+    --alert-label:var(--chip-label);
     --green:#12B76A;
-    --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
-    --green-label:var(--main-text);
+    --green-bg:color-mix(in srgb,var(--green) 50%,transparent);
+    --green-label:var(--chip-label);
     --alert:#DC4B41;        /* softened with the rest; the ink on its 40% fill reads 7.71:1 */
-    --glyph:#3C3C3E;
+    --glyph:#33322F;
     --canvas-empty:var(--page);
-    --grid-line:rgba(168,168,168,.40);
+    --grid-line:rgba(170,166,158,.40);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -209,7 +220,7 @@
      pushes it under the section, which is the direction the operator asked for. */
   .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(var(--hover-veil),var(--hover-veil));}
   #export:hover,.btn:disabled:hover{background-image:none;}
-  .btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
+  .btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
@@ -266,7 +277,7 @@
   .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
-  .tab.on{background:var(--accent-bg);border-color:var(--accent);}
+  .tab.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
   /* the label button carries what used to be the chip's left padding and the 6px gap, so every
      pixel that is not the close X selects the sprite */
   .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
@@ -290,7 +301,7 @@
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   /* the paint pills had only a pressed state and no hover at all */
   .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .paint.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
+  .paint.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
   .swatch input[type=color]{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);
@@ -379,7 +390,7 @@
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
         font-size:13px;color:var(--main-text);
         background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
-  .fbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
+  .fbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
@@ -406,7 +417,7 @@
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
         background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
   .gbtn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
-  .gbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
+  .gbtn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
 
   /* ---------------- export bar ---------------- */
   /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
@@ -493,7 +504,7 @@
      the keyboard. */
   .gbtn.custom:focus{border-color:var(--stroke-focus);}
   .gbtn.custom:focus:not(:focus-visible){outline:none;}
-  .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent);color:var(--main-text);}
+  .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent);color:var(--chip-label);}
 
   /* ============================================================
      Mobile (<=600px): icon controls, stacked tools/palette, common label column
