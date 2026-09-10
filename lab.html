@@ -143,11 +143,11 @@
   .input:focus{outline:none;border-color:var(--stroke-focus);}
   button:focus,input:focus{outline:none;}
   /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
-  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
+  .btn:focus-visible,.tab-name:focus-visible,.tab .x:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
   .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
     border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;}
   /* pressed state — the click gets an immediate answer instead of only a hover tint */
-  .btn:not(:disabled):active,.tab:active,.paint:active,.gbtn:active,.ccell:active,
+  .btn:not(:disabled):active,.tab-name:active,.paint:active,.gbtn:active,.ccell:active,
   .onb__cta:active,.hint-x:active,.tab .x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
@@ -156,13 +156,26 @@
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   /* same metrics as .fbtn so a numbered tab is exactly as compact as a frame button */
-  .tab{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:32px;height:32px;
+  /* The chip is a container; the two things you can do to a sprite are two real buttons inside it.
+     As a <span> with a click handler the tab was mouse-only — nothing in the strip could be
+     reached by Tab, so a keyboard user could open sprites and never switch between them. */
+  .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:0 8px;font-size:13px;color:var(--main-text);cursor:pointer;}
+       padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
   .tab.on{border-color:var(--accent);color:var(--accent);}
-  .tab .x{position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
+  /* the label button carries what used to be the chip's left padding and the 6px gap, so every
+     pixel that is not the close X selects the sprite */
+  .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
+            display:inline-flex;align-items:center;justify-content:center;min-width:32px;
+            font:inherit;color:inherit;cursor:pointer;border-radius:var(--r-btn) 0 0 var(--r-btn);}
+  .tab .x{appearance:none;background:none;border:0;padding:0;font:inherit;
+          position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;cursor:pointer;}
-  .tab .x::before{content:'';position:absolute;inset:-6px;}   /* 25px grab area, chip stays 13px */
+  /* The X keeps a comfortable grab area, but it grows away from the label, never back over it.
+     With a symmetric -6px it reached 6px left of the chip, and on a numbered tab (43px wide) that
+     put the tab's own visual centre inside the close target: aiming at the middle of a tab
+     destroyed it instead of selecting it. Measured 2026-09-10: 65% of a numbered tab was Close. */
+  .tab .x::before{content:'';position:absolute;inset:-6px -6px -6px 0;}
   .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
   .tab .x svg{width:12px;height:12px;display:block;}
 
@@ -170,7 +183,7 @@
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
   .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
          background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-         padding:0 9px;font-size:13px;color:var(--main-text);cursor:pointer;}
+         padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   /* the paint pills had only a pressed state and no hover at all */
   .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .paint.on{border-color:var(--accent);color:var(--accent);}
@@ -350,7 +363,12 @@
   /* ---------------- custom glyph cells (editable) ---------------- */
   .gbtn.custom{color:var(--main-text);caret-color:var(--accent);overflow:hidden;
                text-align:center;line-height:30px;}  /* centre glyph + caret (flex left the empty caret top-left) */
-  .gbtn.custom:focus{outline:none;border-color:var(--stroke-focus);}
+  /* A custom cell is a text field, so mouse focus should be a caret and a quiet border — but
+     `.gbtn.custom:focus` outranked `.gbtn:focus-visible`, so it swallowed the keyboard ring too
+     and tabbing through the Custom row went blind. Split the two: quiet for the pointer, ring for
+     the keyboard. */
+  .gbtn.custom:focus{border-color:var(--stroke-focus);}
+  .gbtn.custom:focus:not(:focus-visible){outline:none;}
   .gbtn.custom.on{color:var(--accent);border-color:var(--accent);}
 
   /* ============================================================
@@ -362,6 +380,12 @@
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}   /* paint -> swatch-only */
     .stage-tl .tw, .stage-tr .zw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only */
     .animbar,.exportbar{justify-content:flex-start;}        /* hug-left instead of space-between */
+    /* A .tool never wrapped its own controls, so the Scale tool stayed a rigid 364px row: at
+       320px the Export button hung 51px past the screen edge and the whole page scrolled
+       sideways. Let a tool break its row on phones; the label column stays put. */
+    .tool{flex-wrap:wrap;}
+    .tool>.tool-label{flex:none;}
+    #export{flex:1;}   /* Export takes the rest of the line it lands on instead of a 116px stub */
     #play .pw,#stop .pw{display:none;}
     .pgroup{width:100%;}
     .pgrid{max-width:none;}
@@ -441,7 +465,7 @@
      the decoration transparent to the pointer leaves the control as the single, stable target.
      The tab's close X and the colour <input> inside a swatch stay clickable on purpose. */
   .btn .iw,.btn>svg,.btn .lbl,.hint-x>svg,.fbtn>*,
-  .tab>span:not(.x),.tab .x>svg,
+  .tab .x>svg,
   .onb__cta>*,.onb__skip>*{pointer-events:none;}
 </style>
 </head>
@@ -460,12 +484,12 @@
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
-        <input class="input" type="text" id="sid" placeholder="File name">
+        <input class="input" type="text" id="sid" placeholder="File name" aria-label="Sprite file name">
       </div>
       <div class="tool">
         <span class="tool-label">Tabs</span>
-        <div class="tabs" id="tabs"></div>
-        <button class="btn icon" id="addtab" title="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <div class="tabs" id="tabs" role="group" aria-label="Open sprites"></div>
+        <button class="btn icon" id="addtab" title="New sprite" aria-label="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
       </div>
       <div class="tool">
         <span class="tool-label">File</span>
@@ -483,22 +507,22 @@
     <div class="bar">
       <div class="tool" id="paintgroup">
         <span class="tool-label">Paint</span>
-        <div class="paints" id="paints">
-          <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Main</button>
-          <button class="paint"    data-l="a"><span class="swatch"><input type="color" id="col-a"></span>Accent</button>
-          <button class="paint"    data-l="d"><span class="swatch"><input type="color" id="col-d"></span>Detail</button>
-          <button class="paint"    data-l="e"><span class="swatch"><input type="color" id="col-e"></span>Extra</button>
+        <div class="paints" id="paints" role="group" aria-label="Paint">
+          <button class="paint on" data-l="b" aria-pressed="true"><span class="swatch"><input type="color" id="col-b" aria-label="Main colour" title="Main colour"></span>Main</button>
+          <button class="paint"    data-l="a" aria-pressed="false"><span class="swatch"><input type="color" id="col-a" aria-label="Accent colour" title="Accent colour"></span>Accent</button>
+          <button class="paint"    data-l="d" aria-pressed="false"><span class="swatch"><input type="color" id="col-d" aria-label="Detail colour" title="Detail colour"></span>Detail</button>
+          <button class="paint"    data-l="e" aria-pressed="false"><span class="swatch"><input type="color" id="col-e" aria-label="Extra colour" title="Extra colour"></span>Extra</button>
         </div>
       </div>
       <div class="tool">
         <span class="tool-label">Editor</span>
-        <button class="btn on" data-view="ascii">Drawing</button>
-        <button class="btn"    data-view="animation">Animation</button>
+        <button class="btn on" data-view="ascii" aria-pressed="true">Drawing</button>
+        <button class="btn"    data-view="animation" aria-pressed="false">Animation</button>
       </div>
       <div class="tool">
         <span class="tool-label">Canvas</span>
-        <input class="input num" type="number" id="cw" min="3" max="128" title="Width">
-        <input class="input num" type="number" id="ch" min="3" max="128" title="Height">
+        <input class="input num" type="number" id="cw" min="3" max="128" title="Width in cells (3-128)" aria-label="Canvas width in cells">
+        <input class="input num" type="number" id="ch" min="3" max="128" title="Height in cells (3-128)" aria-label="Canvas height in cells">
       </div>
     </div>
   </div>
@@ -507,14 +531,14 @@
   <div class="animbar" id="animbar" style="display:none">
     <div class="tool">
       <span class="tool-label">Frames</span>
-      <div class="frames" id="frames"></div>
-      <button class="btn icon" id="addframe" title="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
-      <button class="btn icon" id="delframe" title="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
+      <div class="frames" id="frames" role="group" aria-label="Frames"></div>
+      <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+      <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
     </div>
     <div class="animbar-right">
       <div class="tool">
         <span class="tool-label">FPS</span>
-        <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second">
+        <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second (1-60)" aria-label="Frames per second">
       </div>
       <div class="tool">
         <span class="tool-label">Preview</span>
@@ -527,29 +551,29 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled"><span class="swatch"><input type="color" id="col-bg"></span><span class="tw">Background</span></button>
-      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 0.5V13.5"/><path d="M13.5 3.5L0.5 3.5"/><path d="M10.5 0.5V13.5"/><path d="M13.5 10.5L0.5 10.5"/></svg></span><span class="tw">Grid</span></button>
-      <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 0.5V13.5" stroke-dasharray="3 2.4"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
+      <button class="btn on" id="filled" aria-pressed="true"><span class="swatch"><input type="color" id="col-bg" aria-label="Background colour" title="Background colour"></span><span class="tw">Background</span></button>
+      <button class="btn on" id="gridtog" aria-pressed="true"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 0.5V13.5"/><path d="M13.5 3.5L0.5 3.5"/><path d="M10.5 0.5V13.5"/><path d="M13.5 10.5L0.5 10.5"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="mirror" aria-pressed="true"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 0.5V13.5" stroke-dasharray="3 2.4"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 7H10" stroke-linecap="square"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom</span></button>
-      <button class="btn" data-zoom="1"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 7C6.62419 7 7.37581 7 10.5 7"/><path d="M7 3.5C7 6.62419 7 7.37581 7 10.5"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom</span></button>
-      <button class="btn icon" id="fs" title="Fullscreen"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
+      <button class="btn" data-zoom="-1" title="Zoom out" aria-label="Zoom out"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 7H10" stroke-linecap="square"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom out</span></button>
+      <button class="btn" data-zoom="1" title="Zoom in" aria-label="Zoom in"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 7C6.62419 7 7.37581 7 10.5 7"/><path d="M7 3.5C7 6.62419 7 7.37581 7 10.5"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom in</span></button>
+      <button class="btn icon" id="fs" title="Fullscreen" aria-label="Fullscreen" aria-pressed="false"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
     </div>
     <div class="stage-canvas">
       <div class="canvas-wrap">
         <div class="canvas-frame"><div id="grid" class="grid show-grid"></div><div class="sel-rect" id="selrect" style="display:none"></div></div>
-        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 13L13 13L13 1L0.999999 1" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M11 2.5L6 7L11 11.5" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 1H13V13H1V1Z" fill="#2A2A30"/><path d="M13 1H1V13H13" stroke="#2A2A30"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M3 2.5L8 7L3 11.5" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge"><svg viewBox="0 0 14 14" fill="none"><path d="M0.999999 1L1 13L13 13L13 0.999999" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M2.5 11L7 6L11.5 11" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><path d="M13 13L13 1L1 1L1 13" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M11.5 3L7 8L2.5 3" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge" aria-label="Resize left edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 13L13 13L13 1L0.999999 1" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M11 2.5L6 7L11 11.5" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge" aria-label="Resize right edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 1H13V13H1V1Z" fill="#2A2A30"/><path d="M13 1H1V13H13" stroke="#2A2A30"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M3 2.5L8 7L3 11.5" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge" aria-label="Resize top edge"><svg viewBox="0 0 14 14" fill="none"><path d="M0.999999 1L1 13L13 13L13 0.999999" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M2.5 11L7 6L11.5 11" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge" aria-label="Resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><path d="M13 13L13 1L1 1L1 13" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M11.5 3L7 8L2.5 3" stroke="#E6E6DF"/></svg></button>
       </div>
     </div>
     <div class="fscroll fscroll-h" id="fsbar-h"><div class="fscroll-thumb" id="fsthumb-h"></div></div>
     <div class="fscroll fscroll-v" id="fsbar-v"><div class="fscroll-thumb" id="fsthumb-v"></div></div>
     <div class="stage-bl">
-      <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
-      <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="currentColor"><path d="M0.5 12.5V10.8496H1.5V12.5H3.15039V13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5ZM8.65039 12.5V13.5H5.34961V12.5H8.65039ZM12.5 12.5V10.8496H13.5V12.5C13.5 13.0523 13.0523 13.5 12.5 13.5H10.8496V12.5H12.5ZM1.5 5.34961V8.65039H0.5V5.34961H1.5ZM13.5 5.34961V8.65039H12.5V5.34961H13.5ZM0.5 1.5C0.5 0.947716 0.947716 0.500001 1.5 0.5H3.15039V1.5H1.5V3.15039H0.5V1.5ZM12.5 1.5H10.8496V0.5H12.5C13.0523 0.5 13.5 0.947716 13.5 1.5V3.15039H12.5V1.5ZM8.65039 0.5V1.5H5.34961V0.5H8.65039Z"/></svg></span><span class="tw">Select</span></button>
+      <button class="btn" id="erase" title="Eraser" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
+      <button class="btn" id="select" title="Select" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="currentColor"><path d="M0.5 12.5V10.8496H1.5V12.5H3.15039V13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5ZM8.65039 12.5V13.5H5.34961V12.5H8.65039ZM12.5 12.5V10.8496H13.5V12.5C13.5 13.0523 13.0523 13.5 12.5 13.5H10.8496V12.5H12.5ZM1.5 5.34961V8.65039H0.5V5.34961H1.5ZM13.5 5.34961V8.65039H12.5V5.34961H13.5ZM0.5 1.5C0.5 0.947716 0.947716 0.500001 1.5 0.5H3.15039V1.5H1.5V3.15039H0.5V1.5ZM12.5 1.5H10.8496V0.5H12.5C13.0523 0.5 13.5 0.947716 13.5 1.5V3.15039H12.5V1.5ZM8.65039 0.5V1.5H5.34961V0.5H8.65039Z"/></svg></span><span class="tw">Select</span></button>
     </div>
     <div class="stage-br">
       <button class="btn" id="undo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M5 12L10.4 12C10.9601 12 11.2401 12 11.454 11.891C11.6422 11.7951 11.7951 11.6422 11.891 11.454C12 11.2401 12 10.9601 12 10.4L12 5.6C12 5.03995 12 4.75992 11.891 4.54601C11.7951 4.35785 11.6422 4.20487 11.454 4.10899C11.2401 4 10.9601 4 10.4 4L3 4"/><path d="M7 1L3 4L7 7"/></svg></span><span class="tw">Undo</span></button>
@@ -567,8 +591,8 @@
 
   <!-- Hint -->
   <div class="hint" id="hint">
-    <span>In the custom glyph panel, paste a character from the keyboard, clipboard or selected glyph, Backspace to remove selection.</span>
-    <button class="hint-x" id="hintx" title="Dismiss"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
+    <span id="hinttext"></span>
+    <button class="hint-x" id="hintx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
   </div>
 
   <!-- Glyph palette -->
@@ -576,7 +600,7 @@
 
   <!-- Sprite JSON — box first, export bar under it (Figma 42:363) -->
   <div class="iobox">
-    <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
+    <textarea id="out" placeholder="Paste or export sprite JSON here" aria-label="Sprite JSON"></textarea>
     <input type="file" id="loadfile" accept="application/json,.json" hidden>
     <div class="iobox-actions">
       <button class="btn" id="copy" title="Copy this sprite's JSON to the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="2" y="1" width="7" height="9"/><path d="M8.5 4H12V13H5V10"/></svg></span>Copy</button>
@@ -588,17 +612,17 @@
   <div class="exportbar">
     <div class="tool">
       <span class="tool-label">Type</span>
-      <button class="btn on" data-type="json">JSON</button>
-      <button class="btn"    data-type="svg">SVG</button>
-      <button class="btn"    data-type="png">PNG</button>
-      <button class="btn"    data-type="mp4">MP4</button>
+      <button class="btn on" data-type="json" aria-pressed="true">JSON</button>
+      <button class="btn"    data-type="svg" aria-pressed="false">SVG</button>
+      <button class="btn"    data-type="png" aria-pressed="false">PNG</button>
+      <button class="btn"    data-type="mp4" aria-pressed="false">MP4</button>
     </div>
     <div class="tool">
       <span class="tool-label">Scale</span>
-      <button class="btn"    data-s="1">1×</button>
-      <button class="btn on" data-s="4">4×</button>
-      <button class="btn"    data-s="8">8×</button>
-      <button class="btn"    data-s="16">16×</button>
+      <button class="btn"    data-s="1" aria-pressed="false">1×</button>
+      <button class="btn on" data-s="4" aria-pressed="true">4×</button>
+      <button class="btn"    data-s="8" aria-pressed="false">8×</button>
+      <button class="btn"    data-s="16" aria-pressed="false">16×</button>
       <button class="btn green" id="export"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Export</button>
     </div>
   </div>
@@ -699,6 +723,14 @@
            selMoving:false, selDragNew:false, selAnchor:null, selDragOff:null, sideDrag:null };
 
   function $(id){return document.getElementById(id);}
+  /* "on" is how this app draws a pressed control. A screen reader cannot see a class, so every
+     place that sets it goes through here and mirrors it into aria-pressed. Same idea as a light
+     switch: the plate shows the position, the wire has to carry it too. */
+  function setOn(el,on){
+    if(!el)return;
+    el.classList.toggle('on',!!on);
+    if(el.hasAttribute('aria-pressed'))el.setAttribute('aria-pressed',on?'true':'false');
+  }
   function D(){return docs[activeDoc];}
   function curGrid(){return D().frames[D().active];}
   function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:layer==='e'?d.extra:d.body;}
@@ -730,10 +762,16 @@
       var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
       /* unnamed tabs read as their position — 1 2 3 4 5 — so closing one renumbers the rest;
          typing a file name into ID takes over the label (operator, Figma 42:363). */
-      var name=document.createElement('span');name.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
-      name.onclick=function(){selectTab(i);};t.appendChild(name);
+      var label=(d.id&&d.id.trim())?d.id:String(i+1);
+      var name=document.createElement('button');name.type='button';name.className='tab-name';
+      name.textContent=label;
+      name.setAttribute('aria-pressed',i===activeDoc?'true':'false');
+      name.onclick=function(){selectTab(i);};
+      t.appendChild(name);
       if(docs.length>1){
-        var x=document.createElement('span');x.className='x';x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';x.title='Close';
+        var x=document.createElement('button');x.type='button';x.className='x';
+        x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
+        x.title='Close '+label;x.setAttribute('aria-label','Close '+label);
         x.onclick=function(e){e.stopPropagation();closeTab(i);};t.appendChild(x);
       }
       box.appendChild(t);
@@ -741,8 +779,22 @@
   }
   function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
   function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
+  /* a tab holds a sprite and its own undo stack, and closing was the one action that destroyed
+     work with no confirm and no way back. Ask only when there IS work — an untouched scratch tab
+     closes silently, so the prompt stays meaningful. */
+  function docHasWork(d){
+    if(!d)return false;
+    if(d.frames.length>1)return true;
+    if((d.custom||[]).some(function(c){return !!c;}))return true;
+    return d.frames.some(function(g){return g.some(function(r){return r.some(function(c){return c.g!==' ';});});});
+  }
   function closeTab(i){
     if(docs.length<=1)return;
+    var d=docs[i];
+    if(docHasWork(d)){
+      var nm=(d.id&&d.id.trim())?d.id:String(i+1);
+      if(!confirm('Close "'+nm+'"?\n\nThis sprite and its undo history will be lost. Export its JSON first if you want to keep it.'))return;
+    }
     commitSelection();docs.splice(i,1);
     if(activeDoc>=docs.length)activeDoc=docs.length-1;else if(activeDoc>i)activeDoc--;
     syncInputs();build();renderFrames();renderTabs();updateHist();
@@ -756,7 +808,7 @@
     $('sid').value=d.id;
     $('cw').value=d.w; $('ch').value=d.h; sizeNumInput($('cw')); sizeNumInput($('ch'));
     setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('e',d.extra); setSwatch('bg',d.bgColor);
-    $('filled').classList.toggle('on',d.bgOn);
+    setOn($('filled'),d.bgOn);
     $('fps').value=d.fps;
     buildCustomRow();
   }
@@ -903,7 +955,7 @@
   function setTool(t){
     if(t!=='select')commitSelection();           /* leaving select stamps + drops the selection */
     ui.tool=t;
-    $('select').classList.toggle('on',t==='select');
+    setOn($('select'),t==='select');
     gridEl.classList.toggle('selmode',t==='select');
     render();
   }
@@ -1041,30 +1093,38 @@
     var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);
     if(!ch&&ui.curGlyph&&ui.curGlyph!==' ')ch=ui.curGlyph;   /* empty clipboard -> drop in the selected palette glyph */
     var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);putCustom(+b.dataset.idx,ch);setGlyph(ch);}}   /* commit + select immediately */
-  function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
+  function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';setOn(b,!!ch&&ch===ui.curGlyph);});}
   function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
   /* ============================================================
      9. Frames / animation
      ============================================================ */
   function cloneGrid(g){return g.map(function(r){return r.map(function(c){return {g:c.g,l:c.l};});});}
+  var MAX_FRAMES=16;   /* named, so the cap and the message that explains it cannot drift apart */
   function renderFrames(){
     var d=D(),fr=$('frames');fr.innerHTML='';
     d.frames.forEach(function(g,i){
       var b=document.createElement('button');b.className='fbtn'+(i===d.active?' on':'');b.textContent=(i+1);
+      b.setAttribute('aria-label','Frame '+(i+1));
+      b.setAttribute('aria-pressed',i===d.active?'true':'false');
       b.onclick=function(){selectFrame(i);};fr.appendChild(b);
     });
-    $('addframe').disabled=d.frames.length>=16;
-    $('delframe').disabled=d.frames.length<=1;
+    /* a control that greys out without saying why reads as broken. Both caps now explain
+       themselves in the tooltip the moment they bite. */
+    var af=$('addframe'),df=$('delframe');
+    af.disabled=d.frames.length>=MAX_FRAMES;
+    af.title=af.disabled?('Frame limit reached — '+MAX_FRAMES+' frames per sprite'):'Add frame';
+    df.disabled=d.frames.length<=1;
+    df.title=df.disabled?'A sprite keeps at least one frame':'Delete frame';
   }
   function selectFrame(i){D().active=i;if(ui.playing)ui.playIdx=i;render();renderFrames();}
-  function addFrame(){var d=D();if(d.frames.length>=16)return;pushUndo();d.frames.splice(d.active+1,0,cloneGrid(curGrid()));d.active++;render();renderFrames();}
+  function addFrame(){var d=D();if(d.frames.length>=MAX_FRAMES)return;pushUndo();d.frames.splice(d.active+1,0,cloneGrid(curGrid()));d.active++;render();renderFrames();}
   function delFrame(){var d=D();if(d.frames.length<=1)return;pushUndo();d.frames.splice(d.active,1);if(d.active>=d.frames.length)d.active=d.frames.length-1;build();renderFrames();}
   function play(){var d=D();if(ui.playing||d.frames.length<2)return;commitSelection();ui.playing=true;ui.playIdx=d.active;setPlayState();
     ui.playTimer=setInterval(function(){ui.playIdx=(ui.playIdx+1)%d.frames.length;render();
       [].forEach.call($('frames').children,function(b,i){b.classList.toggle('on',i===ui.playIdx);});},Math.round(1000/d.fps));}
   function stop(){if(!ui.playing)return;ui.playing=false;clearInterval(ui.playTimer);ui.playTimer=null;setPlayState();render();renderFrames();}
-  function setPlayState(){$('play').classList.toggle('on',ui.playing);$('stop').classList.toggle('on',!ui.playing&&ui.view==='animation');}
+  function setPlayState(){setOn($('play'),ui.playing);setOn($('stop'),!ui.playing&&ui.view==='animation');}
 
   /* ============================================================
      10. View (ASCII / Animation)
@@ -1072,7 +1132,7 @@
   function applyView(){
     var anim=ui.view==='animation';
     $('animbar').style.display=anim?'flex':'none';
-    [].forEach.call(document.querySelectorAll('[data-view]'),function(b){b.classList.toggle('on',b.dataset.view===ui.view);});
+    [].forEach.call(document.querySelectorAll('[data-view]'),function(b){setOn(b,b.dataset.view===ui.view);});
     if(!anim)stop();else renderFrames();
   }
 
@@ -1082,16 +1142,20 @@
   function setGlyph(g){
     if(ui.tool==='select')setTool('draw');
     ui.curGlyph=g;
-    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.toggle('on',b.dataset.g===g);});
+    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){setOn(b,b.dataset.g===g);});
     refreshCustomActive();
-    $('erase').classList.toggle('on',g===' ');
+    setOn($('erase'),g===' ');
   }
   /* Drop the glyph selection entirely: nothing stays highlighted in the palette or the Custom row,
      and clicking another empty Custom cell inserts nothing until a glyph is picked again. */
   function deselectGlyph(){
     ui.curGlyph='';
     [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.remove('on');});
-    $('erase').classList.remove('on');
+    setOn($('erase'),false);
+  }
+  function codepointName(g){
+    var cp=g.codePointAt(0);
+    return g===' '?'Blank':'U+'+cp.toString(16).toUpperCase().padStart(4,'0');
   }
   function buildPalette(){
     var pal=$('palette');pal.innerHTML='';
@@ -1106,6 +1170,10 @@
       var pg=document.createElement('div');pg.className='pgrid';
       grp.g.forEach(function(g){
         var b=document.createElement('button');b.className='gbtn';b.textContent=g;b.dataset.g=g;
+        /* a glyph names itself with a character a screen reader cannot pronounce, so the
+           codepoint is the label: "U+2588", not silence. */
+        b.setAttribute('aria-label',codepointName(g));
+        b.setAttribute('aria-pressed','false');
         b.onclick=function(){setGlyph(g);};pg.appendChild(b);
       });
       box.appendChild(pg);pal.appendChild(box);
@@ -1128,7 +1196,7 @@
   function selectLayer(l){
     if(ui.tool==='select')setTool('draw');
     ui.curLayer=l;
-    [].forEach.call(document.querySelectorAll('.paint'),function(b){b.classList.toggle('on',b.dataset.l===l);});
+    [].forEach.call(document.querySelectorAll('.paint'),function(b){setOn(b,b.dataset.l===l);});
   }
   function wireColor(layer){
     var inp=$('col-'+layer),field=LAYER_FIELD[layer],before=null;
@@ -1139,7 +1207,7 @@
     });
     inp.addEventListener('change',function(){
       var d=D(),after=inp.value;d[field]=(before!=null?before:after);pushUndo();d[field]=after;
-      if(layer==='bg'&&!d.bgOn){d.bgOn=true;$('filled').classList.add('on');}
+      if(layer==='bg'&&!d.bgOn){d.bgOn=true;setOn($('filled'),true);}
       render();
     });
   }
@@ -1375,7 +1443,7 @@
   }
   function setExportType(t){
     ui.exportType=t;
-    [].forEach.call(document.querySelectorAll('[data-type]'),function(b){b.classList.toggle('on',b.dataset.type===t);});
+    [].forEach.call(document.querySelectorAll('[data-type]'),function(b){setOn(b,b.dataset.type===t);});
   }
 
   /* ============================================================
@@ -1598,12 +1666,12 @@
   $('ch').addEventListener('input',function(){sizeNumInput($('ch'));});
 
   /* stage controls */
-  $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;$('filled').classList.toggle('on',d.bgOn);render();};
+  $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;setOn($('filled'),d.bgOn);render();};
   /* the embedded swatch opens the colour picker without toggling the Background button */
   ['click','mousedown'].forEach(function(ev){$('col-bg').addEventListener(ev,function(e){e.stopPropagation();});});
   $('select').onclick=function(){setTool(ui.tool==='select'?'draw':'select');};
-  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
-  $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
+  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;setOn($('gridtog'),ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
+  $('mirror').onclick=function(){ui.mirror=!ui.mirror;setOn($('mirror'),ui.mirror);};
   document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
 
   /* ---------------- fullscreen popup ---------------- */
@@ -1626,7 +1694,9 @@
     relocateFsPanels(true);
     document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
     document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
-    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
+    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';
+    $('fs').setAttribute('aria-label','Close fullscreen');$('fs').setAttribute('aria-pressed','true');
+    build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
   }
   function exitFullscreen(){
     ui.fsOpen=false;
@@ -1634,7 +1704,9 @@
     document.body.style.top='';
     if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
     relocateFsPanels(false);
-    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';build();updateScrollbars();
+    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';
+    $('fs').setAttribute('aria-label','Fullscreen');$('fs').setAttribute('aria-pressed','false');
+    build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
   window.addEventListener('resize',updateScrollbars);
@@ -1647,6 +1719,11 @@
   $('clear').onclick=function(){pushUndo();clearSelection();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
 
   /* hint */
+  /* The hint described a keyboard the touch build does not have — Backspace, typing into a cell.
+     The code already splits these two worlds with isCoarse(); the copy now splits with it. */
+  $('hinttext').textContent=isCoarse()
+    ? 'Custom panel: pick a glyph, then tap an empty cell to keep it there. Tap a kept glyph to draw with it, tap it again to clear the cell.'
+    : 'Custom panel: pick a glyph and click an empty cell to keep it there, or click the cell and type / paste your own. Backspace clears a cell.';
   $('hintx').onclick=function(){$('hint').style.display='none';};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
@@ -1661,11 +1738,11 @@
     {img:'assets/onboarding/onboarding_1.png',title:'Blockmode — ASCII Sprite Editor',
      text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid. Pick a glyph from the palette, choose a paint, then draw on the grid. Nothing installs and nothing uploads. It is one page in your browser.'},
     {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
-     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. Right-click erases. So does the Eraser tool, if you prefer a mode over a second mouse button. Ctrl/Cmd+Z undoes, and every sprite keeps its own undo history.'},
+     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. The Eraser under the canvas clears cells the same way you paint them; with a mouse, right-click erases without leaving your brush. Undo sits under the canvas too, or Ctrl/Cmd+Z — and every sprite keeps its own undo history.'},
     {img:'assets/onboarding/onboarding_3.gif',title:'Color and Background',
      text:'You draw in four colors — Main, Accent, Detail and Extra. Each one is a color you can change at any time, and every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
     {img:'assets/onboarding/onboarding_4.gif',title:'Select and Mirror',
-     text:'Use Select to move or remove part of a sprite. Drag a box, drag it to reposition, use the arrow keys to nudge it, or press Delete to remove it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
+     text:'Use Select to move or remove part of a sprite. Drag a box around it, then drag the box itself to reposition — with a keyboard, arrow keys nudge it one cell at a time and Delete clears it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
     {img:'assets/onboarding/onboarding_5.gif',title:'Save and Export',
      text:'Blockmode keeps your tabs, frames and Custom glyphs in this browser between sessions. But browser storage is not a backup: clear it, open Blockmode in another browser or device, and your work will be gone. Export JSON often to save your sprites properly and load them again whenever you want to continue.'}
   ];
@@ -1704,13 +1781,17 @@
   /* animation */
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
   $('play').onclick=play;$('stop').onclick=stop;
-  $('fps').addEventListener('change',function(){var v=Math.max(1,Math.min(60,Math.round(+$('fps').value)||D().fps));
+  /* `Math.round(+v)||fps` treated a typed 0 as "nothing entered" and quietly restored the old
+     value, because 0 is falsy in JavaScript — the same trap that makes `count || 10` skip a real
+     zero. Ask whether the number is a number, then clamp it; 0 now lands on 1, as typing it means. */
+  $('fps').addEventListener('change',function(){
+    var raw=parseFloat($('fps').value),v=isFinite(raw)?Math.max(1,Math.min(60,Math.round(raw))):D().fps;
     D().fps=v;$('fps').value=v;if(ui.playing){stop();play();}scheduleSave();});
 
   /* export */
   document.querySelectorAll('[data-type]').forEach(function(b){b.onclick=function(){setExportType(b.dataset.type);};});
   document.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){ui.scale=+b.dataset.s;
-    document.querySelectorAll('[data-s]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');};});
+    document.querySelectorAll('[data-s]').forEach(function(x){setOn(x,false);});setOn(b,true);};});
   $('export').onclick=doExport;
 
   /* The box mirrors the live sprite JSON, so Copy works at any time. Its second button is
