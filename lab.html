@@ -37,11 +37,14 @@
        The one colour left in the chrome is the alert, and the only other colour on the page is the
        drawing. That is the whole rule: an interface in grey, a picture in colour. */
     --accent:#67E8F9;
-    /* On black a bright colour can simply BE the text, so Clear stays a tinted outline here. */
-    --alert-bg:color-mix(in srgb,var(--alert) 15%,transparent);
-    --alert-label:var(--alert);
+    /* Both coloured buttons are soft-filled: 40% of the colour, its own vivid edge, and the
+       theme's own text as the label. The colour itself cannot be the label on a fill this
+       strong — measured 2.6:1 — so the fill carries the hue and the label carries the reading. */
+    --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
+    --alert-label:var(--main-text);
     --green:#3DDC84;
-    --green-label:#08130C;
+    --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
+    --green-label:var(--main-text);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
     --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
@@ -121,10 +124,11 @@
        contrasting label is bright and legible at the same time, which coloured text on a tint can
        never be here. Dark needs none of this: on black a bright colour simply is the text. */
     --accent:#C81F63;
-    --alert-bg:var(--alert);   /* Clear is FILLED here — a vivid red cannot be readable text on paper */
-    --alert-label:#FFFFFF;
-    --green:#12B76A;        /* Export, filled — bright enough to carry the ink as its label */
-    --green-label:#0C2A19;
+    --alert-bg:color-mix(in srgb,var(--alert) 40%,transparent);
+    --alert-label:var(--main-text);
+    --green:#12B76A;
+    --green-bg:color-mix(in srgb,var(--green) 40%,transparent);
+    --green-label:var(--main-text);
     --alert:#CE2318;        /* vivid, not darkened — 5.42:1 against its white label */
     --glyph:#272A30;
     --canvas-empty:var(--page);
@@ -198,18 +202,16 @@
   .btn.alert{background:var(--alert-bg);border-color:var(--alert);color:var(--alert-label);}
   /* Export is the primary action and it is filled, so its colour can be as bright as it likes —
      the label contrasts against the fill, not against the page. */
-  .btn.green{background:var(--green);border-color:var(--green);color:var(--green-label);}
+  .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
   .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
-  .btn.alert:hover{border-color:color-mix(in srgb,var(--alert-label) 12%,var(--alert));
-                   background:color-mix(in srgb,var(--alert-label) 12%,var(--alert-bg));}
+  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 55%,transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green-label) 10%,var(--green));
-                              border-color:color-mix(in srgb,var(--green-label) 10%,var(--green));}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 55%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
   .btn:disabled:hover{border-color:var(--stroke);}
 
@@ -235,8 +237,7 @@
   .onb__cta:active,.hint-x:active,.tab .x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:color-mix(in srgb,var(--green-label) 20%,var(--green));
-                               border-color:color-mix(in srgb,var(--green-label) 20%,var(--green));}
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 68%,transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
