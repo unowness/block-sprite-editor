@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blockmode — ASCII Sprite Editor</title>
-<meta name="description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
-<link rel="icon" type="image/png" href="favicon.png">
-<link rel="apple-touch-icon" href="favicon.png">
 <!-- Open Graph / social preview -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://blockmode.app/">
@@ -19,6 +16,9 @@
 <meta name="twitter:title" content="Blockmode — ASCII Sprite Editor">
 <meta name="twitter:description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export.">
 <meta name="twitter:image" content="https://blockmode.app/blockmode-opengraph.png">
+<meta name="description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <!-- Pre-paint theme script is on hold with the THEME toggle: a stored 'light' must NOT be applied,
      or anyone who picked Light before would be stranded in the unfinished theme with no way back.
      The preference itself is left in localStorage. Restore alongside the toggle:
@@ -39,8 +39,13 @@
     --main-text-05:rgba(230,230,223,.5);
     --tool-text-id:#9AA0A6;
     --accent:#67E8F9;
-    --alert:#CB4036;
-    --green:#5CE422;
+    /* Clear was the least readable control in the interface at 3.74:1 — under AA — while being the
+       only one that destroys work. Same red family, raised to 4.82:1. */
+    --alert:#E05A50;
+    /* was #5CE422, the exact hex of the default Extra paint: the Export button and one of the
+       user's four brushes were the same colour, so chrome and artwork could not be told apart.
+       Moved the chrome, not the palette. 9.44:1 on its own tint. */
+    --green:#3DDC84;
     --canvas:#0D0D0F;
     --glyph:#cfd2c4;   /* glyph-preview colour on palette tiles */
     --stage-bg:#070708;    /* editing-window fill (= page in dark) */
@@ -65,24 +70,31 @@
   /* Light theme — adapted, not a raw inversion: warm paper (not clinical white),
      deeper accent for WCAG-AA text, everything else re-tuned. Toggled via
      data-theme on <html>; absence = dark (default). */
+  /* Measured before this pass: panel against page 1.06:1, input against panel 1.03:1, border
+     against panel 1.33:1. Every surface was the same value, so the light theme was a set of nested
+     boxes you could not see — the structure was there in the markup and absent on screen.
+     The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    --page:#F4F5F6;         /* cool near-white (not warm paper) */
-    --tool-background:#FBFCFD;
-    --input-background:#FFFFFF;
-    --stroke:#DADDE1;       /* cool light border */
-    --stroke-focus:#ABAFB4; /* darkest UI grey ~#ADADAD (focus) */
-    --stroke-hover:#C7CACE;
-    --main-text:#20232A;    /* cool dark ink (readable — not a "grey shade") */
-    --main-text-05:rgba(32,35,42,.5);
-    --tool-text-id:#6B6F75; /* cool dim label, kept AA-readable */
-    --accent:#4F46E5;   /* Electric Indigo (light theme). Dark stays cyan. */
-    --alert:#BE3B2F;
-    --green:#2E8B1E;
-    --canvas:#EFF1F3;       /* cool light palette tiles */
+    --page:#EDEFF2;         /* grey ground, so a white panel can read as a panel */
+    --tool-background:#FFFFFF;   /* 1.15:1 against the ground, up from 1.06 */
+    --input-background:#F5F7F9;  /* recessed inside the panel, 1.07:1 */
+    --stroke:#B4BAC3;       /* 1.95:1 against a panel, up from 1.33 */
+    --stroke-focus:#6E7681;
+    --stroke-hover:#9AA1AC;
+    --main-text:#1B1E24;    /* cool dark ink (readable — not a "grey shade") */
+    --main-text-05:rgba(27,30,36,.5);
+    --tool-text-id:#5F646B; /* cool dim label, 5.96:1 on a panel */
+    /* was #4F46E5 indigo against the dark theme's #67E8F9 cyan — 69.9 degrees apart, so the
+       product changed identity with the theme for no reason anyone chose. One hue family now:
+       both sit near 190 degrees, 6 degrees apart. 5.07:1 on the ground, 6.05:1 on a panel. */
+    --accent:#116C7E;
+    --alert:#AE2E23;        /* 4.72:1 on its tint, was 4.02 */
+    --green:#166534;        /* 5.47:1 on its tint, was 3.44 — Export failed AA in light */
+    --canvas:#E4E7EB;       /* palette tiles, readable against a white panel */
     --glyph:#34373D;
-    --stage-bg:#FBFCFD;     /* editing window = tool panels */
-    --canvas-empty:var(--page); /* transparent bg -> the page colour (#F4F5F6) shows "through" the canvas */
-    --grid-line:rgba(180,184,189,.5);   /* cool grey grid, 50% alpha (half the weight of the old solid #B4B8BD) */
+    --stage-bg:#FFFFFF;     /* editing window = tool panels */
+    --canvas-empty:var(--page); /* transparent bg -> the page colour shows "through" the canvas */
+    --grid-line:rgba(150,157,167,.5);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -128,7 +140,9 @@
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
-  .btn.alert{background:rgba(203,64,54,.15);border-color:var(--alert);color:var(--alert);}
+  /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
+     dark theme's colour and stopped following the token entirely */
+  .btn.alert{background:color-mix(in srgb,var(--alert) 15%,transparent);border-color:var(--alert);color:var(--alert);}
   .btn.green{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
@@ -154,11 +168,11 @@
   .input:focus{outline:none;border-color:var(--stroke-focus);}
   button:focus,input:focus{outline:none;}
   /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
-  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
+  .btn:focus-visible,.tab-name:focus-visible,.tab .x:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
   .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
     border-color:var(--accent);outline:2px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px;}
   /* pressed state — the click gets an immediate answer instead of only a hover tint */
-  .btn:not(:disabled):active,.tab:active,.paint:active,.gbtn:active,.ccell:active,
+  .btn:not(:disabled):active,.tab-name:active,.paint:active,.gbtn:active,.ccell:active,
   .onb__cta:active,.hint-x:active,.tab .x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
@@ -167,12 +181,20 @@
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   /* same metrics as .fbtn so a numbered tab is exactly as compact as a frame button */
-  .tab{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:32px;height:32px;
+  /* The chip is a container; the two things you can do to a sprite are two real buttons inside it.
+     As a <span> with a click handler the tab was mouse-only — nothing in the strip could be
+     reached by Tab, so a keyboard user could open sprites and never switch between them. */
+  .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:0 8px;font-size:13px;color:var(--main-text);cursor:pointer;}
+       padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
   .tab.on{border-color:var(--accent);color:var(--accent);}
-  .tab-name{min-width:18px;text-align:center;}   /* a bare number still gets a label-sized target */
-  .tab .x{position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
+  /* the label button carries what used to be the chip's left padding and the 6px gap, so every
+     pixel that is not the close X selects the sprite */
+  .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
+            display:inline-flex;align-items:center;justify-content:center;min-width:32px;
+            font:inherit;color:inherit;cursor:pointer;border-radius:var(--r-btn) 0 0 var(--r-btn);}
+  .tab .x{appearance:none;background:none;border:0;padding:0;font:inherit;
+          position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
           border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;cursor:pointer;}
   /* The X keeps a comfortable grab area, but it grows away from the label, never back over it.
      With a symmetric -6px it reached 6px left of the chip, and on a numbered tab (43px wide) that
@@ -249,12 +271,18 @@
         background-position:0 0;
         border-right:1px solid var(--stroke);border-bottom:1px solid var(--stroke);}
   .cell{background:transparent;}
-  .cell:hover{background:color-mix(in srgb,var(--accent) 28%,transparent);}
+  /* The accent carried nine separate jobs, and this was the one that put it inside the artwork:
+     hovering a cell laid the interface's own colour over the drawing. A cursor highlight only has
+     to say "here" — a shift in value does that without lending the picture a hue it never chose. */
+  .cell:hover{background:color-mix(in srgb,var(--main-text) 22%,transparent);}
 
   /* ---------------- hint banner ---------------- */
-  /* the hint hangs off the stage (cluster gap above) and carries the 40px section gap BELOW it, on
-     .palette — so dismissing the hint (display:none) leaves stage -> Custom at 40px, not 8. */
-  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
+  /* The hint lives INSIDE the palette, on its own full-width row directly under CUSTOM. The
+     palette's own 8px gap sets it off from CUSTOM above; the margin below brings the distance to
+     BLOCK to the same 40px the glyph groups get when the caption is dismissed, so closing it moves
+     nothing but itself. */
+  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+        width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
@@ -265,7 +293,8 @@
   .hint-x svg{width:14px;height:14px;display:block;}
 
   /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 var(--space-cluster);}
+  /* a row of .bars now, so the column's own 8px gap spaces it and it carries no margin of its own */
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;}
   .animbar-right{display:flex;flex-wrap:wrap;gap:8px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
@@ -275,7 +304,17 @@
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
-  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-section);}
+  /* .hint sets display:flex, which outranks the browser's own [hidden]{display:none} — same
+     specificity, author sheet wins — so hiding it needs to be said here, not left to the UA. */
+  .hint[hidden]{display:none;}
+  /* CUSTOM is the row you fill yourself; everything under it is built in. That break was carried
+     entirely by the caption's own margin, so dismissing the caption collapsed 84px to 8px and
+     CUSTOM merged into the glyph stack. With the caption gone the first glyph group holds the gap
+     open itself, at the same 40px that separates the stage from Paint. */
+  .hint[hidden]+.pgroup{margin-top:32px;}   /* + the palette's own 8px gap = 40 */
+  /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
+  .paintbar{margin-top:var(--space-section);}
+  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -292,7 +331,10 @@
 
   /* ---------------- export bar ---------------- */
   /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);}
+  /* Every other row on the page sets its tools 8px apart. space-between made this one row split
+     into two islands 316px apart at 960px, so the same 8px rhythm read as a mistake here and only
+     here. Hug left, like Row A and Row B. */
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin-top:var(--space-cluster);}
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
@@ -366,7 +408,12 @@
   /* ---------------- custom glyph cells (editable) ---------------- */
   .gbtn.custom{color:var(--main-text);caret-color:var(--accent);overflow:hidden;
                text-align:center;line-height:30px;}  /* centre glyph + caret (flex left the empty caret top-left) */
-  .gbtn.custom:focus{outline:none;border-color:var(--stroke-focus);}
+  /* A custom cell is a text field, so mouse focus should be a caret and a quiet border — but
+     `.gbtn.custom:focus` outranked `.gbtn:focus-visible`, so it swallowed the keyboard ring too
+     and tabbing through the Custom row went blind. Split the two: quiet for the pointer, ring for
+     the keyboard. */
+  .gbtn.custom:focus{border-color:var(--stroke-focus);}
+  .gbtn.custom:focus:not(:focus-visible){outline:none;}
   .gbtn.custom.on{color:var(--accent);border-color:var(--accent);}
 
   /* ============================================================
@@ -376,8 +423,14 @@
     .wrap{padding:var(--space-page) 16px 48px;}      /* 48px below the footer to page end */
     /* tools HUG their content (don't stretch full-width) and wrap as needed — Figma mobile */
     .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}   /* paint -> swatch-only */
-    .stage-tl .tw, .stage-tr .zw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only */
+    .stage-tl .tw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only (Zoom already is) */
     .animbar,.exportbar{justify-content:flex-start;}        /* hug-left instead of space-between */
+    /* A .tool never wrapped its own controls, so the Scale tool stayed a rigid 364px row: at
+       320px the Export button hung 51px past the screen edge and the whole page scrolled
+       sideways. Let a tool break its row on phones; the label column stays put. */
+    .tool{flex-wrap:wrap;}
+    .tool>.tool-label{flex:none;}
+    #export{flex:1;}   /* Export takes the rest of the line it lands on instead of a 116px stub */
     #play .pw,#stop .pw{display:none;}
     .pgroup{width:100%;}
     .pgrid{max-width:none;}
@@ -457,7 +510,7 @@
      the decoration transparent to the pointer leaves the control as the single, stable target.
      The tab's close X and the colour <input> inside a swatch stay clickable on purpose. */
   .btn .iw,.btn>svg,.btn .lbl,.hint-x>svg,.fbtn>*,
-  .tab-name,.tab .x>svg,
+  .tab .x>svg,
   .onb__cta>*,.onb__skip>*{pointer-events:none;}
 </style>
 </head>
@@ -476,12 +529,12 @@
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
-        <input class="input" type="text" id="sid" placeholder="File name">
+        <input class="input" type="text" id="sid" placeholder="File name" aria-label="Sprite file name">
       </div>
       <div class="tool">
         <span class="tool-label">Tabs</span>
-        <div class="tabs" id="tabs"></div>
-        <button class="btn icon" id="addtab" title="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <div class="tabs" id="tabs" role="group" aria-label="Open sprites"></div>
+        <button class="btn icon" id="addtab" title="New sprite" aria-label="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
       </div>
       <div class="tool">
         <span class="tool-label">File</span>
@@ -497,45 +550,40 @@
 
     <!-- Row B — paint + view + canvas -->
     <div class="bar">
-      <div class="tool" id="paintgroup">
-        <span class="tool-label">Paint</span>
-        <div class="paints" id="paints">
-          <button class="paint on" data-l="b"><span class="swatch"><input type="color" id="col-b"></span>Main</button>
-          <button class="paint"    data-l="a"><span class="swatch"><input type="color" id="col-a"></span>Accent</button>
-          <button class="paint"    data-l="d"><span class="swatch"><input type="color" id="col-d"></span>Detail</button>
-          <button class="paint"    data-l="e"><span class="swatch"><input type="color" id="col-e"></span>Extra</button>
-        </div>
-      </div>
       <div class="tool">
         <span class="tool-label">Editor</span>
-        <button class="btn on" data-view="ascii">Drawing</button>
-        <button class="btn"    data-view="animation">Animation</button>
+        <button class="btn on" data-view="ascii" aria-pressed="true">Drawing</button>
+        <button class="btn"    data-view="animation" aria-pressed="false">Animation</button>
       </div>
       <div class="tool">
         <span class="tool-label">Canvas</span>
-        <input class="input num" type="number" id="cw" min="3" max="128" title="Width">
-        <input class="input num" type="number" id="ch" min="3" max="128" title="Height">
+        <input class="input num" type="number" id="cw" min="3" max="128" title="Width in cells (3-128)" aria-label="Canvas width in cells">
+        <input class="input num" type="number" id="ch" min="3" max="128" title="Height in cells (3-128)" aria-label="Canvas height in cells">
       </div>
     </div>
-  </div>
 
-  <!-- Animation timeline (shown above the stage in Animation view): Frames | FPS + Preview -->
-  <div class="animbar" id="animbar" style="display:none">
-    <div class="tool">
-      <span class="tool-label">Frames</span>
-      <div class="frames" id="frames"></div>
-      <button class="btn icon" id="addframe" title="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
-      <button class="btn icon" id="delframe" title="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
-    </div>
-    <div class="animbar-right">
+    <!-- Row C — animation: Frames | FPS | Preview.
+         It belongs to the tool group, not to the stage: it is the same kind of thing as Row A and
+         Row B, it just only exists while Editor is on Animation. Sitting outside the group it read
+         as a floating strip pinned to the artboard; sitting inside it, the group simply grows a
+         third line and the 40px to the stage stays where it was. -->
+    <div class="animbar" id="animbar" style="display:none">
       <div class="tool">
-        <span class="tool-label">FPS</span>
-        <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second">
+        <span class="tool-label">Frames</span>
+        <div class="frames" id="frames" role="group" aria-label="Frames"></div>
+        <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
       </div>
-      <div class="tool">
-        <span class="tool-label">Preview</span>
-        <button class="btn" id="play"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
-        <button class="btn" id="stop"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
+      <div class="animbar-right">
+        <div class="tool">
+          <span class="tool-label">FPS</span>
+          <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second (1-60)" aria-label="Frames per second">
+        </div>
+        <div class="tool">
+          <span class="tool-label">Preview</span>
+          <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
+          <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -543,29 +591,31 @@
   <!-- Stage — canvas with corner-docked controls -->
   <div class="stage">
     <div class="stage-tl">
-      <button class="btn on" id="filled"><span class="swatch"><input type="color" id="col-bg"></span><span class="tw">Background</span></button>
-      <button class="btn on" id="gridtog"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 0.5V13.5"/><path d="M13.5 3.5L0.5 3.5"/><path d="M10.5 0.5V13.5"/><path d="M13.5 10.5L0.5 10.5"/></svg></span><span class="tw">Grid</span></button>
-      <button class="btn on" id="mirror"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 0.5V13.5" stroke-dasharray="3 2.4"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
+      <button class="btn on" id="filled" aria-pressed="true"><span class="swatch"><input type="color" id="col-bg" aria-label="Background colour" title="Background colour"></span><span class="tw">Background</span></button>
+      <button class="btn on" id="gridtog" aria-pressed="true"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 0.5V13.5"/><path d="M13.5 3.5L0.5 3.5"/><path d="M10.5 0.5V13.5"/><path d="M13.5 10.5L0.5 10.5"/></svg></span><span class="tw">Grid</span></button>
+      <button class="btn on" id="mirror" aria-pressed="true"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 0.5V13.5" stroke-dasharray="3 2.4"/><path d="M5 1H1C1 2.62732 1 13 1 13H5"/><path d="M9 1H13C13 2.62732 13 13 13 13H9"/></svg></span><span class="tw">Mirror</span></button>
     </div>
     <div class="stage-tr">
-      <button class="btn" data-zoom="-1" title="Zoom out" aria-label="Zoom out"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 7H10" stroke-linecap="square"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom out</span></button>
-      <button class="btn" data-zoom="1" title="Zoom in" aria-label="Zoom in"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3.5 7C6.62419 7 7.37581 7 10.5 7"/><path d="M7 3.5C7 6.62419 7 7.37581 7 10.5"/><rect x="1.5" y="1.5" width="11" height="11" rx="0.5"/></svg></span><span class="zw">Zoom in</span></button>
-      <button class="btn icon" id="fs" title="Fullscreen"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
+      <!-- Remix Icon subtract-line / add-line, redrawn at the house size: Remix's bars run 5->19 of
+           a 24 box, which is 3->11 of a 14 box, and its 2/24 bar weight is this set's 1px stroke. -->
+      <button class="btn icon" data-zoom="-1" title="Zoom out" aria-label="Zoom out"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3 7H11"/></svg></button>
+      <button class="btn icon" data-zoom="1" title="Zoom in" aria-label="Zoom in"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M3 7H11"/><path d="M7 3V11"/></svg></button>
+      <button class="btn icon" id="fs" title="Fullscreen" aria-label="Fullscreen" aria-pressed="false"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg></button>
     </div>
     <div class="stage-canvas">
       <div class="canvas-wrap">
         <div class="canvas-frame"><div id="grid" class="grid show-grid"></div><div class="sel-rect" id="selrect" style="display:none"></div></div>
-        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 13L13 13L13 1L0.999999 1" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M11 2.5L6 7L11 11.5" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 1H13V13H1V1Z" fill="#2A2A30"/><path d="M13 1H1V13H13" stroke="#2A2A30"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M3 2.5L8 7L3 11.5" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge"><svg viewBox="0 0 14 14" fill="none"><path d="M0.999999 1L1 13L13 13L13 0.999999" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M2.5 11L7 6L11.5 11" stroke="#E6E6DF"/></svg></button>
-        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><path d="M13 13L13 1L1 1L1 13" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M11.5 3L7 8L2.5 3" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-l" data-side="l" title="Drag to resize left edge" aria-label="Resize left edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 13L13 13L13 1L0.999999 1" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M4 13L1 13L0.999999 1L4 1" stroke="#E6E6DF"/><path d="M11 2.5L6 7L11 11.5" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-r" data-side="r" title="Drag to resize right edge" aria-label="Resize right edge"><svg viewBox="0 0 14 14" fill="none"><path d="M1 1H13V13H1V1Z" fill="#2A2A30"/><path d="M13 1H1V13H13" stroke="#2A2A30"/><path d="M10 13L13 13L13 1L10 1" stroke="#E6E6DF"/><path d="M3 2.5L8 7L3 11.5" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-t" data-side="t" title="Drag to resize top edge" aria-label="Resize top edge"><svg viewBox="0 0 14 14" fill="none"><path d="M0.999999 1L1 13L13 13L13 0.999999" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M13 4L13 1L1 0.999999L1 4" stroke="#E6E6DF"/><path d="M2.5 11L7 6L11.5 11" stroke="#E6E6DF"/></svg></button>
+        <button class="shandle sh-b" data-side="b" title="Drag to resize bottom edge" aria-label="Resize bottom edge"><svg viewBox="0 0 14 14" fill="none"><path d="M13 13L13 1L1 1L1 13" stroke="#2A2A30"/><rect x="1" y="1" width="12" height="12" fill="#2A2A30"/><path d="M1 10L1 13L13 13L13 10" stroke="#E6E6DF"/><path d="M11.5 3L7 8L2.5 3" stroke="#E6E6DF"/></svg></button>
       </div>
     </div>
     <div class="fscroll fscroll-h" id="fsbar-h"><div class="fscroll-thumb" id="fsthumb-h"></div></div>
     <div class="fscroll fscroll-v" id="fsbar-v"><div class="fscroll-thumb" id="fsthumb-v"></div></div>
     <div class="stage-bl">
-      <button class="btn" id="erase" title="Eraser"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
-      <button class="btn" id="select" title="Select"><span class="iw"><svg viewBox="0 0 14 14" fill="currentColor"><path d="M0.5 12.5V10.8496H1.5V12.5H3.15039V13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5ZM8.65039 12.5V13.5H5.34961V12.5H8.65039ZM12.5 12.5V10.8496H13.5V12.5C13.5 13.0523 13.0523 13.5 12.5 13.5H10.8496V12.5H12.5ZM1.5 5.34961V8.65039H0.5V5.34961H1.5ZM13.5 5.34961V8.65039H12.5V5.34961H13.5ZM0.5 1.5C0.5 0.947716 0.947716 0.500001 1.5 0.5H3.15039V1.5H1.5V3.15039H0.5V1.5ZM12.5 1.5H10.8496V0.5H12.5C13.0523 0.5 13.5 0.947716 13.5 1.5V3.15039H12.5V1.5ZM8.65039 0.5V1.5H5.34961V0.5H8.65039Z"/></svg></span><span class="tw">Select</span></button>
+      <button class="btn" id="erase" title="Eraser" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M6.45455 11.9545L13 5.40909L8.63636 1.04546L1 8.68182L4.27273 11.9545H12.4545"/><path d="M6.45459 3.22727L10.8182 7.59091"/></svg></span><span class="tw">Eraser</span></button>
+      <button class="btn" id="select" title="Select" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="currentColor"><path d="M0.5 12.5V10.8496H1.5V12.5H3.15039V13.5H1.5C0.947715 13.5 0.5 13.0523 0.5 12.5ZM8.65039 12.5V13.5H5.34961V12.5H8.65039ZM12.5 12.5V10.8496H13.5V12.5C13.5 13.0523 13.0523 13.5 12.5 13.5H10.8496V12.5H12.5ZM1.5 5.34961V8.65039H0.5V5.34961H1.5ZM13.5 5.34961V8.65039H12.5V5.34961H13.5ZM0.5 1.5C0.5 0.947716 0.947716 0.500001 1.5 0.5H3.15039V1.5H1.5V3.15039H0.5V1.5ZM12.5 1.5H10.8496V0.5H12.5C13.0523 0.5 13.5 0.947716 13.5 1.5V3.15039H12.5V1.5ZM8.65039 0.5V1.5H5.34961V0.5H8.65039Z"/></svg></span><span class="tw">Select</span></button>
     </div>
     <div class="stage-br">
       <button class="btn" id="undo"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M5 12L10.4 12C10.9601 12 11.2401 12 11.454 11.891C11.6422 11.7951 11.7951 11.6422 11.891 11.454C12 11.2401 12 10.9601 12 10.4L12 5.6C12 5.03995 12 4.75992 11.891 4.54601C11.7951 4.35785 11.6422 4.20487 11.454 4.10899C11.2401 4 10.9601 4 10.4 4L3 4"/><path d="M7 1L3 4L7 7"/></svg></span><span class="tw">Undo</span></button>
@@ -581,18 +631,36 @@
     <div class="fspanel" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
   </div>
 
-  <!-- Hint -->
-  <div class="hint" id="hint">
-    <span>In the custom glyph panel, paste a character from the keyboard, clipboard or selected glyph, Backspace to remove selection.</span>
-    <button class="hint-x" id="hintx" title="Dismiss"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
+  <!-- Paint + glyph palette: one block.
+       Choosing a colour and choosing a glyph are the same decision — "what does this stroke lay
+       down" — and they were on opposite sides of the canvas, one in Row B and one below the stage.
+       Fullscreen has always put them together in .fsbottom; the page now agrees with fullscreen. -->
+  <div class="bar paintbar">
+    <div class="tool" id="paintgroup">
+      <span class="tool-label">Paint</span>
+      <div class="paints" id="paints" role="group" aria-label="Paint">
+        <button class="paint on" data-l="b" aria-pressed="true"><span class="swatch"><input type="color" id="col-b" aria-label="Main colour" title="Main colour"></span>Main</button>
+        <button class="paint"    data-l="a" aria-pressed="false"><span class="swatch"><input type="color" id="col-a" aria-label="Accent colour" title="Accent colour"></span>Accent</button>
+        <button class="paint"    data-l="d" aria-pressed="false"><span class="swatch"><input type="color" id="col-d" aria-label="Detail colour" title="Detail colour"></span>Detail</button>
+        <button class="paint"    data-l="e" aria-pressed="false"><span class="swatch"><input type="color" id="col-e" aria-label="Extra colour" title="Extra colour"></span>Extra</button>
+      </div>
+    </div>
   </div>
 
   <!-- Glyph palette -->
   <div class="palette" id="palette"></div>
 
+  <!-- The hint explains the Custom row, so buildPalette() lifts it INTO the palette and drops it
+       directly under CUSTOM — a caption sits under the thing it captions, not above the panel
+       before it. It lives out here in the source only because the palette itself is JS-built. -->
+  <div class="hint" id="hint">
+    <span id="hinttext"></span>
+    <button class="hint-x" id="hintx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
+  </div>
+
   <!-- Sprite JSON — box first, export bar under it (Figma 42:363) -->
   <div class="iobox">
-    <textarea id="out" placeholder="Paste or export sprite JSON here"></textarea>
+    <textarea id="out" placeholder="Paste or export sprite JSON here" aria-label="Sprite JSON"></textarea>
     <input type="file" id="loadfile" accept="application/json,.json" hidden>
     <div class="iobox-actions">
       <button class="btn" id="copy" title="Copy this sprite's JSON to the clipboard"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><rect x="2" y="1" width="7" height="9"/><path d="M8.5 4H12V13H5V10"/></svg></span>Copy</button>
@@ -604,17 +672,17 @@
   <div class="exportbar">
     <div class="tool">
       <span class="tool-label">Type</span>
-      <button class="btn on" data-type="json">JSON</button>
-      <button class="btn"    data-type="svg">SVG</button>
-      <button class="btn"    data-type="png">PNG</button>
-      <button class="btn"    data-type="mp4">MP4</button>
+      <button class="btn on" data-type="json" aria-pressed="true">JSON</button>
+      <button class="btn"    data-type="svg" aria-pressed="false">SVG</button>
+      <button class="btn"    data-type="png" aria-pressed="false">PNG</button>
+      <button class="btn"    data-type="mp4" aria-pressed="false">MP4</button>
     </div>
     <div class="tool">
       <span class="tool-label">Scale</span>
-      <button class="btn"    data-s="1">1×</button>
-      <button class="btn on" data-s="4">4×</button>
-      <button class="btn"    data-s="8">8×</button>
-      <button class="btn"    data-s="16">16×</button>
+      <button class="btn"    data-s="1" aria-pressed="false">1×</button>
+      <button class="btn on" data-s="4" aria-pressed="true">4×</button>
+      <button class="btn"    data-s="8" aria-pressed="false">8×</button>
+      <button class="btn"    data-s="16" aria-pressed="false">16×</button>
       <button class="btn green" id="export"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Export</button>
     </div>
   </div>
@@ -715,6 +783,14 @@
            selMoving:false, selDragNew:false, selAnchor:null, selDragOff:null, sideDrag:null };
 
   function $(id){return document.getElementById(id);}
+  /* "on" is how this app draws a pressed control. A screen reader cannot see a class, so every
+     place that sets it goes through here and mirrors it into aria-pressed. Same idea as a light
+     switch: the plate shows the position, the wire has to carry it too. */
+  function setOn(el,on){
+    if(!el)return;
+    el.classList.toggle('on',!!on);
+    if(el.hasAttribute('aria-pressed'))el.setAttribute('aria-pressed',on?'true':'false');
+  }
   function D(){return docs[activeDoc];}
   function curGrid(){return D().frames[D().active];}
   function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:layer==='e'?d.extra:d.body;}
@@ -746,15 +822,16 @@
       var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
       /* unnamed tabs read as their position — 1 2 3 4 5 — so closing one renumbers the rest;
          typing a file name into ID takes over the label (operator, Figma 42:363). */
-      var name=document.createElement('span');name.className='tab-name';
-      name.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
+      var label=(d.id&&d.id.trim())?d.id:String(i+1);
+      var name=document.createElement('button');name.type='button';name.className='tab-name';
+      name.textContent=label;
+      name.setAttribute('aria-pressed',i===activeDoc?'true':'false');
+      name.onclick=function(){selectTab(i);};
       t.appendChild(name);
-      /* select on the chip, not on the label: the label is pointer-events:none decoration, so a
-         handler sitting on it never fired for a real mouse — the chip was selectable only by the
-         few pixels of padding the close target had not already claimed. */
-      t.onclick=function(){selectTab(i);};
       if(docs.length>1){
-        var x=document.createElement('span');x.className='x';x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';x.title='Close';
+        var x=document.createElement('button');x.type='button';x.className='x';
+        x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
+        x.title='Close '+label;x.setAttribute('aria-label','Close '+label);
         x.onclick=function(e){e.stopPropagation();closeTab(i);};t.appendChild(x);
       }
       box.appendChild(t);
@@ -791,7 +868,7 @@
     $('sid').value=d.id;
     $('cw').value=d.w; $('ch').value=d.h; sizeNumInput($('cw')); sizeNumInput($('ch'));
     setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('e',d.extra); setSwatch('bg',d.bgColor);
-    $('filled').classList.toggle('on',d.bgOn);
+    setOn($('filled'),d.bgOn);
     $('fps').value=d.fps;
     buildCustomRow();
   }
@@ -938,7 +1015,7 @@
   function setTool(t){
     if(t!=='select')commitSelection();           /* leaving select stamps + drops the selection */
     ui.tool=t;
-    $('select').classList.toggle('on',t==='select');
+    setOn($('select'),t==='select');
     gridEl.classList.toggle('selmode',t==='select');
     render();
   }
@@ -1076,30 +1153,38 @@
     var ch=firstGlyph(t.replace(/\s/g,''))||firstGlyph(t);
     if(!ch&&ui.curGlyph&&ui.curGlyph!==' ')ch=ui.curGlyph;   /* empty clipboard -> drop in the selected palette glyph */
     var b=e.currentTarget;if(ch){b.textContent=ch;placeCaretEnd(b);putCustom(+b.dataset.idx,ch);setGlyph(ch);}}   /* commit + select immediately */
-  function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';b.classList.toggle('on',!!ch&&ch===ui.curGlyph);});}
+  function refreshCustomActive(){[].forEach.call(document.querySelectorAll('.gbtn.custom'),function(b){var ch=D().custom[+b.dataset.idx]||'';setOn(b,!!ch&&ch===ui.curGlyph);});}
   function placeCaretEnd(el){var r=document.createRange();r.selectNodeContents(el);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
 
   /* ============================================================
      9. Frames / animation
      ============================================================ */
   function cloneGrid(g){return g.map(function(r){return r.map(function(c){return {g:c.g,l:c.l};});});}
+  var MAX_FRAMES=16;   /* named, so the cap and the message that explains it cannot drift apart */
   function renderFrames(){
     var d=D(),fr=$('frames');fr.innerHTML='';
     d.frames.forEach(function(g,i){
       var b=document.createElement('button');b.className='fbtn'+(i===d.active?' on':'');b.textContent=(i+1);
+      b.setAttribute('aria-label','Frame '+(i+1));
+      b.setAttribute('aria-pressed',i===d.active?'true':'false');
       b.onclick=function(){selectFrame(i);};fr.appendChild(b);
     });
-    $('addframe').disabled=d.frames.length>=16;
-    $('delframe').disabled=d.frames.length<=1;
+    /* a control that greys out without saying why reads as broken. Both caps now explain
+       themselves in the tooltip the moment they bite. */
+    var af=$('addframe'),df=$('delframe');
+    af.disabled=d.frames.length>=MAX_FRAMES;
+    af.title=af.disabled?('Frame limit reached — '+MAX_FRAMES+' frames per sprite'):'Add frame';
+    df.disabled=d.frames.length<=1;
+    df.title=df.disabled?'A sprite keeps at least one frame':'Delete frame';
   }
   function selectFrame(i){D().active=i;if(ui.playing)ui.playIdx=i;render();renderFrames();}
-  function addFrame(){var d=D();if(d.frames.length>=16)return;pushUndo();d.frames.splice(d.active+1,0,cloneGrid(curGrid()));d.active++;render();renderFrames();}
+  function addFrame(){var d=D();if(d.frames.length>=MAX_FRAMES)return;pushUndo();d.frames.splice(d.active+1,0,cloneGrid(curGrid()));d.active++;render();renderFrames();}
   function delFrame(){var d=D();if(d.frames.length<=1)return;pushUndo();d.frames.splice(d.active,1);if(d.active>=d.frames.length)d.active=d.frames.length-1;build();renderFrames();}
   function play(){var d=D();if(ui.playing||d.frames.length<2)return;commitSelection();ui.playing=true;ui.playIdx=d.active;setPlayState();
     ui.playTimer=setInterval(function(){ui.playIdx=(ui.playIdx+1)%d.frames.length;render();
       [].forEach.call($('frames').children,function(b,i){b.classList.toggle('on',i===ui.playIdx);});},Math.round(1000/d.fps));}
   function stop(){if(!ui.playing)return;ui.playing=false;clearInterval(ui.playTimer);ui.playTimer=null;setPlayState();render();renderFrames();}
-  function setPlayState(){$('play').classList.toggle('on',ui.playing);$('stop').classList.toggle('on',!ui.playing&&ui.view==='animation');}
+  function setPlayState(){setOn($('play'),ui.playing);setOn($('stop'),!ui.playing&&ui.view==='animation');}
 
   /* ============================================================
      10. View (ASCII / Animation)
@@ -1107,7 +1192,7 @@
   function applyView(){
     var anim=ui.view==='animation';
     $('animbar').style.display=anim?'flex':'none';
-    [].forEach.call(document.querySelectorAll('[data-view]'),function(b){b.classList.toggle('on',b.dataset.view===ui.view);});
+    [].forEach.call(document.querySelectorAll('[data-view]'),function(b){setOn(b,b.dataset.view===ui.view);});
     if(!anim)stop();else renderFrames();
   }
 
@@ -1117,16 +1202,20 @@
   function setGlyph(g){
     if(ui.tool==='select')setTool('draw');
     ui.curGlyph=g;
-    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.toggle('on',b.dataset.g===g);});
+    [].forEach.call(document.querySelectorAll('.gbtn'),function(b){setOn(b,b.dataset.g===g);});
     refreshCustomActive();
-    $('erase').classList.toggle('on',g===' ');
+    setOn($('erase'),g===' ');
   }
   /* Drop the glyph selection entirely: nothing stays highlighted in the palette or the Custom row,
      and clicking another empty Custom cell inserts nothing until a glyph is picked again. */
   function deselectGlyph(){
     ui.curGlyph='';
     [].forEach.call(document.querySelectorAll('.gbtn'),function(b){b.classList.remove('on');});
-    $('erase').classList.remove('on');
+    setOn($('erase'),false);
+  }
+  function codepointName(g){
+    var cp=g.codePointAt(0);
+    return g===' '?'Blank':'U+'+cp.toString(16).toUpperCase().padStart(4,'0');
   }
   function buildPalette(){
     var pal=$('palette');pal.innerHTML='';
@@ -1135,12 +1224,17 @@
     var clab=document.createElement('div');clab.className='plabel';clab.textContent='CUSTOM';cbox.appendChild(clab);
     var cgrid=document.createElement('div');cgrid.className='pgrid';cgrid.id='customgrid';cbox.appendChild(cgrid);
     pal.appendChild(cbox);
+    var hint=$('hint');if(hint)pal.appendChild(hint);   /* caption goes under the panel it captions */
     GROUPS.forEach(function(grp){
       var box=document.createElement('div');box.className='pgroup';
       var lab=document.createElement('div');lab.className='plabel';lab.textContent=grp.label;box.appendChild(lab);
       var pg=document.createElement('div');pg.className='pgrid';
       grp.g.forEach(function(g){
         var b=document.createElement('button');b.className='gbtn';b.textContent=g;b.dataset.g=g;
+        /* a glyph names itself with a character a screen reader cannot pronounce, so the
+           codepoint is the label: "U+2588", not silence. */
+        b.setAttribute('aria-label',codepointName(g));
+        b.setAttribute('aria-pressed','false');
         b.onclick=function(){setGlyph(g);};pg.appendChild(b);
       });
       box.appendChild(pg);pal.appendChild(box);
@@ -1163,7 +1257,7 @@
   function selectLayer(l){
     if(ui.tool==='select')setTool('draw');
     ui.curLayer=l;
-    [].forEach.call(document.querySelectorAll('.paint'),function(b){b.classList.toggle('on',b.dataset.l===l);});
+    [].forEach.call(document.querySelectorAll('.paint'),function(b){setOn(b,b.dataset.l===l);});
   }
   function wireColor(layer){
     var inp=$('col-'+layer),field=LAYER_FIELD[layer],before=null;
@@ -1174,7 +1268,7 @@
     });
     inp.addEventListener('change',function(){
       var d=D(),after=inp.value;d[field]=(before!=null?before:after);pushUndo();d[field]=after;
-      if(layer==='bg'&&!d.bgOn){d.bgOn=true;$('filled').classList.add('on');}
+      if(layer==='bg'&&!d.bgOn){d.bgOn=true;setOn($('filled'),true);}
       render();
     });
   }
@@ -1410,7 +1504,7 @@
   }
   function setExportType(t){
     ui.exportType=t;
-    [].forEach.call(document.querySelectorAll('[data-type]'),function(b){b.classList.toggle('on',b.dataset.type===t);});
+    [].forEach.call(document.querySelectorAll('[data-type]'),function(b){setOn(b,b.dataset.type===t);});
   }
 
   /* ============================================================
@@ -1573,6 +1667,41 @@
     document.addEventListener('touchend',sideEnd);
   })();
 
+  /* ---------------- stuck drags ----------------
+     Every drag here ends on mouseup. A mouseup does not always arrive: release the button outside
+     the window, or switch app mid-gesture, and the browser never delivers it. The gesture stays
+     live, and because the movement handlers sit on document, every later mouse move keeps driving
+     it with nothing pressed — brush a stretch handle, alt-tab, come back, and the canvas grows row
+     by row under the cursor until it fills the stage. Reproduced 2026-09-10: 16 rows to 26 on plain
+     movement, no button held.
+     Like letting go of a drawer handle while your hand is out of the room — the drawer keeps
+     following you until something tells it the hand is gone. `buttons` is that something: a move
+     carrying 0 is proof no button is down. Losing focus says the same thing, and says it without
+     waiting for a move.
+     Capture phase, so it lands before the handlers it is cancelling; the synthetic mouseup reuses
+     every existing ender, including the ones living inside closures. */
+  /* ---------------- a clicked button stays armed ----------------
+     A mouse click leaves a button focused, and a focused button answers Space and Enter. Nothing
+     on screen says so: :focus-visible deliberately does not match a pointer click, so the ring
+     that would warn you is absent by design. Click Zoom once and the next Space — the key you
+     press to scroll a page — zooms the drawing instead; hold it and the canvas runs to the top of
+     its range with no visible cause. Clear and Undo carry the same loaded gun.
+     Like leaving a power tool plugged in with the trigger taped down: it looks idle and is not.
+     Verified 2026-09-10: after a real click, document.activeElement is the Zoom button and
+     :focus-visible is false.
+     A keyboard activation reports detail === 0 and keeps its focus, so tabbing and repeating by
+     keyboard are untouched — only the pointer hands the control back. */
+  document.addEventListener('click',function(e){
+    if(!e.detail)return;                                   /* keyboard-driven click: leave focus be */
+    var b=e.target&&e.target.closest&&e.target.closest('.btn');
+    if(b&&document.activeElement===b)b.blur();
+  });
+
+  function dragInFlight(){return !!(ui.sideDrag||ui.drawing||ui.selMoving||ui.selDragNew);}
+  function endStuckDrag(){if(dragInFlight())document.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));}
+  document.addEventListener('mousemove',function(e){if(e.buttons===0)endStuckDrag();},true);
+  window.addEventListener('blur',endStuckDrag);
+
   /* keyboard */
   document.addEventListener('keydown',function(e){
     var t=e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||e.target.isContentEditable)return;
@@ -1633,17 +1762,28 @@
   $('ch').addEventListener('input',function(){sizeNumInput($('ch'));});
 
   /* stage controls */
-  $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;$('filled').classList.toggle('on',d.bgOn);render();};
+  $('filled').onclick=function(){var d=D();pushUndo();d.bgOn=!d.bgOn;setOn($('filled'),d.bgOn);render();};
   /* the embedded swatch opens the colour picker without toggling the Background button */
   ['click','mousedown'].forEach(function(ev){$('col-bg').addEventListener(ev,function(e){e.stopPropagation();});});
   $('select').onclick=function(){setTool(ui.tool==='select'?'draw':'select');};
-  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;$('gridtog').classList.toggle('on',ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
-  $('mirror').onclick=function(){ui.mirror=!ui.mirror;$('mirror').classList.toggle('on',ui.mirror);};
-  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
+  $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;setOn($('gridtog'),ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
+  $('mirror').onclick=function(){ui.mirror=!ui.mirror;setOn($('mirror'),ui.mirror);};
+  /* A flat +4 made every press mean something different: from 10 that is a 40% jump, from 190 it
+     is 2%, and crossing the whole 10-200 range took 42 clicks. A step in PROPORTION feels the same
+     everywhere and crosses the range in nine — the way a camera lens steps, not a ruler. */
+  var ZOOM_STEP=1.25;
+  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
+    var dir=+b.dataset.zoom, next=dir>0?ui.fs*ZOOM_STEP:ui.fs/ZOOM_STEP;
+    next=Math.round(next);
+    if(next===ui.fs)next=ui.fs+dir;   /* rounding must never leave the button doing nothing */
+    ui.fs=Math.max(10,Math.min(200,next));build();updateScrollbars();};});
 
   /* ---------------- fullscreen popup ---------------- */
   var FS_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg>';
   var CLOSE_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
+  /* Kept, still unused. Auto-fitting the drawing to the stage was built and then rejected by the
+     operator on 2026-09-10 — "увеличивать поле не нужно точно" — so the canvas stays at the cell
+     size ui.fs holds and the Zoom buttons are the only thing that changes it. */
   function fitCanvas(){
     var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
     var availW=Math.max(60,sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-8);
@@ -1661,7 +1801,9 @@
     relocateFsPanels(true);
     document.querySelector('.stage').classList.add('fullscreen');document.body.classList.add('fs-lock');
     document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
-    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
+    $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';
+    $('fs').setAttribute('aria-label','Close fullscreen');$('fs').setAttribute('aria-pressed','true');
+    build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
   }
   function exitFullscreen(){
     ui.fsOpen=false;
@@ -1669,7 +1811,9 @@
     document.body.style.top='';
     if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
     relocateFsPanels(false);
-    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';build();updateScrollbars();
+    $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';
+    $('fs').setAttribute('aria-label','Fullscreen');$('fs').setAttribute('aria-pressed','false');
+    build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
   window.addEventListener('resize',updateScrollbars);
@@ -1682,7 +1826,14 @@
   $('clear').onclick=function(){pushUndo();clearSelection();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
 
   /* hint */
-  $('hintx').onclick=function(){$('hint').style.display='none';};
+  /* The hint described a keyboard the touch build does not have — Backspace, typing into a cell.
+     The code already splits these two worlds with isCoarse(); the copy now splits with it. */
+  $('hinttext').textContent=isCoarse()
+    ? 'Custom panel: pick a glyph, then tap an empty cell to keep it there. Tap a kept glyph to draw with it, tap it again to clear the cell.'
+    : 'Custom panel: pick a glyph and click an empty cell to keep it there, or click the cell and type / paste your own. Backspace clears a cell.';
+  /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
+     the section gap down to the paint bar */
+  $('hintx').onclick=function(){$('hint').hidden=true;};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
      Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.
@@ -1696,11 +1847,11 @@
     {img:'assets/onboarding/onboarding_1.png',title:'Blockmode — ASCII Sprite Editor',
      text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid. Pick a glyph from the palette, choose a paint, then draw on the grid. Nothing installs and nothing uploads. It is one page in your browser.'},
     {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
-     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. Right-click erases. So does the Eraser tool, if you prefer a mode over a second mouse button. Ctrl/Cmd+Z undoes, and every sprite keeps its own undo history.'},
+     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. The Eraser under the canvas clears cells the same way you paint them; with a mouse, right-click erases without leaving your brush. Undo sits under the canvas too, or Ctrl/Cmd+Z — and every sprite keeps its own undo history.'},
     {img:'assets/onboarding/onboarding_3.gif',title:'Color and Background',
      text:'You draw in four colors — Main, Accent, Detail and Extra. Each one is a color you can change at any time, and every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
     {img:'assets/onboarding/onboarding_4.gif',title:'Select and Mirror',
-     text:'Use Select to move or remove part of a sprite. Drag a box, drag it to reposition, use the arrow keys to nudge it, or press Delete to remove it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
+     text:'Use Select to move or remove part of a sprite. Drag a box around it, then drag the box itself to reposition — with a keyboard, arrow keys nudge it one cell at a time and Delete clears it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
     {img:'assets/onboarding/onboarding_5.gif',title:'Save and Export',
      text:'Blockmode keeps your tabs, frames and Custom glyphs in this browser between sessions. But browser storage is not a backup: clear it, open Blockmode in another browser or device, and your work will be gone. Export JSON often to save your sprites properly and load them again whenever you want to continue.'}
   ];
@@ -1739,13 +1890,17 @@
   /* animation */
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
   $('play').onclick=play;$('stop').onclick=stop;
-  $('fps').addEventListener('change',function(){var v=Math.max(1,Math.min(60,Math.round(+$('fps').value)||D().fps));
+  /* `Math.round(+v)||fps` treated a typed 0 as "nothing entered" and quietly restored the old
+     value, because 0 is falsy in JavaScript — the same trap that makes `count || 10` skip a real
+     zero. Ask whether the number is a number, then clamp it; 0 now lands on 1, as typing it means. */
+  $('fps').addEventListener('change',function(){
+    var raw=parseFloat($('fps').value),v=isFinite(raw)?Math.max(1,Math.min(60,Math.round(raw))):D().fps;
     D().fps=v;$('fps').value=v;if(ui.playing){stop();play();}scheduleSave();});
 
   /* export */
   document.querySelectorAll('[data-type]').forEach(function(b){b.onclick=function(){setExportType(b.dataset.type);};});
   document.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){ui.scale=+b.dataset.s;
-    document.querySelectorAll('[data-s]').forEach(function(x){x.classList.remove('on');});b.classList.add('on');};});
+    document.querySelectorAll('[data-s]').forEach(function(x){setOn(x,false);});setOn(b,true);};});
   $('export').onclick=doExport;
 
   /* The box mirrors the live sprite JSON, so Copy works at any time. Its second button is
