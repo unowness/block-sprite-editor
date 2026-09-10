@@ -8,10 +8,8 @@
 <meta name="description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<!-- Pre-paint theme script is on hold with the THEME toggle: a stored 'light' must NOT be applied,
-     or anyone who picked Light before would be stranded in the unfinished theme with no way back.
-     The preference itself is left in localStorage. Restore alongside the toggle:
-     <script>try{if(localStorage.getItem('blockmode:lab:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script> -->
+<!-- Set data-theme before first paint, or a stored Light renders one dark frame and then flips. -->
+<script>try{if(localStorage.getItem('blockmode:lab:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -96,8 +94,11 @@
 
   /* ---------------- header ---------------- */
   /* header is brand-only again — Import/Save moved into the Row A "File" tool (Figma 42:363) */
-  header{margin-bottom:var(--space-frame);}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:var(--space-frame);}
   .brand{display:flex;align-items:center;gap:12px;}
+  /* top-aligned with the logo, not centred on it: the toggle belongs to the page corner, and a
+     56px logo would otherwise drag it into the middle of the header */
+  .theme{display:flex;gap:8px;flex:none;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
 
@@ -510,6 +511,12 @@
       <img class="logo logo-dark" src="favicon.png" width="56" height="56" alt="Blockmode logo">
       <img class="logo logo-light" src="logo-blockmode-white-56x56.svg" width="56" height="56" alt="Blockmode logo">
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
+    </div>
+    <!-- Theme, top right. Same segmented idiom as Editor / Type / Scale — a new component would
+         be a third way of saying "one of these two" on a page that already has two. -->
+    <div class="theme" role="group" aria-label="Theme">
+      <button class="btn" data-theme-btn="light" aria-pressed="false">Light</button>
+      <button class="btn" data-theme-btn="dark" aria-pressed="true">Dark</button>
     </div>
   </header>
 
@@ -1729,13 +1736,13 @@
   /* theme (light / dark) — persisted; the <head> script sets data-theme pre-paint to avoid a flash */
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
-    [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.classList.toggle('on',b.dataset.themeBtn===t);});
+    [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){setOn(b,b.dataset.themeBtn===t);});
     try{localStorage.setItem('blockmode:lab:theme',t);}catch(e){}
   }
   [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.onclick=function(){applyTheme(b.dataset.themeBtn);};});
-  /* Toggle is hidden, so force dark WITHOUT persisting — applyTheme would overwrite the stored
-     preference, and it should survive until the light theme is finished and the toggle returns. */
-  document.documentElement.setAttribute('data-theme','dark');
+  /* Dark is the default; a stored choice wins. The <head> script already set the attribute, so
+     this only syncs the buttons and never overwrites a preference it did not read. */
+  applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
 
   /* paint layers + colors */
   document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
