@@ -197,7 +197,10 @@
      INSIDE the frame. Controls stay docked to the frame corners (outside the scroll). */
   .stage{position:relative;background:var(--stage-bg);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
-  .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
+  /* The stage was a fixed 346px letterbox on every screen. On a 1440x900 desktop that gave the
+     drawing surface 2.37% of the viewport while the panel around it stayed 65% empty. It now takes
+     a share of the window, still floored and still capped. */
+  .stage-canvas{position:relative;height:clamp(346px,58vh,600px);max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
                 padding:54px 12px;overflow:auto;scrollbar-width:none;}
   .stage-canvas::-webkit-scrollbar{width:0;height:0;display:none;}   /* hide native — custom bar below */
@@ -219,7 +222,7 @@
      Esc or the X closes it. */
   body.fs-lock{overflow:hidden;position:fixed;left:0;right:0;width:100%;}  /* scroll-lock (top offset set in JS to avoid jump) */
   .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:110px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
-  .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
+  .stage.fullscreen .stage-canvas{position:absolute;inset:0;height:auto;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
   /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
   body.fs-lock .wrap>*:not(.stage):not(.fsbottom){visibility:hidden;}
   /* Fullscreen bottom bar: Paint panel (left) + Custom panel (right), in the backdrop below the stage.
@@ -249,9 +252,11 @@
   .cell:hover{background:color-mix(in srgb,var(--accent) 28%,transparent);}
 
   /* ---------------- hint banner ---------------- */
-  /* the hint hangs off the stage (cluster gap above) and carries the 40px section gap BELOW it, on
-     .palette — so dismissing the hint (display:none) leaves stage -> Custom at 40px, not 8. */
-  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);
+  /* The hint describes the Custom row, so it belongs to the block below, not to the stage above:
+     the 40px section gap opens above it and it sits a cluster gap from Paint and the palette.
+     Dismissing it hands that section gap to the paint bar, so the stage never ends up 8px from
+     the palette. */
+  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-top:var(--space-section);
         background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
@@ -262,7 +267,7 @@
   .hint-x svg{width:14px;height:14px;display:block;}
 
   /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
-  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 var(--space-cluster);}
+  .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0 0 var(--space-cluster);}
   .animbar-right{display:flex;flex-wrap:wrap;gap:8px;}
   .frames{display:flex;flex-wrap:wrap;gap:8px;}
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
@@ -272,7 +277,13 @@
   #play,#stop{gap:8px;}   /* icon -> label gap inside the Preview buttons */
 
   /* ---------------- glyph palette ---------------- */
-  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-section);}
+  /* .hint sets display:flex, which outranks the browser's own [hidden]{display:none} — same
+     specificity, author sheet wins — so hiding it needs to be said here, not left to the UA. */
+  .hint[hidden]{display:none;}
+  /* hint -> Paint -> palette is one block: cluster gaps inside it, the section gap above it */
+  .paintbar{margin-top:var(--space-cluster);}
+  .hint[hidden]+.paintbar{margin-top:var(--space-section);}
+  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   .pgroup{display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -289,7 +300,10 @@
 
   /* ---------------- export bar ---------------- */
   /* the JSON box carries the 40px section gap now; the export bar hangs off it at 8px */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);}
+  /* Every other row on the page sets its tools 8px apart. space-between made this one row split
+     into two islands 316px apart at 960px, so the same 8px rhythm read as a mistake here and only
+     here. Hug left, like Row A and Row B. */
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin-top:var(--space-cluster);}
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
@@ -505,15 +519,6 @@
 
     <!-- Row B — paint + view + canvas -->
     <div class="bar">
-      <div class="tool" id="paintgroup">
-        <span class="tool-label">Paint</span>
-        <div class="paints" id="paints" role="group" aria-label="Paint">
-          <button class="paint on" data-l="b" aria-pressed="true"><span class="swatch"><input type="color" id="col-b" aria-label="Main colour" title="Main colour"></span>Main</button>
-          <button class="paint"    data-l="a" aria-pressed="false"><span class="swatch"><input type="color" id="col-a" aria-label="Accent colour" title="Accent colour"></span>Accent</button>
-          <button class="paint"    data-l="d" aria-pressed="false"><span class="swatch"><input type="color" id="col-d" aria-label="Detail colour" title="Detail colour"></span>Detail</button>
-          <button class="paint"    data-l="e" aria-pressed="false"><span class="swatch"><input type="color" id="col-e" aria-label="Extra colour" title="Extra colour"></span>Extra</button>
-        </div>
-      </div>
       <div class="tool">
         <span class="tool-label">Editor</span>
         <button class="btn on" data-view="ascii" aria-pressed="true">Drawing</button>
@@ -593,6 +598,22 @@
   <div class="hint" id="hint">
     <span id="hinttext"></span>
     <button class="hint-x" id="hintx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
+  </div>
+
+  <!-- Paint + glyph palette: one block.
+       Choosing a colour and choosing a glyph are the same decision — "what does this stroke lay
+       down" — and they were on opposite sides of the canvas, one in Row B and one below the stage.
+       Fullscreen has always put them together in .fsbottom; the page now agrees with fullscreen. -->
+  <div class="bar paintbar">
+    <div class="tool" id="paintgroup">
+      <span class="tool-label">Paint</span>
+      <div class="paints" id="paints" role="group" aria-label="Paint">
+        <button class="paint on" data-l="b" aria-pressed="true"><span class="swatch"><input type="color" id="col-b" aria-label="Main colour" title="Main colour"></span>Main</button>
+        <button class="paint"    data-l="a" aria-pressed="false"><span class="swatch"><input type="color" id="col-a" aria-label="Accent colour" title="Accent colour"></span>Accent</button>
+        <button class="paint"    data-l="d" aria-pressed="false"><span class="swatch"><input type="color" id="col-d" aria-label="Detail colour" title="Detail colour"></span>Detail</button>
+        <button class="paint"    data-l="e" aria-pressed="false"><span class="swatch"><input type="color" id="col-e" aria-label="Extra colour" title="Extra colour"></span>Extra</button>
+      </div>
+    </div>
   </div>
 
   <!-- Glyph palette -->
@@ -715,6 +736,7 @@
   var docs=[ newDoc('Current') ];
   var activeDoc=0;
   var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
+           zoomedByHand:false,                   /* set by the Zoom buttons; suppresses auto-fit */
            view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
            drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null,
            cellW:0, cellH:0,
@@ -777,8 +799,8 @@
       box.appendChild(t);
     });
   }
-  function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
-  function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
+  function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();releaseFit();updateScrollbars();}
+  function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();releaseFit();updateScrollbars();}
   /* a tab holds a sprite and its own undo stack, and closing was the one action that destroyed
      work with no confirm and no way back. Ask only when there IS work — an untouched scratch tab
      closes silently, so the prompt stays meaningful. */
@@ -926,7 +948,7 @@
       var add=target-d.w,la=Math.floor(add/2),ra=add-la,j;
       pushUndo();clearSelection();for(j=0;j<la;j++)addColLeft();for(j=0;j<ra;j++)addColRight();
     }
-    build();renderFrames();$('cw').value=d.w;sizeNumInput($('cw'));
+    build();renderFrames();$('cw').value=d.w;sizeNumInput($('cw'));releaseFit();updateScrollbars();
   }
   function resizeHeight(target){
     var d=D();target=Math.max(3,Math.min(128,target|0));
@@ -939,7 +961,7 @@
       var add=target-d.h,ta=Math.floor(add/2),ba=add-ta,j;
       pushUndo();clearSelection();for(j=0;j<ta;j++)addRowTop();for(j=0;j<ba;j++)addRowBottom();
     }
-    build();renderFrames();$('ch').value=d.h;sizeNumInput($('ch'));
+    build();renderFrames();$('ch').value=d.h;sizeNumInput($('ch'));releaseFit();updateScrollbars();
   }
   /* one cell on a single side, no undo push (the drag handler snapshots once at gesture start) */
   function sideStep(side,grow){
@@ -1595,7 +1617,9 @@
       while(sd.applied>want){if(!sideStep(sd.side,false))break;sd.applied--;changed=true;}
       if(changed){build();renderFrames();syncInputs();hmap[sd.side].classList.add('show');}
     }
-    function sideEnd(){if(ui.sideDrag){ui.sideDrag=null;document.body.style.cursor='';hideAll();updateOut();}}
+    /* refit once the drag settles, not on every step: resizing by handle is the same "reflow this"
+       signal as typing a new W/H, but doing it mid-gesture would fight the hand that is dragging. */
+    function sideEnd(){if(ui.sideDrag){ui.sideDrag=null;document.body.style.cursor='';hideAll();updateOut();releaseFit();updateScrollbars();}}
     Object.keys(hmap).forEach(function(side){
       hmap[side].addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();sideStart(side,e.clientX,e.clientY);});
       hmap[side].addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();var t=e.changedTouches[0];sideStart(side,t.clientX,t.clientY);},{passive:false});
@@ -1672,18 +1696,40 @@
   $('select').onclick=function(){setTool(ui.tool==='select'?'draw':'select');};
   $('gridtog').onclick=function(){ui.showGrid=!ui.showGrid;setOn($('gridtog'),ui.showGrid);gridEl.classList.toggle('show-grid',ui.showGrid);};
   $('mirror').onclick=function(){ui.mirror=!ui.mirror;setOn($('mirror'),ui.mirror);};
-  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();};});
+  document.querySelectorAll('[data-zoom]').forEach(function(b){b.onclick=function(){
+    ui.zoomedByHand=true;   /* from here on this sprite keeps the size you chose */
+    ui.fs=Math.max(10,Math.min(200,ui.fs+(+b.dataset.zoom)*4));build();updateScrollbars();};});
 
   /* ---------------- fullscreen popup ---------------- */
   var FS_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1 5V1H5"/><path d="M13 5V1H9"/><path d="M1 9V13H5"/><path d="M13 9V13H9"/></svg>';
   var CLOSE_ICON='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
+  /* fitCanvas() was written and then never called from anywhere, so the drawing stayed at whatever
+     cell size ui.fs happened to hold — 32px — no matter how much room the stage had. Measured on a
+     1440x900 desktop: a 958x346 stage holding a 159x193 drawing, 2.37% of the screen.
+     Think of it as a picture in a mount: the mount was being cut to a fixed size and the picture
+     left small in the middle of it, instead of the picture being printed to fill the mount. */
+  /* A stretch handle is a 14px chip sitting 22px outside the field, with an 8px invisible grab pad
+     around it — 30px of room the fit has to leave, or the handles push a scrollbar into a stage
+     whose drawing already fits. Plus 2px of slack, because the cell size is floored and the
+     per-cell measurement is fractional. */
+  var HANDLE_ROOM=30, FIT_SLACK=2;
   function fitCanvas(){
     var d=D(),sc=document.querySelector('.stage-canvas'),m=measure(),cwPer=m.w/ui.fs,chPer=m.h/ui.fs,cs=getComputedStyle(sc);
-    var availW=Math.max(60,sc.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-8);
-    var availH=Math.max(60,sc.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-8);
+    function room(a,b){return Math.max(parseFloat(a),HANDLE_ROOM)+Math.max(parseFloat(b),HANDLE_ROOM)+FIT_SLACK;}
+    var availW=Math.max(60,sc.clientWidth-room(cs.paddingLeft,cs.paddingRight));
+    var availH=Math.max(60,sc.clientHeight-room(cs.paddingTop,cs.paddingBottom));
     var fs=Math.floor(Math.min(availW/(d.w*cwPer),availH/(d.h*chPer)));
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
+  /* Auto-fit is the default, not a rule: the moment you press Zoom, your zoom is the truth for
+     this sprite and the fit stops arguing with you. Changing the canvas size is a clear "reflow
+     this" and hands the fit back. */
+  function autoFit(){
+    if(ui.fsOpen)return;              /* fullscreen is deliberately 1:1 — large art scrolls */
+    if(ui.zoomedByHand)return;
+    fitCanvas();
+  }
+  function releaseFit(){ui.zoomedByHand=false;autoFit();}
   /* the REAL Paint pills + Custom row, moved into the fullscreen bottom bar and back (no duplicates) */
   function relocateFsPanels(toFs){
     var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);
@@ -1709,7 +1755,7 @@
     build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
-  window.addEventListener('resize',updateScrollbars);
+  window.addEventListener('resize',function(){autoFit();updateScrollbars();});
   document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
   wireScrollThumb($('fsthumb-h'),'x');
   wireScrollThumb($('fsthumb-v'),'y');
@@ -1724,7 +1770,9 @@
   $('hinttext').textContent=isCoarse()
     ? 'Custom panel: pick a glyph, then tap an empty cell to keep it there. Tap a kept glyph to draw with it, tap it again to clear the cell.'
     : 'Custom panel: pick a glyph and click an empty cell to keep it there, or click the cell and type / paste your own. Backspace clears a cell.';
-  $('hintx').onclick=function(){$('hint').style.display='none';};
+  /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
+     the section gap down to the paint bar */
+  $('hintx').onclick=function(){$('hint').hidden=true;};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
      Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.
@@ -1866,6 +1914,7 @@
   build();
   renderFrames();
   updateHist();
+  autoFit();
   updateScrollbars();
   /* first visit only — once Skip or Start drawing is pressed, the flag keeps it from returning */
   try{if(localStorage.getItem(ONB_KEY)!=='1')onbOpen(0);}catch(e){}
