@@ -24,10 +24,10 @@
     --page:#0A0A0B;
     --stage-bg:#141417;    /* the drawing section is a panel too, not a hole in the page */
     --tool-background:#17171A;
-    --input-background:#1F1F22;
-    --stroke:#2F2F33;
+    --input-background:#1C1D20;
+    --stroke:#2A2A2E;   /* softened with light's, by less */
     --stroke-focus:#70707A;
-    --stroke-hover:#43434A;
+    --stroke-hover:#3C3C43;
     --main-text:#E9E9E6;
     --main-text-05:rgba(233,233,230,.5);
     --tool-text-id:#9B9B97;
@@ -39,8 +39,8 @@
     --accent:#E9E9E6;
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
-    --btn-background:#1F1F22;   /* controls */
-    --canvas:#1F1F22;  /* glyph tiles are controls too */
+    --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
+    --canvas:#1C1D20;  /* glyph tiles are controls too */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
     --glyph:#D2D2CE;   /* glyph-preview colour on palette tiles */
     /* the one surface that stays at page value on purpose: "no background" should read as a hole
@@ -87,26 +87,26 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    --page:#E0E6EC;              /* the grey ground — L* 90.9 */
-    --stage-bg:#EBF0F4;          /* L* 94.5 */
-    --tool-background:#F0F4F7;   /* the trays — L* 96.0 */
-    --btn-background:#FFFFFF;    /* controls, the only white — L* 100 */
-    --input-background:#FFFFFF;  /* a field is a control you type into; same height, own border */
-    --canvas:#FFFFFF;            /* glyph tiles are controls */
-    /* 6% takes a white control to L* 95.1, just under its tray at 96.0 — hovering presses it back
-       into the surface it came from, without ever making it look switched off */
-    --hover-veil:color-mix(in srgb,var(--main-text) 6%,transparent);
-    --stroke:#C3CAD3;
-    --stroke-focus:#5D6673;
-    --stroke-hover:#A3ACB8;
-    --main-text:#101419;    /* cool ink */
-    --main-text-05:rgba(16,20,25,.5);
-    --tool-text-id:#59616C;
-    --accent:#101419;       /* the accent is the ink, exactly as it is the paper in dark */
+    --page:#E4E7EA;              /* the grey ground — L* 91.5 */
+    --stage-bg:#EDEFF2;          /* L* 94.5 */
+    --tool-background:#F3F5F7;   /* the trays — L* 96.5 */
+    --btn-background:#FBFCFD;    /* controls, still the top of the ramp — L* 98.8 */
+    --input-background:#FBFCFD;  /* a field is a control you type into; same height, own border */
+    --canvas:#FBFCFD;            /* glyph tiles are controls */
+    /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
+       surface it came from, without ever making it look switched off */
+    --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
+    --stroke:#DADEE2;       /* 1.31:1 on a control — a line you notice only when you look for it */
+    --stroke-focus:#6B7079;
+    --stroke-hover:#BCC1C7;
+    --main-text:#15171B;    /* cool ink, half the cast it had */
+    --main-text-05:rgba(21,23,27,.5);
+    --tool-text-id:#5E636A;
+    --accent:#15171B;       /* the accent is the ink, exactly as it is the paper in dark */
     --alert:#8F231C;        /* same red family as dark's, darkened for the paper */
-    --glyph:#252B33;
+    --glyph:#272A30;
     --canvas-empty:var(--page);
-    --grid-line:rgba(138,150,166,.5);
+    --grid-line:rgba(152,158,168,.42);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
