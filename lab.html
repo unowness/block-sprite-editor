@@ -16,7 +16,13 @@
      ============================================================ */
   :root{
     /* color */
+    /* Every surface sits ABOVE the ground, never level with it. One ramp, four steps: the page is
+       the floor, the drawing stage and the tool panels are things resting on it, and inputs and
+       glyph tiles are the topmost. Nothing shares a value with the page, so no panel edge has to
+       be found by its border alone. In light the ramp inverts — the paper is the top and the
+       surfaces press into it. */
     --page:#0A0A0B;
+    --stage-bg:#141417;    /* the drawing section is a panel too, not a hole in the page */
     --tool-background:#17171A;
     --input-background:#1F1F22;
     --stroke:#2F2F33;
@@ -33,10 +39,11 @@
     --accent:#E9E9E6;
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
-    --canvas:#0F0F11;
+    --canvas:#1F1F22;  /* glyph tiles read as inputs, because that is what they are */
     --glyph:#D2D2CE;   /* glyph-preview colour on palette tiles */
-    --stage-bg:#0A0A0B;    /* editing-window fill (= page in dark) */
-    --canvas-empty:var(--page);   /* transparent bg -> the page colour shows "through" the canvas */
+    /* the one surface that stays at page value on purpose: "no background" should read as a hole
+       cut through the stage, not as another panel */
+    --canvas-empty:var(--page);
     --grid-line:#2F2F33;   /* grid lines + canvas frame (= --stroke in dark) */
 
     /* type */
@@ -62,27 +69,34 @@
      boxes you could not see — the structure was there in the markup and absent on screen.
      The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    --page:#EAEAE7;         /* paper the panels sit on */
-    --tool-background:#FFFFFF;
-    --input-background:#F5F5F2;  /* recessed inside the panel */
-    --stroke:#C6C6C1;
-    --stroke-focus:#70706A;
-    --stroke-hover:#A6A6A0;
+    /* the same ramp, inverted: the paper is the top and every surface presses into it */
+    --page:#F5F5F2;         /* paper */
+    --stage-bg:#ECECE8;
+    --tool-background:#E9E9E5;
+    --input-background:#DFDFDA;
+    --canvas:#DFDFDA;       /* glyph tiles read as inputs here too */
+    --stroke:#BCBCB6;
+    --stroke-focus:#6A6A64;
+    --stroke-hover:#9E9E98;
     --main-text:#17171A;    /* ink */
     --main-text-05:rgba(23,23,26,.5);
-    --tool-text-id:#5C5C57;
+    --tool-text-id:#575752;
     --accent:#17171A;       /* the accent is the ink, exactly as it is the paper in dark */
-    --alert:#A8271C;
-    --canvas:#E2E2DE;       /* palette tiles, readable against a white panel */
+    --alert:#951B12;   /* the lighter paper pushed Clear to 4.24:1, under AA; back over 5 */
     --glyph:#33333A;
-    --stage-bg:#FFFFFF;     /* editing window = tool panels */
-    --canvas-empty:var(--page); /* transparent bg -> the page colour shows "through" the canvas */
+    --canvas-empty:var(--page);
     --grid-line:rgba(150,150,145,.5);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
   :root[data-theme="light"] .logo.logo-dark{display:none;}
-  :root[data-theme="light"] .logo.logo-light{display:block;}
+  /* The light mascot ships as near-white artwork, which on paper is a shape you cannot see. It is
+     painted here instead of drawn: the SVG becomes a mask and the panel colour fills it, so the
+     logo is made of the same material as the panels under it and moves whenever they do. */
+  :root[data-theme="light"] .logo.logo-light{
+    display:block;background-color:var(--tool-background);
+    -webkit-mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;
+            mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;}
 
   *{box-sizing:border-box;}
   body{margin:0;background:var(--page);color:var(--main-text);font-family:var(--font-ui);}
@@ -94,7 +108,11 @@
   .brand{display:flex;align-items:center;gap:12px;}
   /* top-aligned with the logo, not centred on it: the toggle belongs to the page corner, and a
      56px logo would otherwise drag it into the middle of the header */
-  .theme{display:flex;gap:8px;flex:none;}
+  .theme{flex:none;}
+  /* Remix Icon draws sun and moon as filled paths in a 24 box, where this set is 1px strokes in a
+     14 box. Rendered at 14 the 2/24 line lands on 1.17px, so the two idioms sit at the same weight
+     without redrawing either. */
+  .theme svg{width:15px;height:15px;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
 
@@ -276,7 +294,7 @@
      nothing but itself. */
   .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
         width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
-        background:var(--page);border:1px solid var(--stroke);border-radius:var(--r-tool);
+        background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -331,7 +349,7 @@
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:var(--space-section);background:var(--page);
+  .iobox{position:relative;margin-top:var(--space-section);background:var(--tool-background);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   /* no bottom reserve for the buttons: that left a dead band across the box once the JSON ran out.
      The text fills the full height and Copy/Paste float over the bottom-right, which the JSON's
@@ -512,15 +530,12 @@
   <header>
     <div class="brand">
       <img class="logo logo-dark" src="favicon.png" width="56" height="56" alt="Blockmode logo">
-      <img class="logo logo-light" src="logo-blockmode-white-56x56.svg" width="56" height="56" alt="Blockmode logo">
+      <span class="logo logo-light" role="img" aria-label="Blockmode logo"></span>
       <h1 class="title">Blockmode<br>ASCII Sprite Editor</h1>
     </div>
-    <!-- Theme, top right. Same segmented idiom as Editor / Type / Scale — a new component would
-         be a third way of saying "one of these two" on a page that already has two. -->
-    <div class="theme" role="group" aria-label="Theme">
-      <button class="btn" data-theme-btn="light" aria-pressed="false">Light</button>
-      <button class="btn" data-theme-btn="dark" aria-pressed="true">Dark</button>
-    </div>
+    <!-- Theme, top right: one button that shows where it will take you, not where you are. A light
+         switch on a dark wall does not need a label saying the light is currently off. -->
+    <button class="btn icon theme" id="themetog" type="button"></button>
   </header>
 
   <div class="bars">
@@ -1737,14 +1752,23 @@
   $('sid').addEventListener('input',function(){D().id=$('sid').value;renderTabs();updateOut();});
 
   /* theme (light / dark) — persisted; the <head> script sets data-theme pre-paint to avoid a flash */
+  /* Remix Icon sun-line / moon-line, verbatim. The button shows the theme it will GIVE you. */
+  var SUN_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12C18 15.3137 15.3137 18 12 18ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16ZM11 1H13V4H11V1ZM11 20H13V23H11V20ZM3.51472 4.92893L4.92893 3.51472L7.05025 5.63604L5.63604 7.05025L3.51472 4.92893ZM16.9497 18.364L18.364 16.9497L20.4853 19.0711L19.0711 20.4853L16.9497 18.364ZM19.0711 3.51472L20.4853 4.92893L18.364 7.05025L16.9497 5.63604L19.0711 3.51472ZM5.63604 16.9497L7.05025 18.364L4.92893 20.4853L3.51472 19.0711L5.63604 16.9497ZM23 11V13H20V11H23ZM4 11V13H1V11H4Z"/></svg>';
+  var MOON_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z"/></svg>';
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
-    [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){setOn(b,b.dataset.themeBtn===t);});
+    var b=$('themetog'),toLight=(t!=='light');
+    b.innerHTML=toLight?SUN_ICON:MOON_ICON;
+    /* the name states the ACTION, because that is what the icon is showing */
+    b.title=toLight?'Switch to light theme':'Switch to dark theme';
+    b.setAttribute('aria-label',b.title);
     try{localStorage.setItem('blockmode:lab:theme',t);}catch(e){}
   }
-  [].forEach.call(document.querySelectorAll('[data-theme-btn]'),function(b){b.onclick=function(){applyTheme(b.dataset.themeBtn);};});
+  $('themetog').onclick=function(){
+    applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');
+  };
   /* Dark is the default; a stored choice wins. The <head> script already set the attribute, so
-     this only syncs the buttons and never overwrites a preference it did not read. */
+     this only draws the button and never overwrites a preference it did not read. */
   applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
 
   /* paint layers + colors */
