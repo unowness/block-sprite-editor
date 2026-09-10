@@ -71,38 +71,50 @@
      boxes you could not see — the structure was there in the markup and absent on screen.
      The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    /* Light does not mirror dark; it has its own order, and the operator set it: the page is the
-       middle. Sections rise a step off it, the controls on them rise another, and the fields you
-       type into sink below it — so a control reads as something placed ON the page and a field as
-       something cut INTO it. Hover then drops a control below its own section, which is the one
-       move that cannot be mistaken for anything else on the ramp. */
-    --page:#F5F5F2;              /* paper — the middle of the ramp, not the top */
-    --stage-bg:#FAFAF8;          /* sections rise off the page */
-    --tool-background:#FAFAF8;
-    --btn-background:#FFFFFF;    /* controls rise off the sections */
-    --input-background:#EBEBE7;  /* fields sink below the page */
+    /* Light keeps the operator's order — the page is the MIDDLE of the ramp; sections rise a step
+       off it, the controls on them rise another, and the fields you type into sink below it, so a
+       control reads as something placed ON the page and a field as something cut INTO it.
+
+       What changed is the room the ramp is given. The previous light theme lived in the top 7
+       points of L*, so every surface was a whisper and the borders had to carry structure they are
+       too thin to carry. This one spans 89 to 100 — eleven points, which is what dark spans too
+       (0.7 to 12.0). Same generosity, opposite end of the range: the two themes now cost the eye
+       the same amount of work.
+
+       Cool, not warm: every grey carries more blue than red, so the paper reads as daylight rather
+       than as aged stock. The greys hold the temperature on their own — the one warning colour
+       does NOT get cooled with them, because Clear has to read as the same signal in both themes,
+       and a hue that changes with the theme is a hue nobody chose. */
+    --page:#E8EBF0;              /* L* 92.9 */
+    --stage-bg:#F4F6F9;          /* sections rise off the page — L* 96.8 */
+    --tool-background:#F4F6F9;
+    --btn-background:#FFFFFF;    /* controls rise off the sections — L* 100 */
+    --input-background:#DCE0E6;  /* fields sink below the page — L* 89.0 */
     --canvas:#FFFFFF;            /* glyph tiles are controls */
     --hover-veil:color-mix(in srgb,var(--main-text) 8%,transparent);
-    --stroke:#BCBCB6;
-    --stroke-focus:#6A6A64;
-    --stroke-hover:#9E9E98;
-    --main-text:#17171A;    /* ink */
-    --main-text-05:rgba(23,23,26,.5);
-    --tool-text-id:#575752;
-    --accent:#17171A;       /* the accent is the ink, exactly as it is the paper in dark */
-    --alert:#951B12;   /* the lighter paper pushed Clear to 4.24:1, under AA; back over 5 */
-    --glyph:#33333A;
+    --stroke:#C3CAD3;
+    --stroke-focus:#5D6673;
+    --stroke-hover:#A3ACB8;
+    --main-text:#101419;    /* cool ink */
+    --main-text-05:rgba(16,20,25,.5);
+    --tool-text-id:#59616C;
+    --accent:#101419;       /* the accent is the ink, exactly as it is the paper in dark */
+    --alert:#9E2A22;        /* same red family as dark's, darkened for the paper. 5.38:1 on tint */
+    --glyph:#252B33;
     --canvas-empty:var(--page);
-    --grid-line:rgba(150,150,145,.5);
+    --grid-line:rgba(138,150,166,.5);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
   :root[data-theme="light"] .logo.logo-dark{display:none;}
-  /* The light mascot ships as near-white artwork, which on paper is a shape you cannot see. It is
-     painted here instead of drawn: the SVG becomes a mask and the panel colour fills it, so the
-     logo is made of the same material as the panels under it and moves whenever they do. */
+  /* The light mascot ships as near-white artwork, which on paper is a shape you cannot see, so the
+     SVG is a mask here and a token fills it.
+     It was set to the panel colour on request; at any value on this ramp that is a watermark
+     (1.1:1 against the page), and an invisible brand mark was part of why the light theme read as
+     unfinished. It takes the ink now, which is what dark does — a white mascot on black there, a
+     black one on paper here. One line back to --tool-background if the watermark was the point. */
   :root[data-theme="light"] .logo.logo-light{
-    display:block;background-color:var(--tool-background);
+    display:block;background-color:var(--main-text);
     -webkit-mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;
             mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;}
 
