@@ -36,12 +36,17 @@
        an outline at 13:1. Nothing is filled and nothing is tinted.
        The one colour left in the chrome is the alert, and the only other colour on the page is the
        drawing. That is the whole rule: an interface in grey, a picture in colour. */
-    --accent:#E9E9E6;
+    --accent:#67E8F9;
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     --alert:#E05A50;
     --btn-background:#1C1D20;   /* controls — L* 10.9, a 3.0 step off the tray rather than 4.0 */
     --canvas:#1C1D20;  /* glyph tiles are controls too */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
+    /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
+       than the surface to fall on, and here there is nothing darker. This is the one place the two
+       themes are built differently on purpose — see the light block. */
+    --shadow-section:none;
+    --shadow-control:none;
     --glyph:#D2D2CE;   /* glyph-preview colour on palette tiles */
     /* the one surface that stays at page value on purpose: "no background" should read as a hole
        cut through the stage, not as another panel */
@@ -87,12 +92,16 @@
        rather than as aged stock. The greys hold the temperature on their own — the one warning
        colour does NOT get cooled with them, because Clear has to read as the same signal in both
        themes, and a hue that changes with the theme is a hue nobody chose. */
-    --page:#E4E7EA;              /* the grey ground — L* 91.5 */
-    --stage-bg:#EDEFF2;          /* L* 94.5 */
-    --tool-background:#F3F5F7;   /* the trays — L* 96.5 */
-    --btn-background:#FBFCFD;    /* controls, still the top of the ramp — L* 98.8 */
-    --input-background:#FBFCFD;  /* a field is a control you type into; same height, own border */
-    --canvas:#FBFCFD;            /* glyph tiles are controls */
+    --page:#EDEFF1;              /* the grey ground — L* 94.4 */
+    /* Everything ON the ground is white. One step, not four — the depth is carried by shadow,
+       which is what a light interface has and a dark one does not. */
+    --stage-bg:#FFFFFF;
+    --tool-background:#FFFFFF;
+    --btn-background:#FFFFFF;
+    --input-background:#FFFFFF;
+    --canvas:#FFFFFF;
+    --shadow-section:0 1px 2px rgba(16,20,28,.07), 0 2px 8px rgba(16,20,28,.04);
+    --shadow-control:0 1px 1.5px rgba(16,20,28,.07);
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
     --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
@@ -102,7 +111,7 @@
     --main-text:#15171B;    /* cool ink, half the cast it had */
     --main-text-05:rgba(21,23,27,.5);
     --tool-text-id:#5E636A;
-    --accent:#15171B;       /* the accent is the ink, exactly as it is the paper in dark */
+    --accent:#B01E7D;       /* magenta-pink, 321 degrees — 43 away from Clear's red */
     --alert:#8F231C;        /* same red family as dark's, darkened for the paper */
     --glyph:#272A30;
     --canvas-empty:var(--page);
@@ -145,7 +154,7 @@
   .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
   .tool{display:flex;align-items:flex-start;gap:8px;
         background:var(--tool-background);border:1px solid var(--stroke);
-        border-radius:var(--r-tool);padding:8px 8px 8px 12px;}
+        border-radius:var(--r-tool);padding:8px 8px 8px 12px;box-shadow:var(--shadow-section);}
   .tool.grow{flex:1;}                    /* Row B Canvas grows so the row reaches the right edge */
   .tool.grow .num{flex:1;width:auto;}    /* and its inputs lengthen to fill — no empty gap, no Paint tail */
   .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;margin-right:2px;}  /* +2 over the 8px gap = 10px label->control */
@@ -153,6 +162,7 @@
   /* ---------------- buttons ---------------- */
   /* all controls share a 32px box; the 1px border is INSIDE (border-box), so active/focus
      border is a colour swap only — never a size change. */
+  .btn,.tab,.paint,.fbtn,.gbtn{box-shadow:var(--shadow-control);}
   .btn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 9px;
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
@@ -257,7 +267,7 @@
   /* ---------------- stage ---------------- */
   /* stage grows with the canvas up to a cap (1280x600); past that the canvas scrolls
      INSIDE the frame. Controls stay docked to the frame corners (outside the scroll). */
-  .stage{position:relative;background:var(--stage-bg);
+  .stage{position:relative;background:var(--stage-bg);box-shadow:var(--shadow-section);
          border:1px solid var(--stroke);border-radius:var(--r-tool);overflow:hidden;}
   .stage-canvas{position:relative;min-height:346px;max-height:600px;max-width:1280px;
                 display:flex;align-items:safe center;justify-content:safe center;
@@ -318,7 +328,7 @@
      palette's own 8px gap sets it off from CUSTOM above; the margin below brings the distance to
      BLOCK to the same 40px the glyph groups get when the caption is dismissed, so closing it moves
      nothing but itself. */
-  .hint{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
         width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
         background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
@@ -352,7 +362,7 @@
   /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
   .paintbar{margin-top:var(--space-section);}
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
-  .pgroup{display:flex;align-items:flex-start;gap:10px;
+  .pgroup{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
   /* label column = widest label (measured in JS); every glyph grid starts at the same x.
@@ -375,7 +385,7 @@
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:var(--space-section);background:var(--tool-background);
+  .iobox{position:relative;margin-top:var(--space-section);background:var(--tool-background);box-shadow:var(--shadow-section);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   /* no bottom reserve for the buttons: that left a dead band across the box once the JSON ran out.
      The text fills the full height and Copy/Paste float over the bottom-right, which the JSON's
