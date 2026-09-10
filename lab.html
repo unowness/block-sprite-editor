@@ -28,8 +28,13 @@
     --main-text-05:rgba(230,230,223,.5);
     --tool-text-id:#9AA0A6;
     --accent:#67E8F9;
-    --alert:#CB4036;
-    --green:#5CE422;
+    /* Clear was the least readable control in the interface at 3.74:1 — under AA — while being the
+       only one that destroys work. Same red family, raised to 4.82:1. */
+    --alert:#E05A50;
+    /* was #5CE422, the exact hex of the default Extra paint: the Export button and one of the
+       user's four brushes were the same colour, so chrome and artwork could not be told apart.
+       Moved the chrome, not the palette. 9.44:1 on its own tint. */
+    --green:#3DDC84;
     --canvas:#0D0D0F;
     --glyph:#cfd2c4;   /* glyph-preview colour on palette tiles */
     --stage-bg:#070708;    /* editing-window fill (= page in dark) */
@@ -54,24 +59,31 @@
   /* Light theme — adapted, not a raw inversion: warm paper (not clinical white),
      deeper accent for WCAG-AA text, everything else re-tuned. Toggled via
      data-theme on <html>; absence = dark (default). */
+  /* Measured before this pass: panel against page 1.06:1, input against panel 1.03:1, border
+     against panel 1.33:1. Every surface was the same value, so the light theme was a set of nested
+     boxes you could not see — the structure was there in the markup and absent on screen.
+     The ground is now grey and the panels sit on it in white, the way paper sits on a desk. */
   :root[data-theme="light"]{
-    --page:#F4F5F6;         /* cool near-white (not warm paper) */
-    --tool-background:#FBFCFD;
-    --input-background:#FFFFFF;
-    --stroke:#DADDE1;       /* cool light border */
-    --stroke-focus:#ABAFB4; /* darkest UI grey ~#ADADAD (focus) */
-    --stroke-hover:#C7CACE;
-    --main-text:#20232A;    /* cool dark ink (readable — not a "grey shade") */
-    --main-text-05:rgba(32,35,42,.5);
-    --tool-text-id:#6B6F75; /* cool dim label, kept AA-readable */
-    --accent:#4F46E5;   /* Electric Indigo (light theme). Dark stays cyan. */
-    --alert:#BE3B2F;
-    --green:#2E8B1E;
-    --canvas:#EFF1F3;       /* cool light palette tiles */
+    --page:#EDEFF2;         /* grey ground, so a white panel can read as a panel */
+    --tool-background:#FFFFFF;   /* 1.15:1 against the ground, up from 1.06 */
+    --input-background:#F5F7F9;  /* recessed inside the panel, 1.07:1 */
+    --stroke:#B4BAC3;       /* 1.95:1 against a panel, up from 1.33 */
+    --stroke-focus:#6E7681;
+    --stroke-hover:#9AA1AC;
+    --main-text:#1B1E24;    /* cool dark ink (readable — not a "grey shade") */
+    --main-text-05:rgba(27,30,36,.5);
+    --tool-text-id:#5F646B; /* cool dim label, 5.96:1 on a panel */
+    /* was #4F46E5 indigo against the dark theme's #67E8F9 cyan — 69.9 degrees apart, so the
+       product changed identity with the theme for no reason anyone chose. One hue family now:
+       both sit near 190 degrees, 6 degrees apart. 5.07:1 on the ground, 6.05:1 on a panel. */
+    --accent:#116C7E;
+    --alert:#AE2E23;        /* 4.72:1 on its tint, was 4.02 */
+    --green:#166534;        /* 5.47:1 on its tint, was 3.44 — Export failed AA in light */
+    --canvas:#E4E7EB;       /* palette tiles, readable against a white panel */
     --glyph:#34373D;
-    --stage-bg:#FBFCFD;     /* editing window = tool panels */
-    --canvas-empty:var(--page); /* transparent bg -> the page colour (#F4F5F6) shows "through" the canvas */
-    --grid-line:rgba(180,184,189,.5);   /* cool grey grid, 50% alpha (half the weight of the old solid #B4B8BD) */
+    --stage-bg:#FFFFFF;     /* editing window = tool panels */
+    --canvas-empty:var(--page); /* transparent bg -> the page colour shows "through" the canvas */
+    --grid-line:rgba(150,157,167,.5);
   }
   /* logo swaps per theme: raster mascot (dark) <-> operator's SVG mascot (light) */
   .logo.logo-light{display:none;}
@@ -117,7 +129,9 @@
   .btn.on{border-color:var(--accent);color:var(--accent);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
-  .btn.alert{background:rgba(203,64,54,.15);border-color:var(--alert);color:var(--alert);}
+  /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
+     dark theme's colour and stopped following the token entirely */
+  .btn.alert{background:color-mix(in srgb,var(--alert) 15%,transparent);border-color:var(--alert);color:var(--alert);}
   .btn.green{background:color-mix(in srgb,var(--green) 12%,transparent);border-color:var(--green);color:var(--green);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
@@ -249,7 +263,10 @@
         background-position:0 0;
         border-right:1px solid var(--stroke);border-bottom:1px solid var(--stroke);}
   .cell{background:transparent;}
-  .cell:hover{background:color-mix(in srgb,var(--accent) 28%,transparent);}
+  /* The accent carried nine separate jobs, and this was the one that put it inside the artwork:
+     hovering a cell laid the interface's own colour over the drawing. A cursor highlight only has
+     to say "here" — a shift in value does that without lending the picture a hue it never chose. */
+  .cell:hover{background:color-mix(in srgb,var(--main-text) 22%,transparent);}
 
   /* ---------------- hint banner ---------------- */
   /* The hint describes the Custom row, so it belongs to the block below, not to the stage above:
@@ -547,8 +564,8 @@
       </div>
       <div class="tool">
         <span class="tool-label">Preview</span>
-        <button class="btn" id="play"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
-        <button class="btn" id="stop"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
+        <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
+        <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
       </div>
     </div>
   </div>
