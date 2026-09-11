@@ -138,7 +138,7 @@
        the flatness this theme kept being sent back for. So the page drops to step 3, the panels
        rise to step 1, and the controls go to white: the same ladder, three rungs apart instead of
        one, with the controls still the brightest thing on screen. */
-    --page:#F0F0F0;              /* gray-3 */
+    --page:#F4F4F4;              /* lifted between gray-3 and gray-2 — L* 96.2 */
     --stage-bg:#FCFCFC;          /* gray-1 */
     --tool-background:#FCFCFC;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
@@ -173,11 +173,15 @@
        estimated by eye off the screenshot, not sampled, with one exception: the muted grey came
        out at 3.36:1 by eye, under AA, and #717171 both fixes it and happens to be Marathon's own
        --foreground-muted. Two references landing on the same value is worth taking. */
-    --accent:#E0E0E0;            /* gray-5, their active/selected background */
-    --accent-edge:var(--stroke);       /* the hairline stays; the fill does the talking */
+    /* A pressed control drops back to the colour of the page: raised when it is off, level with
+       the ground when it is on. That fill only reads 1.10:1 against a white control, so the
+       state moves onto the outline — gray-9 gives 3.32 against the control and 2.11 against the
+       resting border, which is unmistakable and still spends no hue. */
+    --accent:var(--page);
+    --accent-edge:#8D8D8D;       /* gray-9 — the outline carries what the fill no longer can */
     --accent-label:var(--main-text);
     --accent-bg:var(--accent);   /* light selects with the grey fill itself */
-    --accent-wash:#D9D9D9;       /* gray-6 — selected, hovered */
+    --accent-wash:#ECECEC;       /* selected and hovered: one step under the page */
     --alert-bg:transparent;
     --alert-label:var(--alert);
     /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
