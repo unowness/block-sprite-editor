@@ -72,8 +72,6 @@
     --green:#A4DB00;
     --green-bg:transparent;
     --green-label:var(--green);
-    --green-hover:color-mix(in srgb,var(--green) 10%,transparent);
-    --green-active:color-mix(in srgb,var(--green) 20%,transparent);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     /* Marathon's --error, lifted until it survives its own hover. At #F24723 the label sat at
        4.15:1 the moment you pointed at it — the wash and the label are the same colour and move
@@ -226,22 +224,16 @@
        All three signals now share ONE lightness, the accent's L* 42.9, each at the maximum chroma
        its hue can reach there: blue C 90.6, red C 87.9, green C 54.2. The green is the quiet one
        not by choice but because sRGB has no more green than that at this depth. */
-    /* The operator pointed at a paint swatch - a bright green square that sits on white perfectly
-       well - and asked why Export cannot be that green. It can, and the swatch is the proof of
-       the rule rather than the exception to it: that green measures 1.75:1 on the panel, which is
-       fine for a square nobody has to READ and hopeless for a word. The acid green is the same
-       story at 1.18:1.
-       So Export stops being ink and becomes the square. #C0FE04 as the FILL, a green-black on top
-       of it at 13.44:1, and the colour is finally the one that was asked for three times.
-       Dark keeps its green as ink at #A4DB00, because on a black ground ink is where a bright
-       green already works. Same hue, two jobs, two values - that is the honest version of "the
-       same green in both themes". */
-    --green:#C0FE04;
-    --green-bg:var(--green);
-    --green-label:#1A2400;
-    /* a filled button deepens under the pointer; a transparent one glows */
-    --green-hover:color-mix(in srgb,var(--green) 88%,var(--green-label));
-    --green-active:color-mix(in srgb,var(--green) 78%,var(--green-label));
+    /* One green now, #A4DB00, the same value in both themes - built like Clear, the colour on the
+       border and the label, nothing filled.
+       This is the operator's call over the measurement, and the measurement is written down rather
+       than buried: as INK on this panel it reads 1.61:1, where AA asks 4.5 for text. A bright green
+       cannot be both bright and readable on white - that trade is the whole history of this token,
+       and brightness won. The paint swatches sit at the same level and look right for the same
+       reason: at that lightness a green is something you SEE rather than read. */
+    --green:#A4DB00;
+    --green-bg:transparent;
+    --green-label:var(--green);
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
     --glyph:#202020;
     --canvas-empty:var(--page);
@@ -312,7 +304,7 @@
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:var(--green-hover);}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;background:var(--btn-background);border-color:var(--stroke);color:var(--tool-text-id);}
 
   /* ---------------- inputs ---------------- */
@@ -337,7 +329,7 @@
   .onb__cta:active,.hint-x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:var(--green-active);}
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
