@@ -398,7 +398,12 @@
      grid is off; while it is on, the lattice owns all four edges and the border steps aside so the
      left and top are not drawn twice. */
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--grid-line);border-radius:2px;overflow:hidden;background:var(--canvas-empty);}
-  .canvas-frame:has(.grid.show-grid){border-color:transparent;}
+  /* Transparent was not enough: a border box still paints the element's own background under it,
+     so the frame's 1px ring kept showing the canvas colour and read as a heavy dark outline
+     against a light page. With the grid on the border has no job at all, so it has no width —
+     and no radius either, because the lattice inside it has square corners and a 2px round was
+     clipping them. */
+  .canvas-frame:has(.grid.show-grid){border-width:0;border-radius:0;}
   .grid{display:inline-block;background:var(--canvas-empty);cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);touch-action:none;}  /* single-finger draws, no page scroll */
   .grid.show-grid{background-image:
