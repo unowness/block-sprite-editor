@@ -923,6 +923,7 @@
       <button class="btn"    data-type="svg" aria-pressed="false">SVG</button>
       <button class="btn"    data-type="png" aria-pressed="false">PNG</button>
       <button class="btn"    data-type="mp4" aria-pressed="false">MP4</button>
+      <button class="btn"    data-type="txt" aria-pressed="false">TXT</button>
     </div>
     <div class="tool">
       <span class="tool-label">Scale</span>
@@ -1003,7 +1004,11 @@
     /* The one primitive a block editor was missing: everything above is square, so a diagonal
        could only be staircased out of half-blocks. Filled corner triangles make a real slope, and
        the arcs make a curve the box-drawing corners cannot. */
-    {label:'Slope',    g:['▲','▼','◀','▶','△','▽','◁','▷','◤','◥','◣','◢','◜','◝','◞','◟','◠','◡']}
+    {label:'Slope',    g:['▲','▼','◀','▶','△','▽','◁','▷','◤','◥','◣','◢','◜','◝','◞','◟','◠','◡']},
+    /* CP437 — the DOS code page this whole idiom descends from. These are the characters that made
+       a text console draw faces, cards and notes, and they are figures rather than texture: the
+       only row here you can build a sprite out of directly. */
+    {label:'Classic',  g:['☺','☻','♥','♦','♣','♠','◘','◙','♂','♀','♪','♫','☼','‼','▬','↨','∟','↔']}
   ];
 
   /* The four paints this editor shipped with. Their KEYS are frozen forever: a cell stores one
@@ -1966,16 +1971,28 @@
     }catch(e){expStatus('');alert('MP4 encoding failed here — exporting WebM instead. ('+((e&&e.message)||e)+')');exportVideo();}
   }
 
+  /* The drawing as the characters it is made of, and nothing else - no colour, no wrapper. This is
+     the format ASCII art actually travels in: a README, a commit message, a chat window. Trailing
+     blanks are cut because they are invisible everywhere the file will be pasted; the blanks
+     INSIDE a line are the drawing and stay. */
+  function exportTXT(){
+    var g=curGrid(),d=D(),out=[];
+    for(var y=0;y<d.h;y++){var line='';
+      for(var x=0;x<d.w;x++)line+=g[y][x].g;
+      out.push(line.replace(/\s+$/,''));}
+    downloadBlob(new Blob([out.join('\n')+'\n'],{type:'text/plain;charset=utf-8'}),spriteName()+'.txt');
+  }
   function doExport(){
     if(ui.exportType==='json'){var t=exportJSON();$('out').value=t;downloadBlob(new Blob([t],{type:'application/json'}),spriteName()+'.json');}
+    else if(ui.exportType==='txt')exportTXT();
     else if(ui.exportType==='svg')exportSVG();
     else if(ui.exportType==='png')exportPNG();
     else if(ui.exportType==='mp4')exportMp4();
   }
-  /* The types the scale does not reach. JSON is the only one: it carries no picture at all.
+  /* The types the scale does not reach: JSON and TXT carry no picture at all.
      SVG is NOT here on purpose - the scale writes its width and height attributes (the viewBox
      stays 1:1), so choosing 8x there really does change the file it hands you. */
-  var SCALE_FREE={json:1};
+  var SCALE_FREE={json:1,txt:1};
   function setExportType(t){
     ui.exportType=t;
     [].forEach.call(document.querySelectorAll('[data-type]'),function(b){setOn(b,b.dataset.type===t);});
@@ -2048,9 +2065,12 @@
     if(ui.playing||!e.target.classList.contains('cell'))return;
     var x=+e.target.dataset.x,y=+e.target.dataset.y;
     if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y);return;}
-    /* the sampler runs before every other check: picking a colour is not drawing, so it needs no
-       glyph selected, no undo step, and no paint layer */
-    if(e.button===2){e.preventDefault();pickCell(x,y);return;}
+    /* The sampler runs before every other check: picking a colour is not drawing, so it needs no
+       glyph selected, no undo step, and no paint layer - and returning here is also what stops a
+       right-drag or an Alt-drag from painting.
+       Alt is the second way in, because it is the eyedropper modifier every raster editor has
+       trained people to reach for, and because a trackpad's second click is a setting away. */
+    if(e.button===2||e.altKey){e.preventDefault();pickCell(x,y);return;}
     if(ui.curLayer==='bg')return;
     e.preventDefault();pushUndo();ui.drawing=true;
     paint(x,y);
