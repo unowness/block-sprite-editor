@@ -1023,7 +1023,7 @@
   var activeDoc=0;
   var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
            view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
-           drawing:false, erasing:false, playing:false, playIdx:0, playTimer:null,
+           drawing:false, holdTimer:null, playing:false, playIdx:0, playTimer:null,
            cellW:0, cellH:0,
            tool:'draw',                          /* 'draw' | 'select' */
            sel:null, selBuf:null, selPos:null,   /* selection rect / floating buffer / float top-left */
@@ -1264,13 +1264,26 @@
      7. Painting (central-axis mirror)
      ============================================================ */
   function setCell(g,x,y,glyph,layer){var d=D();if(x<0||x>=d.w||y<0||y>=d.h)return;g[y][x]={g:glyph,l:layer};}
-  function paint(x,y,erase){
+  function paint(x,y){
     if(ui.curLayer==='bg')return;                 /* background is a global fill, not a per-cell layer */
-    if(!erase&&!ui.curGlyph)return;               /* no glyph selected -> nothing to draw (right-click still erases) */
-    var d=D(),g=curGrid(),glyph=erase?' ':ui.curGlyph,layer=ui.curLayer;
+    if(!ui.curGlyph)return;                       /* nothing picked -> nothing to draw. ' ' IS a glyph here */
+    var d=D(),g=curGrid(),glyph=ui.curGlyph,layer=ui.curLayer;
     setCell(g,x,y,glyph,layer);
     if(ui.mirror){var mx=d.w-1-x;if(mx!==x)setCell(g,mx,y,glyph===' '?' ':mir(glyph),layer);}
     render();
+  }
+  /* The second mouse button used to erase. It SAMPLES now: whatever is in the cell becomes the
+     brush - the glyph and the paint it was drawn with. Picking up an empty cell hands you a space,
+     which is the eraser you already had, so nothing was lost by the change; picking up a drawn one
+     hands you its exact character and colour, which is what was missing.
+     An empty cell's layer is meaningless - every blank carries 'b' whatever the sprite looks like -
+     so only a real glyph brings its paint with it. */
+  function pickCell(x,y){
+    var g=curGrid();
+    if(!g||!g[y]||!g[y][x])return;
+    var c=g[y][x];
+    setGlyph(c.g===' '?' ':c.g);
+    if(c.g!==' ')selectLayer(c.l);
   }
 
   /* ============================================================
@@ -2009,15 +2022,18 @@
     if(ui.playing||!e.target.classList.contains('cell'))return;
     var x=+e.target.dataset.x,y=+e.target.dataset.y;
     if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y);return;}
+    /* the sampler runs before every other check: picking a colour is not drawing, so it needs no
+       glyph selected, no undo step, and no paint layer */
+    if(e.button===2){e.preventDefault();pickCell(x,y);return;}
     if(ui.curLayer==='bg')return;
-    e.preventDefault();pushUndo();ui.drawing=true;ui.erasing=(e.button===2);
-    paint(x,y,ui.erasing);
+    e.preventDefault();pushUndo();ui.drawing=true;
+    paint(x,y);
   });
   gridEl.addEventListener('mouseover',function(e){
-    if(ui.drawing&&e.target.classList.contains('cell'))paint(+e.target.dataset.x,+e.target.dataset.y,ui.erasing);
+    if(ui.drawing&&e.target.classList.contains('cell'))paint(+e.target.dataset.x,+e.target.dataset.y);
   });
   gridEl.addEventListener('contextmenu',function(e){e.preventDefault();});
-  document.addEventListener('mouseup',function(){var was=ui.drawing;ui.drawing=false;ui.erasing=false;if(was)updateOut();});
+  document.addEventListener('mouseup',function(){var was=ui.drawing;ui.drawing=false;if(was)updateOut();});
 
   /* selection drag — shared by mouse + touch */
   function selDragMove(cx,cy){
@@ -2041,6 +2057,8 @@
   document.addEventListener('mousemove',function(e){selDragMove(e.clientX,e.clientY);});
   document.addEventListener('mouseup',selDragEnd);
 
+  var HOLD_MS=450;   /* long enough not to fire on a deliberate tap, short enough to feel answered */
+  function cancelHold(){if(ui.holdTimer){clearTimeout(ui.holdTimer);ui.holdTimer=null;}}
   /* touch: drag-paint in Draw mode, rectangle/move in Select mode (the P0 touch fix) */
   function touchCellAt(t){var el=document.elementFromPoint(t.clientX,t.clientY);return el&&el.classList.contains('cell')?el:null;}
   gridEl.addEventListener('touchstart',function(e){
@@ -2049,15 +2067,31 @@
     var x=+cell.dataset.x,y=+cell.dataset.y;
     if(ui.tool==='select'){e.preventDefault();selMouseDown(x,y,true);ui.touchSel=true;return;}
     if(ui.curLayer==='bg')return;
-    e.preventDefault();pushUndo();ui.drawing=true;ui.erasing=false;paint(x,y,false);
+    e.preventDefault();
+    /* A finger has no second button, so HOLDING one still is the sample. The dab is made first and
+       taken back if the hold completes - the alternative is delaying every tap by 450ms to find out
+       whether it was a hold, which would make ordinary drawing feel broken.
+       The cell is read BEFORE the dab: after it, curGrid() holds what was just painted, and
+       sampling that would hand back the brush you already had. */
+    var gr0=curGrid(), was=(gr0&&gr0[y]&&gr0[y][x])?{g:gr0[y][x].g,l:gr0[y][x].l}:{g:' ',l:null};
+    pushUndo();ui.drawing=true;paint(x,y);
+    cancelHold();
+    ui.holdTimer=setTimeout(function(){
+      ui.holdTimer=null;ui.drawing=false;
+      undo();
+      setGlyph(was.g===' '?' ':was.g);
+      if(was.g!==' ')selectLayer(was.l);
+    },HOLD_MS);
   },{passive:false});
   gridEl.addEventListener('touchmove',function(e){
     if(ui.playing)return;
     var t=e.changedTouches[0];
+    cancelHold();   /* a finger that moves is drawing, not sampling */
     if(ui.touchSel){e.preventDefault();selDragMove(t.clientX,t.clientY);return;}
-    if(ui.drawing){e.preventDefault();var cell=touchCellAt(t);if(cell)paint(+cell.dataset.x,+cell.dataset.y,ui.erasing);}
+    if(ui.drawing){e.preventDefault();var cell=touchCellAt(t);if(cell)paint(+cell.dataset.x,+cell.dataset.y);}
   },{passive:false});
   document.addEventListener('touchend',function(){
+    cancelHold();
     if(ui.drawing){ui.drawing=false;updateOut();}
     if(ui.touchSel){ui.touchSel=false;selDragEnd();}
   });
@@ -2305,7 +2339,11 @@
     {img:'assets/onboarding/onboarding_1.png',title:'Blockmode — ASCII Sprite Editor',
      text:'Blockmode is a sprite editor where every pixel is a character. You paint with block and box-drawing glyphs on a grid. Pick a glyph from the palette, choose a paint, then draw on the grid. Nothing installs and nothing uploads. It is one page in your browser.'},
     {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
-     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. The Eraser under the canvas clears cells the same way you paint them; with a mouse, right-click erases without leaving your brush. Undo sits under the canvas too, or Ctrl/Cmd+Z — and every sprite keeps its own undo history.'},
+     text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. The Eraser under the canvas clears cells the same way you paint them. Undo sits under the canvas too, or Ctrl/Cmd+Z — and every sprite keeps its own undo history.'},
+    /* img is empty until this one is recorded; onbRender hides the frame rather than drawing an
+       empty bordered strip. */
+    {img:'',title:'Pick up what is already there',
+     text:'Right-click any cell to sample it. Its glyph and the paint it was drawn with both become your brush, so a mark you liked can be carried across the sprite without hunting for it in the palette again. On a touch screen, hold a cell for a moment instead. Sampling an empty cell hands you a blank — paint with that and you are erasing, the same thing the Eraser under the canvas does.'},
     {img:'assets/onboarding/onboarding_3.gif',title:'Color and Background',
      text:'You draw in paints, not in colors. Four to start with — Main, Accent, Detail and Extra — and + adds more, up to 16 per sprite. Every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
     {img:'assets/onboarding/onboarding_4.gif',title:'Select and Mirror',
@@ -2319,17 +2357,18 @@
     var d=document.createElement('span');d.className='onb__dot';onbDots.appendChild(d);
     var im=document.createElement('img');im.className='onb__img';im.alt=p.title;onbFrame.appendChild(im);onbImgs.push(im);
   });
-  function onbLoad(i){if(i<onbImgs.length&&!onbImgs[i].getAttribute('src'))onbImgs[i].src=ONB[i].img;}
+  function onbLoad(i){if(i<onbImgs.length&&ONB[i].img&&!onbImgs[i].getAttribute('src'))onbImgs[i].src=ONB[i].img;}
   function onbPreload(i){        /* walk the pages in order, loading the next once the current is in */
     if(i>=onbImgs.length)return;
-    if(onbImgs[i].getAttribute('src')){onbPreload(i+1);return;}
+    if(!ONB[i].img||onbImgs[i].getAttribute('src')){onbPreload(i+1);return;}
     onbImgs[i].onload=onbImgs[i].onerror=function(){onbPreload(i+1);};
     onbImgs[i].src=ONB[i].img;
   }
   function onbRender(){
     var p=ONB[onbIdx],last=onbIdx===ONB.length-1;
     onbLoad(onbIdx);   /* current page must be loaded even if the preloader hasn't reached it */
-    onbImgs.forEach(function(im,i){im.classList.toggle('on',i===onbIdx);});
+    onbFrame.hidden=!p.img;   /* no recording yet -> no empty bordered strip */
+    onbImgs.forEach(function(im,i){im.classList.toggle('on',i===onbIdx&&!!ONB[i].img);});
     onbTitle.textContent=p.title;onbText.textContent=p.text;
     onbCta.textContent=last?'Start drawing':'Continue';
     onbSkip.innerHTML=last?'Onboarding Complete!':'Skip onboarding<span aria-hidden="true"> →</span>';
