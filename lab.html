@@ -523,7 +523,7 @@
 
   /* stage-control icons — icon + label on desktop, icon-only on mobile (8px icon→label gap, per Figma) */
   .stage-tl .btn,.stage-tr .btn,.stage-bl .btn,.stage-br .btn,
-  #himport,#hsave,#export,.iobox-actions .btn{gap:8px;}
+  #himport,#hsave,#export,.iobox-actions .btn,[data-view]{gap:8px;}
   .iw{display:inline-flex;align-items:center;justify-content:center;flex:none;}
   .iw svg{width:14px;height:14px;display:block;}
   .iw.fillic{width:14px;height:14px;border-radius:3px;background:var(--fillbg,transparent);
@@ -745,8 +745,13 @@
     <div class="bar">
       <div class="tool">
         <span class="tool-label">Editor</span>
-        <button class="btn on" data-view="ascii" aria-pressed="true">Drawing</button>
-        <button class="btn"    data-view="animation" aria-pressed="false">Animation</button>
+        <!-- Remix Icon pencil-line and film-line, verbatim in their own 24 box, the same way the
+             theme toggle takes sun-line and moon-line. Their 2/24 line lands on 1.17px at the 14px
+             this set renders at, so a filled Remix outline and a 1px house stroke read at the same
+             weight without either being redrawn. film-line rather than a play triangle because the
+             Animation view IS a strip of frames, and because Play already exists inside it. -->
+        <button class="btn on" data-view="ascii" aria-pressed="true"><span class="iw"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.7279 9.57627L14.3137 8.16206L5 17.4758V18.89H6.41421L15.7279 9.57627ZM17.1421 8.16206L18.5563 6.74785L17.1421 5.33363L15.7279 6.74785L17.1421 8.16206ZM7.24264 20.89H3V16.6473L16.435 3.21231C16.8256 2.82179 17.4587 2.82179 17.8492 3.21231L20.6777 6.04074C21.0682 6.43126 21.0682 7.06443 20.6777 7.45495L7.24264 20.89Z"/></svg></span>Drawing</button>
+        <button class="btn"    data-view="animation" aria-pressed="false"><span class="iw"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 3.9934C2 3.44476 2.45531 3 2.9918 3H21.0082C21.556 3 22 3.44495 22 3.9934V20.0066C22 20.5552 21.5447 21 21.0082 21H2.9918C2.44405 21 2 20.5551 2 20.0066V3.9934ZM8 5V19H16V5H8ZM4 5V7H6V5H4ZM18 5V7H20V5H18ZM4 9V11H6V9H4ZM18 9V11H20V9H18ZM4 13V15H6V13H4ZM18 13V15H20V13H18ZM4 17V19H6V17H4ZM18 17V19H20V17H18Z"/></svg></span>Animation</button>
       </div>
       <!-- display:contents, so these two sit in the row itself and wrap on their own; a wrapper
            with a box of its own would make them one unbreakable block. -->
