@@ -266,9 +266,19 @@
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
-  /* Hover = the button's own resting outline, 10% brighter. Mixing towards --main-text rather than
-     white keeps it correct in both themes: it lightens on dark, darkens (gains contrast) on light. */
-  .btn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
+  /* Hover states the accent at half strength, so pointing at a control is a weaker version of
+     selecting it rather than a separate idea. One rule for every control family, because there
+     were three of them saying the same thing in three places.
+     :not(.on) is not decoration. A selected control keeps its full accent outline - and the guard
+     also settles a cascade race that had been quietly turning the selected TAB grey on hover:
+     .tab.on was declared BEFORE .tab:hover at equal specificity, so the later rule won. The tab was
+     the only family ordered that way; .btn, .paint and .gbtn all had .on after :hover and were
+     fine. With the state excluded from the selector, the order stops mattering anywhere. */
+  .btn:not(.on):not(.alert):not(.green):not(:disabled):hover,
+  .tab:not(.on):hover,
+  .paint:not(.on):hover,
+  .gbtn:not(.on):hover,
+  .fbtn:not(.on):hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);}
   /* ...plus a 5% fill lift, layered over the base colour (as a flat gradient) so it stacks on every
      button variant without replacing its background-color. Export brightens via its own filter, and
      disabled buttons opt out. */
@@ -299,7 +309,6 @@
      light — one rule, no need to ask which theme is on */
   #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
-  .btn:disabled:hover{border-color:var(--stroke);}
 
   /* ---------------- inputs ---------------- */
   .input{height:32px;background:var(--input-background);color:var(--main-text);
@@ -345,8 +354,6 @@
   .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
          background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
-  /* the paint pills had only a pressed state and no hover at all */
-  .paint:hover,.tab:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .paint.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
   .swatch{position:relative;width:14px;height:14px;border-radius:2px;
           border:1px solid color-mix(in srgb,var(--main-text) 15%,transparent);overflow:hidden;flex:none;}
@@ -490,7 +497,6 @@
   .pgrid{display:flex;flex-wrap:wrap;gap:8px;max-width:var(--pgrid-w,780px);}
   .gbtn{width:32px;height:32px;font-family:var(--font-mono);font-size:17px;color:var(--glyph);
         background:var(--canvas);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;padding:0;}
-  .gbtn:hover{border-color:color-mix(in srgb,var(--main-text) 10%,var(--stroke));}
   .gbtn.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
 
   /* ---------------- export bar ---------------- */
