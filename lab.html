@@ -912,6 +912,7 @@
     {k:'d',name:'Detail', color:'#f0a5c0'},
     {k:'e',name:'Extra',  color:'#5CE422'}
   ];
+  var BASE_KEYS=BASE_PALETTE.map(function(p){return p.k;}).join('');   /* 'bade' - never deletable */
   var EXTRA_KEYS='123456789ABC';      /* twelve more one-character cell keys */
   var MAX_PAINTS=4+EXTRA_KEYS.length; /* = 16 */
   /* Placeholder names that LOOK like placeholders. One flat group of short nouns, so nobody reads
@@ -1498,6 +1499,7 @@
     if(l!=='bg'&&!paintByKey(l))l=paletteOf(D())[0].k;
     ui.curLayer=l;
     [].forEach.call(document.querySelectorAll('.paint'),function(b){setOn(b,b.dataset.l===l);});
+    refreshPaintTrash();
   }
   /* One wiring for the background swatch and for every paint swatch. The focus/change dance is
      what makes a colour drag a SINGLE undo step: remember the colour on focus, put it back for the
@@ -1550,12 +1552,24 @@
     box.appendChild(add);
     var del=document.createElement('button');del.type='button';del.className='btn icon';del.id='delpaint';
     del.innerHTML=TRASH_SVG;
-    del.disabled=pal.length<=1;
-    del.title=del.disabled?'A sprite keeps at least one paint':'Delete paint';
-    del.setAttribute('aria-label',del.title);
     del.addEventListener('click',delPaint);
     box.appendChild(del);
     setOn(box.querySelector('.paint[data-l="'+ui.curLayer+'"]'),true);
+    refreshPaintTrash();
+  }
+  /* The four originals stay. Their keys are what every saved sprite spells out, and they are the
+     floor the others fall back to - so the trash goes quiet on them rather than arguing after the
+     click. Only paints the user added can be taken away.
+     This reads the SELECTION, not the palette, so it has to run whenever the selection moves and
+     not only when renderPaints rebuilds the row. */
+  function refreshPaintTrash(){
+    var del=$('delpaint');if(!del)return;
+    var pal=paletteOf(D()),cur=paintByKey(ui.curLayer),base=BASE_KEYS.indexOf(ui.curLayer)>=0;
+    del.disabled=base||pal.length<=1;
+    del.title=base?((cur?cur.name:'This paint')+' is one of the four originals and stays')
+            :pal.length<=1?'A sprite keeps at least one paint'
+            :('Delete paint \u2014 its cells keep their glyph and move to '+pal[0].name);
+    del.setAttribute('aria-label',del.title);
   }
   /* A new paint needs a key, a name and a colour, and none of the three is asked of the user.
      The key is the lowest free character, so it is stable. The name is drawn from the bird list -
@@ -1575,14 +1589,17 @@
     pal.push({k:k,name:name,color:color});
     renderPaints();selectLayer(k);scheduleSave();
   }
-  /* Deletes the paint you have selected, the way the trash in Frames deletes the frame you are on.
-     Cells drawn with it are not erased - they change hands and keep their glyph, landing on the
-     first paint, which is the same thing that happens to a cell naming a paint a file never
-     defined. One undo step puts the paint and the cells back together. */
+  /* Deletes the paint you have selected, the way the trash in Frames deletes the frame you are on -
+     except that the four originals are not on offer, so this only ever removes a paint the user
+     added themselves.
+     NOTHING IS ERASED. Cells drawn with the paint keep their glyph and change hands, landing on
+     the first paint, which is the same thing that happens to a cell naming a paint a file never
+     defined. Deleting a colour is a recolour, not a rubbing-out. One undo step puts the paint and
+     the cells back together. */
   function delPaint(){
     var d=D(),pal=paletteOf(d),i=-1;
     for(var n=0;n<pal.length;n++)if(pal[n].k===ui.curLayer)i=n;
-    if(pal.length<=1||i<0)return;
+    if(pal.length<=1||i<0||BASE_KEYS.indexOf(ui.curLayer)>=0)return;
     pushUndo();
     var gone=pal[i].k;
     pal.splice(i,1);
