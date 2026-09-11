@@ -68,6 +68,8 @@
     --green:#C0FE04;
     --green-bg:transparent;
     --green-label:var(--green);
+    --green-hover:color-mix(in srgb,var(--green) 10%,transparent);
+    --green-active:color-mix(in srgb,var(--green) 20%,transparent);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     /* Marathon's --error, lifted until it survives its own hover. At #F24723 the label sat at
        4.15:1 the moment you pointed at it — the wash and the label are the same colour and move
@@ -210,13 +212,20 @@
     --accent-wash:color-mix(in srgb,var(--accent) 2%,transparent);
     --alert-bg:transparent;
     --alert-label:var(--alert);
-    /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
-       bright — #A8E10C measures 1.5:1 against white — so on this ground it has to come down to
-       L* 48 to be readable at all, and at that depth the hue reads as olive rather than acid.
-       Hue 75 against dark's 76: the same green, not a different one. */
-    --green:#546E03;   /* 4.24:1 on hover became 5.07 */
-    --green-bg:transparent;
-    --green-label:var(--green);
+    /* Dark can spend this green as INK because its ground is black. White cannot: an acid
+       yellow-green is intrinsically bright - #C0FE04 measures 1.21:1 against white - so as a
+       label or an outline it is invisible here, which is exactly why this used to be an olive at
+       L* 48 and read as dull rather than acid.
+       So light spends the SAME green as a FILL and puts the ink on top of it. One hex, two jobs,
+       and the primary action finally looks like one. The label is a green-black rather than the
+       neutral one, so the button is green through and through: 13.4:1 on the fill. */
+    --green:#C0FE04;
+    --green-bg:var(--green);
+    --green-label:#1A2400;
+    /* a filled button deepens under the pointer; a transparent one glows. Same token, opposite
+       arithmetic - the same split the accent wash already makes between the two themes. */
+    --green-hover:color-mix(in srgb,var(--green) 88%,var(--green-label));
+    --green-active:color-mix(in srgb,var(--green) 78%,var(--green-label));
     --alert:#C40F09;        /* same fix as dark: 4.00:1 on hover became 5.15 */
     --glyph:#202020;
     --canvas-empty:var(--page);
@@ -287,8 +296,8 @@
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
-  .btn:disabled{opacity:.35;cursor:default;border-color:var(--stroke);color:var(--tool-text-id);}
+  #export:not(:disabled):hover{background:var(--green-hover);}
+  .btn:disabled{opacity:.35;cursor:default;background:var(--btn-background);border-color:var(--stroke);color:var(--tool-text-id);}
 
   /* ---------------- inputs ---------------- */
   .input{height:32px;background:var(--input-background);color:var(--main-text);
@@ -312,7 +321,7 @@
   .onb__cta:active,.hint-x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
+  #export:not(:disabled):active{background:var(--green-active);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
