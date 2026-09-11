@@ -511,10 +511,15 @@
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   /* The built-in rows are a selection, not the alphabet. This says where the rest lives, and it
      sits at the END of the palette because that is where you arrive having not found what you
-     wanted. Footer-link metrics, so it reads as a note rather than as another control. */
-  .pal-note{width:100%;margin:0;padding:0 12px;color:var(--tool-text-id);font-size:13px;line-height:1.5;}
-  .pal-note a{color:var(--tool-text-id);text-decoration:underline;text-underline-offset:2px;}
-  .pal-note a:hover{color:var(--accent);}
+     wanted. It is the footer note's type, flush with the content edge like that one.
+     The fade is a MIXED colour rather than opacity, which the footer uses: opacity would make a
+     stacking context and drag the link down with it, and the link has to sit at full accent. On
+     the page these render identically - .75 of --tool-text-id over --page is the same value,
+     verified against the footer's own computed colour. */
+  .pal-note{width:100%;margin:0;padding:0;max-width:880px;font-size:13px;line-height:1.3;
+            color:color-mix(in srgb,var(--tool-text-id) 75%,var(--page));}
+  .pal-note a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
+  .pal-note a:hover{color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
   .pgroup{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
