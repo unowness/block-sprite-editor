@@ -179,15 +179,23 @@
        estimated by eye off the screenshot, not sampled, with one exception: the muted grey came
        out at 3.36:1 by eye, under AA, and #717171 both fixes it and happens to be Marathon's own
        --foreground-muted. Two references landing on the same value is worth taking. */
-    /* A pressed control drops back to the colour of the page: raised when it is off, level with
-       the ground when it is on. That fill only reads 1.10:1 against a white control, so the
-       state moves onto the outline — gray-9 gives 3.32 against the control and 2.11 against the
-       resting border, which is unmistakable and still spends no hue. */
-    --accent:var(--page);
-    --accent-edge:#8D8D8D;       /* gray-9 — the outline carries what the fill no longer can */
-    --accent-label:var(--main-text);
-    --accent-bg:var(--accent);   /* light selects with the grey fill itself */
-    --accent-wash:#ECECEC;       /* selected and hovered: one step under the page */
+    /* A pressed control still drops back to the colour of the page - raised when it is off, level
+       with the ground when it is on - but the state no longer has to be told in grey. The fill
+       stays the page; the outline and the label carry the blue.
+       Which blue: hue 218, saturation 100%, L* 43. That is the BRIGHTEST blue this ground will
+       take and still be readable as text - 5.22:1 on the pressed fill, 5.80:1 on white. A lighter
+       one stops being ink (#1668FF measures 4.20:1 and fails) and has to become a fill instead.
+       Full saturation is the point: the complaint about every earlier light accent was that the
+       hues were darkened and dull, and nothing here is darkened - it is a pure hue placed exactly
+       where white stops allowing brightness.
+       Making --accent the page colour also quietly blinded six things that are not buttons at all:
+       focus rings, the selection rectangle on the canvas, the custom-cell caret, the onboarding
+       dot and CTA, and the footer link hover were all being drawn in #F4F4F4 on a white page. */
+    --accent:#0057F0;
+    --accent-edge:var(--accent);   /* the outline carries the state, now in colour */
+    --accent-label:var(--accent);
+    --accent-bg:var(--page);       /* the fill is still the page, exactly as before */
+    --accent-wash:#E7ECF7;         /* selected and hovered: one step under the page, tinted blue */
     --alert-bg:transparent;
     --alert-label:var(--alert);
     /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
