@@ -234,8 +234,6 @@
   .tool{display:flex;align-items:flex-start;gap:8px;
         background:var(--tool-background);border:1px solid var(--stroke);
         border-radius:var(--r-tool);padding:8px 8px 8px 12px;box-shadow:var(--shadow-section);}
-  .tool.grow{flex:1;}                    /* Row B Canvas grows so the row reaches the right edge */
-  .tool.grow .num{flex:1;width:auto;}    /* and its inputs lengthen to fill — no empty gap, no Paint tail */
   .tool-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;white-space:nowrap;line-height:32px;margin-right:2px;}  /* +2 over the 8px gap = 10px label->control */
 
   /* ---------------- buttons ---------------- */
@@ -289,7 +287,7 @@
   .input.num{width:48px;text-align:left;-moz-appearance:textfield;}
   .input.num::-webkit-outer-spin-button,
   .input.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-  #sid{width:116px;}   /* shorter ID field — Row A now also carries the File tool (Figma 42:363) */
+  #sid{width:168px;}   /* the name of the file you are working on — long enough to read one back */
 
   /* focus states — design-system, not native */
   .input:focus{outline:none;border-color:var(--stroke-focus);}
@@ -330,6 +328,11 @@
   .tab .x::before{content:'';position:absolute;inset:-6px -6px -6px 0;}
   .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
   .tab .x svg{width:12px;height:12px;display:block;}
+  /* One open sprite has no close button, and the chip's 8px right padding — which exists to clear
+     that button — was left behind: the numeral sat 8px off centre in a 40x32 box. With nothing to
+     clear, the chip is the 32px square every other control in the row is. */
+  .tab:not(:has(.x)){padding:0;}
+  .tab:not(:has(.x)) .tab-name{flex:1;min-width:0;padding:0 7px;border-radius:var(--r-btn);}
 
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
@@ -438,8 +441,13 @@
   /* ---------------- animation timeline (a transparent bar of tool blocks) ---------------- */
   /* a row of .bars now, so the column's own 8px gap spaces it and it carries no margin of its own */
   .animbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin:0;}
-  .animbar-right{display:flex;flex-wrap:wrap;gap:8px;}
-  .frames{display:flex;flex-wrap:wrap;gap:8px;}
+  /* With the cap at 60 the strip wraps to three lines, and Add/Delete were stranded at the top
+     right of the first one. display:contents dissolves the strip's own box so the chips and the
+     two buttons share a single wrapping run: + stays immediately after the last frame, wherever
+     that lands. The role stays on the element — Chrome keeps an explicit role through
+     display:contents, it only drops generic containers. */
+  .animbar .tool{flex-wrap:wrap;}
+  .frames{display:contents;}
   .fbtn{min-width:32px;height:32px;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;
         font-size:13px;color:var(--main-text);
         background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);cursor:pointer;}
@@ -671,7 +679,7 @@
   </header>
 
   <div class="bars">
-    <!-- Row A — document: id + tabs + file -->
+    <!-- Row A — document: id + tabs + canvas + file -->
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
@@ -681,6 +689,11 @@
         <span class="tool-label">Tabs</span>
         <div class="tabs" id="tabs" role="group" aria-label="Open sprites"></div>
         <button class="btn icon" id="addtab" title="New sprite" aria-label="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+      </div>
+      <div class="tool">
+        <span class="tool-label">Canvas</span>
+        <input class="input num" type="number" id="cw" min="3" max="128" title="Width in cells (3-128)" aria-label="Canvas width in cells">
+        <input class="input num" type="number" id="ch" min="3" max="128" title="Height in cells (3-128)" aria-label="Canvas height in cells">
       </div>
       <div class="tool">
         <span class="tool-label">File</span>
@@ -694,33 +707,19 @@
              <button class="btn" data-theme-btn="light">Light</button></div> -->
     </div>
 
-    <!-- Row B — paint + view + canvas -->
+    <!-- Row B — which editor you are in, and while that is Animation, how it plays.
+         FPS and Preview belong beside the Editor switch because they are the same kind of
+         question: what mode am I in, and how does it run. The frames themselves are content,
+         not settings, so they keep a row of their own below. -->
     <div class="bar">
       <div class="tool">
         <span class="tool-label">Editor</span>
         <button class="btn on" data-view="ascii" aria-pressed="true">Drawing</button>
         <button class="btn"    data-view="animation" aria-pressed="false">Animation</button>
       </div>
-      <div class="tool">
-        <span class="tool-label">Canvas</span>
-        <input class="input num" type="number" id="cw" min="3" max="128" title="Width in cells (3-128)" aria-label="Canvas width in cells">
-        <input class="input num" type="number" id="ch" min="3" max="128" title="Height in cells (3-128)" aria-label="Canvas height in cells">
-      </div>
-    </div>
-
-    <!-- Row C — animation: Frames | FPS | Preview.
-         It belongs to the tool group, not to the stage: it is the same kind of thing as Row A and
-         Row B, it just only exists while Editor is on Animation. Sitting outside the group it read
-         as a floating strip pinned to the artboard; sitting inside it, the group simply grows a
-         third line and the 40px to the stage stays where it was. -->
-    <div class="animbar" id="animbar" style="display:none">
-      <div class="tool">
-        <span class="tool-label">Frames</span>
-        <div class="frames" id="frames" role="group" aria-label="Frames"></div>
-        <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
-        <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
-      </div>
-      <div class="animbar-right">
+      <!-- display:contents, so these two sit in the row itself and wrap on their own; a wrapper
+           with a box of its own would make them one unbreakable block. -->
+      <div class="animtools" id="animtools" style="display:none">
         <div class="tool">
           <span class="tool-label">FPS</span>
           <input class="input num" type="number" id="fps" min="1" max="60" title="Frames per second (1-60)" aria-label="Frames per second">
@@ -730,6 +729,21 @@
           <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
           <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
         </div>
+      </div>
+    </div>
+
+    <!-- Row C — the frame strip. It belongs to the tool group, not to the stage: it is the same
+         kind of thing as Row A and Row B, it just only exists while Editor is on Animation.
+         Sitting outside the group it read as a floating strip pinned to the artboard; sitting
+         inside it, the group simply grows a third line and the 40px to the stage stays where it
+         was. Its own row, because a 60-frame sprite wraps to several lines and would otherwise
+         push FPS and Preview around every time a frame is added. -->
+    <div class="animbar" id="animbar" style="display:none">
+      <div class="tool">
+        <span class="tool-label">Frames</span>
+        <div class="frames" id="frames" role="group" aria-label="Frames"></div>
+        <button class="btn icon" id="addframe" title="Add frame" aria-label="Add frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <button class="btn icon" id="delframe" title="Delete frame" aria-label="Delete frame"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
       </div>
     </div>
   </div>
@@ -1326,7 +1340,7 @@
      9. Frames / animation
      ============================================================ */
   function cloneGrid(g){return g.map(function(r){return r.map(function(c){return {g:c.g,l:c.l};});});}
-  var MAX_FRAMES=16;   /* named, so the cap and the message that explains it cannot drift apart */
+  var MAX_FRAMES=60;   /* named, so the cap and the message that explains it cannot drift apart */
   function renderFrames(){
     var d=D(),fr=$('frames');fr.innerHTML='';
     d.frames.forEach(function(g,i){
@@ -1358,6 +1372,7 @@
   function applyView(){
     var anim=ui.view==='animation';
     $('animbar').style.display=anim?'flex':'none';
+    $('animtools').style.display=anim?'contents':'none';
     [].forEach.call(document.querySelectorAll('[data-view]'),function(b){setOn(b,b.dataset.view===ui.view);});
     if(!anim)stop();else renderFrames();
   }
