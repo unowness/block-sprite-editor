@@ -198,14 +198,16 @@
     /* Both are left TRANSPARENT rather than pre-mixed, so they composite on whatever section the
        control actually sits in - a panel, the stage, a palette group - instead of on one assumed
        surface.
-       A selected control is a whisper of blue, not a fill: 5% lands it at L* 96.1, which is the
+       A selected control is a whisper of blue, not a fill: 5% lands it at L* 96.0, which is the
        page's own level, so it still reads as "dropped to the ground" the way it did when the fill
-       was literally the page colour. Hover then sits one step under it at 10%, L* 93.0.
-       The ceiling on the hover is structural, not taste: the label is the same blue as the fill,
-       so darkening the fill spends the label's own contrast. 10% reads 4.86:1, 14% reads 4.56:1,
-       16% reads 4.42 and fails. */
+       was literally the page colour.
+       Hover is LIGHTER than that, not darker. This is where the two themes have to do opposite
+       arithmetic to mean the same thing: adding the accent lightens a dark ground and darkens a
+       light one, so dark gets its hover by adding tint and light gets it by taking tint away. 2%
+       puts the hover at L* 98.2 - above the selection's 96.0 and just under the panel's 99.0, so
+       one value sits between the two resting states and both move towards it. */
     --accent-bg:color-mix(in srgb,var(--accent) 5%,transparent);
-    --accent-wash:color-mix(in srgb,var(--accent) 10%,transparent);
+    --accent-wash:color-mix(in srgb,var(--accent) 2%,transparent);
     --alert-bg:transparent;
     --alert-label:var(--alert);
     /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
