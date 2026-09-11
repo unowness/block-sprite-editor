@@ -93,9 +93,6 @@
     /* radius / metrics straight from the mockup */
     --r-tool:12px;   /* tool_section / panels */
     --r-btn:4px;     /* Button / input */
-    /* The ID field and the Export button are the two ends of the page - name it, export it - and
-       the operator wants them the same width. One token, so they cannot drift apart. */
-    --w-name:168px;
 
     /* vertical rhythm */
     --space-cluster:8px;  /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
@@ -299,7 +296,7 @@
   .input.num{width:48px;text-align:left;-moz-appearance:textfield;}
   .input.num::-webkit-outer-spin-button,
   .input.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-  #sid{width:var(--w-name);}   /* the name of the file you are working on — long enough to read one back */
+  #sid{width:168px;}   /* the name of the file you are working on — long enough to read one back */
 
   /* focus states — design-system, not native */
   .input:focus{outline:none;border-color:var(--stroke-focus);}
@@ -488,7 +485,12 @@
   /* Type on the left, Scale+Export pushed to the right edge of the page - the same right edge the
      stage and the JSON box end on. */
   .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);}
-  #export{width:var(--w-name);}   /* same width as the ID field */
+  /* Export mirrors the Copy + Import pair floating above it. Their right edges already meet -
+     both sit 9px in from the same page edge, one by the JSON box's padding, one by the tool's -
+     so matching the width lines the left edges up too.
+     The number is measured at runtime rather than typed, because that pair is not a fixed size:
+     Import becomes Update the moment you paste into the box, and the pair goes 163 to 168. */
+  #export{width:var(--w-export,163px);}
 
   /* ---------------- import / output box ---------------- */
   /* The JSON box is a field you type into, not a panel, and it was painted as a panel. Same
@@ -2322,7 +2324,21 @@
   function ioPasted(){var v=$('out').value.trim();return !!v&&v!==exportJSON();}
   function refreshIoBtn(){var b=$('load'),pasted=ioPasted();
     b.querySelector('.lbl').textContent=pasted?'Update':'Import';
-    b.title=pasted?'Load the JSON pasted into the box':'Open a sprite JSON file from your computer';}
+    b.title=pasted?'Load the JSON pasted into the box':'Open a sprite JSON file from your computer';
+    sizeExport();}
+  /* Hand-measuring it would have been a number that goes stale the first time the label changes or
+     the UI font finishes loading, so the pair reports its own width and Export follows. */
+  function sizeExport(){
+    var acts=document.querySelector('.iobox-actions');
+    if(!acts)return;
+    var w=acts.getBoundingClientRect().width;
+    if(w>0)document.documentElement.style.setProperty('--w-export',Math.round(w)+'px');
+  }
+  (function(){
+    var acts=document.querySelector('.iobox-actions');
+    if(acts&&window.ResizeObserver)new ResizeObserver(sizeExport).observe(acts);
+    sizeExport();
+  })();
   $('out').addEventListener('input',refreshIoBtn);
   $('load').onclick=function(){
     if(!ioPasted()){$('loadfile').click();return;}
