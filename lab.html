@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blockmode — LAB</title>
-<meta name="description" content="Draw block-ASCII sprites in your browser — four paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
+<meta name="description" content="Draw block-ASCII sprites in your browser — up to 16 paints, animation, and JSON/SVG/PNG/MP4 export. No install, no account.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
 <!-- Set data-theme before first paint, or a stored Light renders one dark frame and then flips. -->
@@ -388,6 +388,13 @@
            white-space:nowrap;line-height:32px;width:48px;flex:none;}
   .fspanel .pgrid{max-width:none;flex-wrap:nowrap;}
   .fspanel .paints{flex-wrap:nowrap;}
+  /* The fullscreen bar is content-sized and centred on the window, which was fine while a palette
+     was always four pills wide. Measured at sixteen: 2294px of panels in a 1440px window, with
+     Main through Extra off the left edge and half the Custom grid off the right - unreachable, not
+     merely clipped. Cap it to the window and let it scroll sideways. Room for a real treatment of
+     a wide palette in here (swatch-only pills, a taller bar) - this only stops it being broken. */
+  body.fs-lock .fsbottom{max-width:calc(100vw - 32px);overflow-x:auto;overflow-y:hidden;}
+  body.fs-lock .fsbottom>.fspanel{flex:none;}
 
   /* The lattice was drawn by two semi-transparent gradient layers, so every crossing composited
      twice: 0.45 per layer became 0.6975 where they met, a line 1.55x denser at every intersection.
@@ -798,12 +805,9 @@
   <div class="bar paintbar">
     <div class="tool" id="paintgroup">
       <span class="tool-label">Paint</span>
-      <div class="paints" id="paints" role="group" aria-label="Paint">
-        <button class="paint on" data-l="b" aria-pressed="true"><span class="swatch"><input type="color" id="col-b" aria-label="Main colour" title="Main colour"></span>Main</button>
-        <button class="paint"    data-l="a" aria-pressed="false"><span class="swatch"><input type="color" id="col-a" aria-label="Accent colour" title="Accent colour"></span>Accent</button>
-        <button class="paint"    data-l="d" aria-pressed="false"><span class="swatch"><input type="color" id="col-d" aria-label="Detail colour" title="Detail colour"></span>Detail</button>
-        <button class="paint"    data-l="e" aria-pressed="false"><span class="swatch"><input type="color" id="col-e" aria-label="Extra colour" title="Extra colour"></span>Extra</button>
-      </div>
+      <!-- Rendered from the document's palette (renderPaints): the four originals plus whatever
+           the user has added, and the + that adds one. Each sprite keeps its own. -->
+      <div class="paints" id="paints" role="group" aria-label="Paint"></div>
     </div>
   </div>
 
@@ -915,8 +919,24 @@
     {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']}
   ];
 
-  var LAYER_FIELD={b:'body',a:'accent',d:'decoration',e:'extra',bg:'bgColor'};  /* paint layer -> color field */
-  var DEFAULTS={body:'#6f74c0',accent:'#b9a5f0',decoration:'#f0a5c0',extra:'#5CE422',bgColor:'#101018'};
+  /* The four paints this editor shipped with. Their KEYS are frozen forever: a cell stores one
+     of these characters, and so does every `colors` row of every sprite anyone has saved. Rename
+     them, recolour them, but b/a/d/e can never mean anything else. */
+  var BASE_PALETTE=[
+    {k:'b',name:'Main',   color:'#6f74c0'},
+    {k:'a',name:'Accent', color:'#b9a5f0'},
+    {k:'d',name:'Detail', color:'#f0a5c0'},
+    {k:'e',name:'Extra',  color:'#5CE422'}
+  ];
+  var EXTRA_KEYS='123456789ABC';      /* twelve more one-character cell keys */
+  var MAX_PAINTS=4+EXTRA_KEYS.length; /* = 16 */
+  /* Placeholder names that LOOK like placeholders. One flat group of short nouns, so nobody reads
+     "Wren" as a role the way "Accent" is a role - the arbitrariness is the message. Same device as
+     naming test fixtures after Tolkien characters: obviously not meaning anything. */
+  var PAINT_NAMES=['Wren','Lark','Dove','Crow','Swan','Ibis','Kite','Rook','Myna','Hawk','Gull','Loon',
+                   'Tern','Finch','Robin','Egret','Heron','Stork','Quail','Snipe','Eider','Pipit',
+                   'Junco','Vireo','Booby','Macaw'];
+  var DEFAULTS={bgColor:'#101018'};
   var HISTORY_LIMIT=200;
   var IMG_PX=22;   /* base raster cell font px (= 1x) */
 
@@ -927,7 +947,7 @@
   function newDoc(name,w,h){
     w=w||8; h=h||6;
     return { name:name||'untitled', id:'', w:w, h:h,
-             body:DEFAULTS.body, accent:DEFAULTS.accent, decoration:DEFAULTS.decoration, extra:DEFAULTS.extra,
+             palette:defaultPalette(),
              bgOn:true, bgColor:DEFAULTS.bgColor, custom:[],
              frames:[blankGrid(w,h)], active:0, fps:8, _undo:[], _redo:[] };
   }
@@ -953,18 +973,76 @@
   }
   function D(){return docs[activeDoc];}
   function curGrid(){return D().frames[D().active];}
-  function colorOf(layer){var d=D();return layer==='a'?d.accent:layer==='d'?d.decoration:layer==='e'?d.extra:d.body;}
+  /* ---- the palette is the single source of truth for paints ----
+     One array per document: [{k, name, color}]. The first four are the originals; anything after
+     them the user added. Everything that used to read d.body / d.accent / d.decoration / d.extra
+     reads this instead, and those four field names now exist only at the file boundary, where old
+     sprites still speak them. */
+  function defaultPalette(){return BASE_PALETTE.map(function(p){return {k:p.k,name:p.name,color:p.color};});}
+  function paletteOf(d){if(!Array.isArray(d.palette)||!d.palette.length)d.palette=defaultPalette();return d.palette;}
+  function paletteKeys(d){return paletteOf(d).map(function(p){return p.k;}).join('');}
+  function paintByKey(k){var pal=paletteOf(D());for(var i=0;i<pal.length;i++)if(pal[i].k===k)return pal[i];return null;}
+  function colorOf(layer){var p=paintByKey(layer);return p?p.color:paletteOf(D())[0].color;}
+  /* A palette arriving from a file or from localStorage is rebuilt, never trusted: one known key
+     each, no duplicates, a real #rrggbb, a name short enough to fit a pill. Anything else is
+     dropped, and a document left with nothing gets the four it shipped with. */
+  function normalizePalette(arr){
+    if(!Array.isArray(arr))return defaultPalette();
+    var valid='bade'+EXTRA_KEYS,seen={},out=[];
+    arr.forEach(function(p){
+      if(!p||typeof p.k!=='string'||p.k.length!==1||valid.indexOf(p.k)<0||seen[p.k])return;
+      if(!/^#[0-9a-fA-F]{6}$/.test(p.color||''))return;
+      seen[p.k]=1;
+      out.push({k:p.k,name:String(p.name||'Paint').slice(0,12),color:p.color});
+    });
+    return out.length?out.slice(0,MAX_PAINTS):defaultPalette();
+  }
+  /* sprites written before paints could be added: four colours in four named fields */
+  function paletteFromLegacy(o){
+    var pal=defaultPalette();
+    if(o.body)pal[0].color=o.body;
+    if(o.accent)pal[1].color=o.accent;
+    if(o.decoration)pal[2].color=o.decoration;
+    if(o.extra)pal[3].color=o.extra;
+    return normalizePalette(pal);
+  }
+  /* Hue of a hex, and the hue that sits FURTHEST from every hue already on the palette: sample the
+     circle every 2 degrees and keep the candidate whose nearest neighbour is the farthest away.
+     Spacing chairs around a table so the closest pair is as far apart as it can be. */
+  function hueOf(hex){
+    var m=/^#([0-9a-fA-F]{6})$/.exec(hex||'');if(!m)return 0;
+    var n=parseInt(m[1],16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;
+    var mx=Math.max(r,g,b),mn=Math.min(r,g,b),c=mx-mn;
+    if(!c)return 0;
+    var h=mx===r?((g-b)/c+6)%6:mx===g?((b-r)/c+2):((r-g)/c+4);
+    return h*60;
+  }
+  function farthestHue(used){
+    var best=0,bestGap=-1;
+    for(var h=0;h<360;h+=2){
+      var gap=180;
+      for(var i=0;i<used.length;i++){var dd=Math.abs(h-used[i])%360;if(dd>180)dd=360-dd;if(dd<gap)gap=dd;}
+      if(gap>bestGap){bestGap=gap;best=h;}
+    }
+    return best;
+  }
+  function hslHex(h,sPct,lPct){
+    var sN=sPct/100,lN=lPct/100,c=(1-Math.abs(2*lN-1))*sN,x=c*(1-Math.abs((h/60)%2-1)),m=lN-c/2;
+    var t=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+    return '#'+t.map(function(v){return ('0'+Math.round((v+m)*255).toString(16)).slice(-2);}).join('');
+  }
   var gridEl=$('grid');
   var frameEl=document.querySelector('.canvas-frame');   /* its 1px border IS the grid's right/bottom edge */
 
   /* ============================================================
      3. History — per-document snapshots
      ============================================================ */
-  function snap(){var d=D();return JSON.stringify({name:d.name,id:d.id,w:d.w,h:d.h,body:d.body,accent:d.accent,
-    decoration:d.decoration,extra:d.extra,bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,active:d.active,fps:d.fps,frames:d.frames});}
+  function snap(){var d=D();return JSON.stringify({name:d.name,id:d.id,w:d.w,h:d.h,palette:paletteOf(d),
+    bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,active:d.active,fps:d.fps,frames:d.frames});}
   function applySnap(str){
     var o=JSON.parse(str),d=D();
-    d.name=o.name;d.id=o.id;d.w=o.w;d.h=o.h;d.body=o.body;d.accent=o.accent;d.decoration=o.decoration;d.extra=o.extra||DEFAULTS.extra;
+    d.name=o.name;d.id=o.id;d.w=o.w;d.h=o.h;
+    d.palette=o.palette?normalizePalette(o.palette):paletteFromLegacy(o);
     d.bgOn=o.bgOn;d.bgColor=o.bgColor;d.custom=o.custom||[];d.active=o.active;d.fps=o.fps;d.frames=o.frames;
     clearSelection();syncInputs();build();renderFrames();renderTabs();
   }
@@ -1027,7 +1105,7 @@
     var d=D();
     $('sid').value=d.id;
     $('cw').value=d.w; $('ch').value=d.h; sizeNumInput($('cw')); sizeNumInput($('ch'));
-    setSwatch('b',d.body); setSwatch('a',d.accent); setSwatch('d',d.decoration); setSwatch('e',d.extra); setSwatch('bg',d.bgColor);
+    renderPaints(); setSwatch('bg',d.bgColor);
     setOn($('filled'),d.bgOn);
     $('fps').value=d.fps;
     buildCustomRow();
@@ -1437,21 +1515,78 @@
      ============================================================ */
   function selectLayer(l){
     if(ui.tool==='select')setTool('draw');
+    /* undo can take the selected paint away with it; land on Main rather than on nothing */
+    if(l!=='bg'&&!paintByKey(l))l=paletteOf(D())[0].k;
     ui.curLayer=l;
     [].forEach.call(document.querySelectorAll('.paint'),function(b){setOn(b,b.dataset.l===l);});
   }
-  function wireColor(layer){
-    var inp=$('col-'+layer),field=LAYER_FIELD[layer],before=null;
-    inp.addEventListener('focus',function(){before=D()[field];});
+  /* One wiring for the background swatch and for every paint swatch. The focus/change dance is
+     what makes a colour drag a SINGLE undo step: remember the colour on focus, put it back for the
+     instant pushUndo() takes its snapshot, then set the new one. */
+  function wireColor(layer,inp){
+    inp=inp||$('col-'+layer);if(!inp)return;
+    var isBg=(layer==='bg'),before=null;
+    function get(){var d=D();if(isBg)return d.bgColor;var p=paintByKey(layer);return p?p.color:null;}
+    function set(v){var d=D();if(isBg){d.bgColor=v;return;}var p=paintByKey(layer);if(p)p.color=v;}
+    inp.addEventListener('focus',function(){before=get();});
     inp.addEventListener('input',function(){
-      var d=D();d[field]=inp.value;inp.parentNode.style.background=inp.value;
-      if(layer==='bg'){if(d.bgOn)render();}else render();
+      var d=D();set(inp.value);inp.parentNode.style.background=inp.value;
+      if(isBg){if(d.bgOn)render();}else render();
     });
     inp.addEventListener('change',function(){
-      var d=D(),after=inp.value;d[field]=(before!=null?before:after);pushUndo();d[field]=after;
-      if(layer==='bg'&&!d.bgOn){d.bgOn=true;setOn($('filled'),true);}
-      render();
+      var d=D(),after=inp.value;set(before!=null?before:after);pushUndo();set(after);
+      if(isBg&&!d.bgOn){d.bgOn=true;setOn($('filled'),true);}
+      render();scheduleSave();
     });
+  }
+  var PLUS_SVG='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg>';
+  function renderPaints(){
+    var box=$('paints');if(!box)return;
+    var d=D(),pal=paletteOf(d);
+    /* The selected paint can vanish underneath us: undo takes back the one that was just added,
+       and every sprite carries its own palette, so switching tabs can land on a document that has
+       never heard of the current key. Either way the brush would keep a key nothing defines and
+       start writing orphan cells. Fall back to the first paint. */
+    if(ui.curLayer!=='bg'&&!paintByKey(ui.curLayer))ui.curLayer=pal[0].k;
+    box.innerHTML='';
+    pal.forEach(function(pnt){
+      var b=document.createElement('button');b.type='button';b.className='paint';
+      b.dataset.l=pnt.k;b.setAttribute('aria-pressed','false');
+      var sw=document.createElement('span');sw.className='swatch';sw.style.background=pnt.color;
+      var inp=document.createElement('input');inp.type='color';inp.id='col-'+pnt.k;inp.value=pnt.color;
+      inp.setAttribute('aria-label',pnt.name+' colour');inp.title=pnt.name+' colour';
+      sw.appendChild(inp);
+      b.appendChild(sw);b.appendChild(document.createTextNode(pnt.name));
+      b.addEventListener('click',function(){selectLayer(pnt.k);});
+      wireColor(pnt.k,inp);
+      box.appendChild(b);
+    });
+    var add=document.createElement('button');add.type='button';add.className='btn icon';add.id='addpaint';
+    add.innerHTML=PLUS_SVG;
+    add.disabled=pal.length>=MAX_PAINTS;
+    add.title=add.disabled?('Paint limit reached \u2014 '+MAX_PAINTS+' paints per sprite'):'Add paint';
+    add.setAttribute('aria-label',add.title);
+    add.addEventListener('click',addPaint);
+    box.appendChild(add);
+    setOn(box.querySelector('.paint[data-l="'+ui.curLayer+'"]'),true);
+  }
+  /* A new paint needs a key, a name and a colour, and none of the three is asked of the user.
+     The key is the lowest free character, so it is stable. The name is drawn from the bird list -
+     placeholders that admit it. The colour is the hue furthest from everything already here, so a
+     fresh paint is never a near-twin of one you are already using. */
+  function addPaint(){
+    var d=D(),pal=paletteOf(d);
+    if(pal.length>=MAX_PAINTS)return;
+    var used=paletteKeys(d),k='';
+    for(var i=0;i<EXTRA_KEYS.length;i++)if(used.indexOf(EXTRA_KEYS[i])<0){k=EXTRA_KEYS[i];break;}
+    if(!k)return;
+    pushUndo();
+    var taken=pal.map(function(p){return p.name;});
+    var free=PAINT_NAMES.filter(function(n){return taken.indexOf(n)<0;});
+    var name=free.length?free[Math.floor(Math.random()*free.length)]:('Paint '+(pal.length+1));
+    var color=hslHex(farthestHue(pal.map(function(p){return hueOf(p.color);})),60,62);
+    pal.push({k:k,name:name,color:color});
+    renderPaints();selectLayer(k);scheduleSave();
   }
 
   /* ============================================================
@@ -1466,13 +1601,17 @@
       glyphs.push(gr);colors.push(cr);mask.push(mr);}
     return {glyphs:glyphs,colors:colors,accent_mask:mask};
   }
-  function stringsToGrid(glyphs,colors,mask,w,h){
+  /* `keys` is the set of paints the file actually defines. A cell naming a paint that is not in
+     it collapses into Main - which is how a 16-paint sprite opened by a four-paint reader
+     degrades: the drawing survives, the extra paints merge. */
+  function stringsToGrid(glyphs,colors,mask,w,h,keys){
+    keys=keys||'bade';
     var g=blankGrid(w,h);
     for(var y=0;y<h;y++)for(var x=0;x<w;x++){
       var ch=(glyphs[y]&&glyphs[y][x])||' ',l='b';
       if(colors&&colors[y]&&colors[y][x]&&colors[y][x]!==' ')l=colors[y][x];
       else if(mask&&mask[y]&&mask[y][x]==='X')l='a';
-      if(l!=='a'&&l!=='d'&&l!=='e')l='b';
+      if(keys.indexOf(l)<0)l='b';
       g[y][x]={g:ch,l:ch===' '?'b':l};
     }
     return g;
@@ -1482,9 +1621,15 @@
     /* if a selection is floating mid-move, export what's shown (buffer stamped on the active frame) */
     var frames=d.frames.map(function(g,i){return frameToStrings(i===d.active&&ui.selBuf?overlayBuf(g):g);});
     var top=frames[d.active]||frames[0];
+    var pal=paletteOf(d);
+    function col(i){return (pal[i]||pal[0]).color;}
     return JSON.stringify({
-      version:3,id:d.id||'sprite',width:d.w,height:d.h,
-      body_color:d.body,accent_color:d.accent,decoration_color:d.decoration,extra_color:d.extra,
+      /* 4, not 3, because a cell can now name a paint a v3 reader has never heard of. The four
+         *_color fields stay and still mean the first four paints, so a v3 reader opens the file
+         and loses only the paints it could not have shown anyway. */
+      version:4,id:d.id||'sprite',width:d.w,height:d.h,
+      palette:pal.map(function(pt){return {key:pt.k,name:pt.name,color:pt.color};}),
+      body_color:col(0),accent_color:col(1),decoration_color:col(2),extra_color:col(3),
       background_color:d.bgOn?d.bgColor:null,fps:d.fps,active:d.active,
       custom_glyphs:(function(){var a=(d.custom||[]).slice(0,20),last=-1,i;for(i=0;i<a.length;i++)if(a[i])last=i;var out=[];for(i=0;i<=last;i++)out.push(a[i]||'');return out;})(),  /* keep cell positions (internal gaps as ''), trim trailing empties */
       frames:frames,
@@ -1494,21 +1639,21 @@
   function loadJSON(t){
     var o=JSON.parse(t),d=D();pushUndo();
     d.id=o.id||'';d.name=o.id||o.name||d.name;
-    if(o.body_color)d.body=o.body_color;
-    if(o.accent_color)d.accent=o.accent_color;
-    if(o.decoration_color)d.decoration=o.decoration_color;
-    if(o.extra_color)d.extra=o.extra_color;
+    d.palette=Array.isArray(o.palette)
+      ? normalizePalette(o.palette.map(function(pt){return pt&&{k:pt.key||pt.k,name:pt.name,color:pt.color};}))
+      : paletteFromLegacy({body:o.body_color,accent:o.accent_color,decoration:o.decoration_color,extra:o.extra_color});
+    var keys=paletteKeys(d);
     d.bgOn=!!o.background_color;d.bgColor=o.background_color||d.bgColor;
     d.custom=Array.isArray(o.custom_glyphs)?o.custom_glyphs.slice(0,20):(d.custom||[]);
     if(o.fps)d.fps=o.fps;
     if(o.frames&&o.frames.length){
       var f0=o.frames[0]||{},w=o.width||((f0.glyphs&&f0.glyphs[0])||'').length,h=o.height||(f0.glyphs?f0.glyphs.length:0);
       if(!(w>=1&&h>=1)||w>512||h>512)throw new Error('bad dimensions');
-      d.w=w;d.h=h;d.frames=o.frames.map(function(f){return stringsToGrid(f.glyphs,f.colors,f.accent_mask,w,h);});
+      d.w=w;d.h=h;d.frames=o.frames.map(function(f){return stringsToGrid(f.glyphs,f.colors,f.accent_mask,w,h,keys);});
     }else if(o.glyphs&&o.glyphs.length){
       var w2=o.width||o.glyphs[0].length,h2=o.height||o.glyphs.length;
       if(!(w2>=1&&h2>=1)||w2>512||h2>512)throw new Error('bad dimensions');
-      d.w=w2;d.h=h2;d.frames=[stringsToGrid(o.glyphs,o.colors,o.accent_mask,w2,h2)];
+      d.w=w2;d.h=h2;d.frames=[stringsToGrid(o.glyphs,o.colors,o.accent_mask,w2,h2,keys)];
     }else throw new Error('no glyphs');
     d.active=Math.min(o.active||0,d.frames.length-1);
     clearSelection();syncInputs();build();renderFrames();renderTabs();
@@ -1906,7 +2051,8 @@
     else if(meta&&((e.key.toLowerCase()==='z'&&e.shiftKey)||e.key.toLowerCase()==='y')){e.preventDefault();redo();}
     else if(!meta){
       var k=e.key.toLowerCase();
-      if(k==='1')selectLayer('b');else if(k==='2')selectLayer('a');else if(k==='3')selectLayer('d');else if(k==='4')selectLayer('e');
+      /* 1-9 pick the first nine paints in palette order; 1-4 are still Main/Accent/Detail/Extra */
+      if(k>='1'&&k<='9'){var pk=paletteOf(D())[+k-1];if(pk)selectLayer(pk.k);}
       else if(k==='m')$('mirror').click();
       else if(k==='g')$('gridtog').click();
       else if(k==='s')$('select').click();
@@ -1940,8 +2086,7 @@
   applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
 
   /* paint layers + colors */
-  document.querySelectorAll('.paint').forEach(function(b){b.addEventListener('click',function(){selectLayer(b.dataset.l);});});
-  ['b','a','d','e','bg'].forEach(wireColor);
+  wireColor('bg');   /* the paint swatches are wired as renderPaints creates them */
 
   /* view */
   document.querySelectorAll('[data-view]').forEach(function(b){b.onclick=function(){commitSelection();ui.view=b.dataset.view;applyView();};});
@@ -2040,7 +2185,7 @@
     {img:'assets/onboarding/onboarding_2.gif',title:'Paint and erase',
      text:'Pick a glyph from the palette, pick a paint, then click or drag across the grid. Hold and drag to fill a run of cells in one stroke. The Eraser under the canvas clears cells the same way you paint them; with a mouse, right-click erases without leaving your brush. Undo sits under the canvas too, or Ctrl/Cmd+Z — and every sprite keeps its own undo history.'},
     {img:'assets/onboarding/onboarding_3.gif',title:'Color and Background',
-     text:'You draw in four colors — Main, Accent, Detail and Extra. Each one is a color you can change at any time, and every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
+     text:'You draw in paints, not in colors. Four to start with — Main, Accent, Detail and Extra — and + adds more, up to 16 per sprite. Every cell remembers which paint it belongs to, so recoloring a whole sprite is one click, not a repaint. Background sits behind your sprite. Turn it off to export transparent PNGs and SVGs.'},
     {img:'assets/onboarding/onboarding_4.gif',title:'Select and Mirror',
      text:'Use Select to move or remove part of a sprite. Drag a box around it, then drag the box itself to reposition — with a keyboard, arrow keys nudge it one cell at a time and Delete clears it. Mirror starts on, so your marks are reflected across the centre line. Turn it off for asymmetrical details; it never changes what is already on the grid.'},
     {img:'assets/onboarding/onboarding_5.gif',title:'Save and Export',
@@ -2124,8 +2269,8 @@
   var LS_KEY='blockmode:lab:v1', saveTimer=null;
   function serializeState(){
     return JSON.stringify({v:1,active:activeDoc,docs:docs.map(function(d){
-      return {name:d.name,id:d.id,w:d.w,h:d.h,body:d.body,accent:d.accent,decoration:d.decoration,
-        extra:d.extra,bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,frames:d.frames,active:d.active,fps:d.fps};
+      return {name:d.name,id:d.id,w:d.w,h:d.h,palette:paletteOf(d),
+        bgOn:d.bgOn,bgColor:d.bgColor,custom:d.custom,frames:d.frames,active:d.active,fps:d.fps};
     })});
   }
   function saveState(){try{localStorage.setItem(LS_KEY,serializeState());}catch(e){}}   /* ignore quota / private mode */
@@ -2139,8 +2284,11 @@
       var built=o.docs.map(function(s){
         if(!(s.w>=1&&s.h>=1)||!Array.isArray(s.frames)||!s.frames.length)throw 0;   /* corrupt -> bail to default */
         var d=newDoc(s.name,s.w,s.h);
-        d.id=s.id||'';d.body=s.body||d.body;d.accent=s.accent||d.accent;d.decoration=s.decoration||d.decoration;
-        d.extra=s.extra||d.extra;d.bgOn=s.bgOn!==false;d.bgColor=s.bgColor||d.bgColor;
+        /* v stays 1: a save written before paints could be added carries the four old fields
+           instead of a palette, and rejecting it would throw the operator's tabs away. */
+        d.id=s.id||'';
+        d.palette=Array.isArray(s.palette)?normalizePalette(s.palette):paletteFromLegacy(s);
+        d.bgOn=s.bgOn!==false;d.bgColor=s.bgColor||d.bgColor;
         d.custom=Array.isArray(s.custom)?s.custom.slice(0,20):[];
         d.fps=s.fps||d.fps;d.frames=s.frames;d.active=Math.min(s.active||0,s.frames.length-1);
         return d;
@@ -2157,8 +2305,9 @@
      ============================================================ */
   restoreState();
   buildPalette();
+  renderPaints();
   setExportType('json');
-  selectLayer('b');
+  selectLayer(paletteOf(D())[0].k);
   setGlyph('█');
   syncInputs();
   renderTabs();
