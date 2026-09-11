@@ -484,6 +484,14 @@
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   #hint{margin:0 0 32px;}       /* + the palette's own 8px gap = 40 to the first glyph group */
   #hintdraw{margin:8px 0 0;}    /* a cluster gap under the stage; .paintbar's 40 does the rest */
+  /* This one rides INSIDE a bar, beside a .tool, so it takes the row's spacing from the row's own
+     8px gap and its height from the tool it sits next to: 8px padding instead of 9 makes it the
+     same 50px box, not a 52px one that would sit 1px proud top and bottom.
+     flex:1 fills the half of the row that was empty. The min-width is measured, not guessed: with
+     FPS and Preview up, the row leaves 325px beside them, and at 325 this sentence wraps to two
+     lines and makes the hint taller than the tools it sits with. 340 is just past that, so the
+     hint drops to its own full-width line instead of being crushed. */
+  .hint-inline{margin:0;flex:1;min-width:340px;padding:8px 8px 8px 16px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -830,6 +838,13 @@
           <button class="btn" id="play" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2.5 12.5V1.5L12.5 7L2.5 12.5Z"/></svg></span><span class="pw">Play</span></button>
           <button class="btn" id="stop" aria-pressed="false"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-linejoin="bevel"><path d="M2 1.5H5V12.5H2V1.5Z"/><path d="M9 1.5H12V12.5H9V1.5Z"/></svg></span><span class="pw">Pause</span></button>
         </div>
+      </div>
+      <!-- The one thing nothing else on this page says out loud. It rides in Row B rather than
+           under a section because that row is where the document lives - tabs, File, Canvas - and
+           because the row had an empty half doing nothing. -->
+      <div class="hint hint-inline" id="hintsave">
+        <span id="hintsavetext"></span>
+        <button class="hint-x" id="hintsavex" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
       </div>
     </div>
 
@@ -2393,6 +2408,9 @@
     ? 'Drawing: drag across the grid to paint a run of cells. Hold a cell to sample it instead — its glyph and its paint become your brush, and holding an empty cell hands you an eraser.'
     : 'Drawing: click or drag with the left button to paint. The right button samples a cell instead — its glyph and its paint become your brush, and sampling an empty cell hands you an eraser. Alt-click does the same.';
   $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
+  /* No pointer/touch split here: losing your work to a cleared browser is the same on both. */
+  $('hintsavetext').textContent='Tabs live in this browser only — export JSON to keep a sprite for good.';
+  $('hintsavex').onclick=function(){$('hintsave').hidden=true;};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
      Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.
