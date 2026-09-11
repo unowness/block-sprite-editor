@@ -224,7 +224,14 @@
        All three signals now share ONE lightness, the accent's L* 42.9, each at the maximum chroma
        its hue can reach there: blue C 90.6, red C 87.9, green C 54.2. The green is the quiet one
        not by choice but because sRGB has no more green than that at this depth. */
-    --green:#546E00;
+    /* Pushed to the ceiling, which is where it now is. Lighter AND more saturated at once is free
+       for this hue - green's gamut widens as it rises - so it goes as far up as AA allows:
+       L* 45.5, C 56.5, hue unchanged at 116 so it stays the same green as dark's.
+       The wall is the HOVER, where the wash is the label's own colour: 4.52:1 there against a
+       4.5 floor. And shrinking that wash does not help - measured at 8, 6 and 4 percent the rest
+       state becomes the binding one instead, and the ceiling only moves to L* 47.8. Past roughly
+       L* 48 a green label on a near-white panel is not readable at any wash. */
+    --green:#597500;
     --green-bg:transparent;
     --green-label:var(--green);
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
