@@ -478,12 +478,23 @@
      palette's own 8px gap sets it off from CUSTOM above; the margin below brings the distance to
      BLOCK to the same 40px the glyph groups get when the caption is dismissed, so closing it moves
      nothing but itself. */
+  /* Two of these now, and the LOOK is all they share. The spacing belongs to each instance,
+     because each lives in a different flow: the Custom one inside the palette's flex column,
+     the drawing one between two blocks in the page.
+     Both are built so that dismissing leaves no trace. Measured, with and without:
+       CUSTOM -> 8 -> hint -> 40 -> BLOCK      and      CUSTOM -> 40 -> BLOCK
+       stage  -> 8 -> hint -> 40 -> PAINT      and      stage  -> 40 -> PAINT
+     The palette one needs a rule to hold that 40 open (the flex gap is only 8); the drawing one
+     needs nothing at all, because .paintbar already carries the 40 and simply reaches the stage
+     again the moment the hint leaves the flow. */
   .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-        width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
+        width:100%;
         /* the same surface a field gets, in whichever theme is on: the note reads as something
            written INTO the interface rather than as one more panel sitting on it */
         background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
+  #hint{margin:0 0 32px;}       /* + the palette's own 8px gap = 40 to the first glyph group */
+  #hintdraw{margin:8px 0 0;}    /* a cluster gap under the stage; .paintbar's 40 does the rest */
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -890,6 +901,12 @@
   <div class="fsbottom" id="fsbottom">
     <div class="fspanel" id="fspaint"><span class="fscustom-label">PAINT</span></div>
     <div class="fspanel" id="fscustom"><span class="fscustom-label">CUSTOM</span></div>
+  </div>
+
+  <!-- How the two mouse buttons differ, said where the drawing happens. -->
+  <div class="hint" id="hintdraw">
+    <span id="hintdrawtext"></span>
+    <button class="hint-x" id="hintdrawx" title="Dismiss" aria-label="Dismiss this hint"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg></button>
   </div>
 
   <!-- Paint + glyph palette: one block.
@@ -2383,6 +2400,10 @@
   /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
      the section gap down to the paint bar */
   $('hintx').onclick=function(){$('hint').hidden=true;};
+  $('hintdrawtext').textContent=isCoarse()
+    ? 'Drawing: drag across the grid to paint a run of cells. Hold a cell to sample it instead — its glyph and its paint become your brush, and holding an empty cell hands you an eraser.'
+    : 'Drawing: click or drag with the left button to paint. The right button samples a cell instead — its glyph and its paint become your brush, and sampling an empty cell hands you an eraser. Alt-click does the same.';
+  $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
      Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.
