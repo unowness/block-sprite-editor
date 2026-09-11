@@ -60,34 +60,31 @@
        lightness, and the chroma is then whatever the hue can still hold there.
        The trio is picked to sit at one brightness so it reads as a set: L* 77.8, 77.9 and 66.7.
        Red is the outlier and always will be — a red cannot reach L* 78 without becoming pink. */
-    --alert-bg:transparent;
-    --alert-label:var(--alert);
+    /* How a signal button (Clear, Export) is built, as four percentages of its own colour. The two
+       themes answer differently and the rules below read these instead of hardcoding either: dark
+       glows outward from nothing, light behaves like a pressed control. */
+    --sig-fill:0%;      /* at rest: dark shows the panel through */
+    --sig-wash:10%;     /* hover: a glow of its own colour */
+    --sig-press:20%;
+    --sig-edge:100%;    /* hover keeps the full outline */
+    --sig-ink:100%;     /* and the full label */
     /* Marathon's own --primary, read from the game site's stylesheet rather than described:
        hue 75, chroma .98, L* 92.6, 14.13:1 on this surface. Their --surface is #1C1C1C and
        ours is #1C1C1D, so the two systems already agreed about the ground. */
-    /* Paired with Clear, which is the anchor here: same lightness, same chroma, its own hue.
-       Clear is L* 69.0 C 57.2 at hue 41; this is L* 69.0 C 57.3 at hue 136. Both read 7.56:1 on
-       the panel - the same number, because equal lightness IS equal contrast. Two signals of one
-       weight, and the accent sits 12 points above them at a lower chroma, which keeps it the
-       anchor rather than a third sibling.
-       It costs the saturation the green had been climbing towards: C 104.9 -> 57.3, the ceiling
-       at this lightness being 98.2. Pairing with a red means accepting the red's ceiling, because
-       sRGB gives red far less room than green.
-       This one is no longer pure, so the old paint-collision guard does not apply and was checked
-       instead: the default Extra paint is #5CE422 at L* 80.7 C 99.7, which is 11.7 lightness and
-       42 chroma away. Not confusable. */
-    --green:#6FBA5D;
-    --green-bg:transparent;
-    --green-label:var(--green);
-    /* Clear destroys work, and it is the single control allowed to shout about it. */
-    /* Marathon's --error, lifted until it survives its own hover. At #F24723 the label sat at
-       4.15:1 the moment you pointed at it — the wash and the label are the same colour and move
-       together. L 64.2 -> 68.0 keeps the hue and the chroma and buys the margin back. */
-    /* The red cannot reach L* 81: sRGB has almost no red chroma up there - at 81 the best is
-       C 30.8 and the colour is a pale salmon, quieter than the accent and useless for the one
-       control that destroys work. So it comes up as far as it can while staying red: L* 69 at
-       C 57.4. The lightness spread across the three signals falls from 32 points to 12. */
-    --alert:#FF8667;
+    /* On the accent too: L* 81, and the accent's own chroma of 35.9 - which green can reach
+       easily, its ceiling here being 112. So the green is held back to the anchor rather than
+       capped by the gamut, the opposite of the red's problem.
+       Sits 0.2 of a lightness point from the default Extra paint (#5CE422, L* 80.7) but 64 chroma
+       away: a pale sage against a vivid green. Checked because --green once WAS a paint's hex and
+       chrome became indistinguishable from artwork. */
+    --green:#A8D59A;
+    /* Both signals now sit ON the accent: its lightness, and its chroma wherever the hue can
+       reach it. L* 81 for all three, and the contrasts land within 0.3 of each other - 10.82 for
+       the accent, 11.09 for this, 10.79 for the green.
+       The cost is named rather than hidden: sRGB has almost no red chroma at L* 81. The ceiling
+       there is C 30.8, so this is a pale salmon and it is quieter than a control that destroys
+       work would normally be. That is what harmony with a light, low-chroma cyan costs a red. */
+    --alert:#FFB8A5;
     --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
@@ -223,8 +220,14 @@
        one value sits between the two resting states and both move towards it. */
     --accent-bg:color-mix(in srgb,var(--accent) 5%,transparent);
     --accent-wash:color-mix(in srgb,var(--accent) 2%,transparent);
-    --alert-bg:transparent;
-    --alert-label:var(--alert);
+    /* A signal button here is built exactly like a PRESSED control: filled at 5% at rest, and on
+       hover it LIFTS to 2% with the outline and the label at half strength. The same recipe and
+       the same numbers as the accent two lines up, with the button's own colour swapped in. */
+    --sig-fill:5%;
+    --sig-wash:2%;
+    --sig-press:8%;
+    --sig-edge:50%;
+    --sig-ink:50%;
     /* Export is built like Clear again - transparent, outline and label in its own colour - which
        settles the green: read as ink on white it has to be dark, and at this lightness a
        yellow-green is an olive. The acid version only worked as a fill.
@@ -242,8 +245,7 @@
        is L* 50, #008B00, 4.36 - close but not there. That last step is available and it is a
        decision, not an oversight. */
     --green:#00A800;
-    --green-bg:transparent;
-    --green-label:var(--green);
+
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
     --glyph:#202020;
     --canvas-empty:var(--page);
@@ -302,19 +304,23 @@
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
      dark theme's colour and stopped following the token entirely */
-  .btn.alert{background:var(--alert-bg);border-color:var(--alert);color:var(--alert-label);}
+  .btn.alert{background:color-mix(in srgb,var(--alert) var(--sig-fill),transparent);border-color:var(--alert);color:var(--alert);}
   /* Export is the primary action and it is filled, so its colour can be as bright as it likes —
      the label contrasts against the fill, not against the page. */
   /* Outline only: the background stays the surface, the contour and the word carry the colour. */
-  .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
+  .btn.green{background:color-mix(in srgb,var(--green) var(--sig-fill),transparent);border-color:var(--green);color:var(--green);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
-  .btn.alert:hover{background:color-mix(in srgb,var(--alert) 10%,transparent);}
+  .btn.alert:not(:disabled):hover{background:color-mix(in srgb,var(--alert) var(--sig-wash),transparent);
+    border-color:color-mix(in srgb,var(--alert) var(--sig-edge),transparent);
+    color:color-mix(in srgb,var(--alert) var(--sig-ink),transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) var(--sig-wash),transparent);
+    border-color:color-mix(in srgb,var(--green) var(--sig-edge),transparent);
+    color:color-mix(in srgb,var(--green) var(--sig-ink),transparent);}
   .btn:disabled{opacity:.35;cursor:default;background:var(--btn-background);border-color:var(--stroke);color:var(--tool-text-id);}
 
   /* ---------------- inputs ---------------- */
@@ -339,7 +345,7 @@
   .onb__cta:active,.hint-x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) var(--sig-press),transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
