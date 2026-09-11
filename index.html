@@ -487,8 +487,12 @@
      The palette one needs a rule to hold that 40 open (the flex gap is only 8); the drawing one
      needs nothing at all, because .paintbar already carries the 40 and simply reaches the stage
      again the moment the hint leaves the flow. */
-  .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
-        width:100%;
+  /* A hint is as wide as what it says. fit-content sizes it to the sentence; max-width keeps it
+     inside its container so a narrow screen wraps instead of overflowing. The gap to the X equals
+     the X's own padding to the edge, so the cross sits in an even well rather than tight on one
+     side. */
+  .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:9px;
+        width:fit-content;max-width:100%;
         /* the same surface a field gets, in whichever theme is on: the note reads as something
            written INTO the interface rather than as one more panel sitting on it */
         background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
@@ -498,11 +502,10 @@
   /* This one rides INSIDE a bar, beside a .tool, so it takes the row's spacing from the row's own
      8px gap and its height from the tool it sits next to: 8px padding instead of 9 makes it the
      same 50px box, not a 52px one that would sit 1px proud top and bottom.
-     flex:1 fills the half of the row that was empty. The min-width is measured, not guessed: with
-     FPS and Preview up, the row leaves 325px beside them, and at 325 this sentence wraps to two
-     lines and makes the hint taller than the tools it sits with. 340 is just past that, so the
-     hint drops to its own full-width line instead of being crushed. */
-  .hint-inline{margin:0;flex:1;min-width:340px;padding:8px 8px 8px 16px;}
+     It no longer stretches to fill the row: it is the width of its sentence, and when the
+     Animation controls leave less room than that beside it, the bar's own wrap drops it to the
+     next line. The gap matches this one's 8px edge, not the 9px the section hints use. */
+  .hint-inline{margin:0;padding:8px 8px 8px 16px;gap:8px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
@@ -538,7 +541,10 @@
   .hint[hidden]+.pgroup{margin-top:32px;}   /* + the palette's own 8px gap = 40 */
   /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
   .paintbar{margin-top:var(--space-section);}
-  .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
+  /* An explicit column. The groups were already one per line because each is too wide to share
+     one, but the hint is not - shrunk to its sentence it could have slotted in beside a short
+     group. align-items keeps every child at its content width, which is what they already were. */
+  .palette{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-cluster);margin-top:var(--space-cluster);}
   /* The built-in rows are a selection, not the alphabet. This says where the rest lives, and it
      sits at the END of the palette because that is where you arrive having not found what you
      wanted. It is the footer note's type, flush with the content edge like that one.
@@ -2415,9 +2421,12 @@
   /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
      the section gap down to the paint bar */
   $('hintx').onclick=function(){$('hint').hidden=true;};
+  /* Both cut to one line. Measured against the widest a section hint can be at 960 content -
+     892px once the left padding, the gap and the 32px X are taken out. The old pointer line was
+     1262 and the old touch line 1062; these are 798 and 515. */
   $('hintdrawtext').textContent=isCoarse()
-    ? 'Drawing: drag across the grid to paint a run of cells. Hold a cell to sample it instead — its glyph and its paint become your brush, and holding an empty cell hands you an eraser.'
-    : 'Drawing: click or drag with the left button to paint. The right button samples a cell instead — its glyph and its paint become your brush, and sampling an empty cell hands you an eraser. Alt-click does the same.';
+    ? 'Drag to paint. Hold a cell to sample its glyph and paint — hold an empty one to erase.'
+    : 'Left button paints. Right button, or Alt-click, samples a cell: its glyph and paint become your brush — sample an empty cell to erase.';
   $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
   /* No pointer/touch split here: losing your work to a cleared browser is the same on both. */
   $('hintsavetext').textContent='Tabs live in this browser only — export JSON to keep a sprite for good.';
