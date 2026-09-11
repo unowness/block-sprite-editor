@@ -2,8 +2,8 @@
 
 A tiny, dependency-free editor for block-ASCII sprites — the kind used in
 terminal / PETSCII / C64-style games. Draw with block and box-drawing glyphs in
-four colors over an optional background, animate them frame by frame, and
-export to JSON, SVG, PNG or MP4.
+up to 16 paints over an optional background, animate them frame by frame, and
+export to JSON, SVG, PNG, MP4 or plain text.
 
 **Live:** https://unowness.github.io/block-sprite-editor/
 
@@ -29,8 +29,13 @@ It is one self-contained HTML file with no build step and no backend — copy
 - Size from 3×3 to 128×128 — type into **W/H**, or drag any of the four edge
   handles to resize from that side.
 - **Zoom in / Zoom out** step the drawing's cell size.
-- Export **scale** presets: 1×, 4×, 8×, 16×.
-- **Frames** — up to 16 per sprite; set **FPS** (1–60) and play the loop.
+- Export **scale** presets: 1×, 4×, 8×, 16× — disabled for JSON and TXT, which carry no picture.
+- **Paints** — four to start (Main, Accent, Detail, Extra); **+** adds more, up to 16 per sprite.
+  Each cell remembers its paint, so recoloring is one swatch, not a repaint.
+- **Sampling** — right-click (or Alt+click, or hold on touch) picks up a cell's glyph and paint.
+  Sampling an empty cell gives you an eraser.
+- **Theme** — light and dark, toggled from the header corner and remembered.
+- **Frames** — up to 60 per sprite; set **FPS** (1–60) and play the loop.
 - **Fullscreen** renders the sprite 1:1 with the paint and custom panels docked
   at the bottom.
 
@@ -50,6 +55,7 @@ It is one self-contained HTML file with no build step and no backend — copy
 | **SVG** | Current frame, vector. |
 | **PNG** | Current frame, upscaled by the current zoom. |
 | **MP4** | The animation loop (~2s), encoded with WebCodecs (H.264). |
+| **TXT** | Current frame as the characters it is made of, trailing blanks trimmed. |
 
 MP4 needs WebCodecs — available in Chromium browsers and Safari 16.4+. Where it
 is missing (Firefox today), the editor falls back to a WebM recording.
