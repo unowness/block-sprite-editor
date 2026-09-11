@@ -65,16 +65,22 @@
     /* Marathon's own --primary, read from the game site's stylesheet rather than described:
        hue 75, chroma .98, L* 92.6, 14.13:1 on this surface. Their --surface is #1C1C1C and
        ours is #1C1C1D, so the two systems already agreed about the ground. */
-    --green:#C0FE04;
+    /* Harmonised against the accent, which is the anchor: L* 81. The green comes down to exactly
+       that from 92.6 and keeps its own chroma ceiling (89.8), so it stops out-shouting the thing it
+       is supposed to sit beside. It is no longer Marathon's #C0FE04 - that provenance loses to the
+       palette it has to live in. */
+    --green:#A4DB00;
     --green-bg:transparent;
     --green-label:var(--green);
-    --green-hover:color-mix(in srgb,var(--green) 10%,transparent);
-    --green-active:color-mix(in srgb,var(--green) 20%,transparent);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
     /* Marathon's --error, lifted until it survives its own hover. At #F24723 the label sat at
        4.15:1 the moment you pointed at it — the wash and the label are the same colour and move
        together. L 64.2 -> 68.0 keeps the hue and the chroma and buys the margin back. */
-    --alert:#FF5634;
+    /* The red cannot reach L* 81: sRGB has almost no red chroma up there - at 81 the best is
+       C 30.8 and the colour is a pale salmon, quieter than the accent and useless for the one
+       control that destroys work. So it comes up as far as it can while staying red: L* 69 at
+       C 57.4. The lightness spread across the three signals falls from 32 points to 12. */
+    --alert:#FF8667;
     --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
@@ -212,21 +218,16 @@
     --accent-wash:color-mix(in srgb,var(--accent) 2%,transparent);
     --alert-bg:transparent;
     --alert-label:var(--alert);
-    /* Dark can spend this green as INK because its ground is black. White cannot: an acid
-       yellow-green is intrinsically bright - #C0FE04 measures 1.21:1 against white - so as a
-       label or an outline it is invisible here, which is exactly why this used to be an olive at
-       L* 48 and read as dull rather than acid.
-       So light spends the SAME green as a FILL and puts the ink on top of it. One hex, two jobs,
-       and the primary action finally looks like one. The label is a green-black rather than the
-       neutral one, so the button is green through and through: 13.4:1 on the fill. */
-    --green:#C0FE04;
-    --green-bg:var(--green);
-    --green-label:#1A2400;
-    /* a filled button deepens under the pointer; a transparent one glows. Same token, opposite
-       arithmetic - the same split the accent wash already makes between the two themes. */
-    --green-hover:color-mix(in srgb,var(--green) 88%,var(--green-label));
-    --green-active:color-mix(in srgb,var(--green) 78%,var(--green-label));
-    --alert:#C40F09;        /* same fix as dark: 4.00:1 on hover became 5.15 */
+    /* Export is built like Clear again - transparent, outline and label in its own colour - which
+       settles the green: read as ink on white it has to be dark, and at this lightness a
+       yellow-green is an olive. The acid version only worked as a fill.
+       All three signals now share ONE lightness, the accent's L* 42.9, each at the maximum chroma
+       its hue can reach there: blue C 90.6, red C 87.9, green C 54.2. The green is the quiet one
+       not by choice but because sRGB has no more green than that at this depth. */
+    --green:#546E00;
+    --green-bg:transparent;
+    --green-label:var(--green);
+    --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
     --glyph:#202020;
     --canvas-empty:var(--page);
     --grid-line:rgba(187,187,187,.45);   /* gray-8 */
@@ -296,7 +297,7 @@
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
   /* hover and press lift the fill towards the label, which is lighter on dark and darker on
      light — one rule, no need to ask which theme is on */
-  #export:not(:disabled):hover{background:var(--green-hover);}
+  #export:not(:disabled):hover{background:color-mix(in srgb,var(--green) 10%,transparent);}
   .btn:disabled{opacity:.35;cursor:default;background:var(--btn-background);border-color:var(--stroke);color:var(--tool-text-id);}
 
   /* ---------------- inputs ---------------- */
@@ -321,7 +322,7 @@
   .onb__cta:active,.hint-x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
-  #export:not(:disabled):active{background:var(--green-active);}
+  #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
