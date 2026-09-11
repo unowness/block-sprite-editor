@@ -463,7 +463,9 @@
      nothing but itself. */
   .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
         width:100%;margin:0 0 32px;   /* + the palette's own 8px gap = 40 */
-        background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
+        /* the same surface a field gets, in whichever theme is on: the note reads as something
+           written INTO the interface rather than as one more panel sitting on it */
+        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
