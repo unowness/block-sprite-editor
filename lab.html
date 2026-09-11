@@ -65,11 +65,14 @@
     /* Marathon's own --primary, read from the game site's stylesheet rather than described:
        hue 75, chroma .98, L* 92.6, 14.13:1 on this surface. Their --surface is #1C1C1C and
        ours is #1C1C1D, so the two systems already agreed about the ground. */
-    /* Harmonised against the accent, which is the anchor: L* 81. The green comes down to exactly
-       that from 92.6 and keeps its own chroma ceiling (89.8), so it stops out-shouting the thing it
-       is supposed to sit beside. It is no longer Marathon's #C0FE04 - that provenance loses to the
-       palette it has to live in. */
-    --green:#00FF00;
+    /* Down from the primary: L* 87.8 -> 75, and the chroma follows it down because the ceiling
+       does - 119.8 -> 105.1, which is the 12% off saturation that was asked for without having to
+       mix anything INTO the hue.
+       Kept pure (R and B at zero) on purpose. Desaturating by adding red lands straight on the
+       default Extra paint, #5CE422 at L* 80 - and --green being the exact hex of a paint is a bug
+       this project has already had: chrome and artwork became indistinguishable. A green with no
+       red in it cannot be mistaken for a paint, because the generated ones all carry some. */
+    --green:#00D600;
     --green-bg:transparent;
     --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
@@ -226,19 +229,15 @@
        not by choice but because sRGB has no more green than that at this depth. */
     /* One green, the same value in both themes - built like Clear, the colour on the border and
        the label, nothing filled.
-       #00FF00. The hue was turned to the green primary on the operator's call, and this is the
-       floor of the barrel: 119.8 is the single largest chroma sRGB can express in the green
-       region, because it IS the primary - there is no colour past a primary, in any hue.
-       The walk that got here, each stop at its own chroma peak: 117 #C1FF00 C100.9, 120 #B3FF00
-       C102.4, 124 #9DFF00 C105.4, 128 #82FF00 C109.1, 132 #5EFF00 C114.0, 136 #00FF00 C119.8.
-       Note the primary is DARKER than the chartreuse it replaced - L* 87.8 against 93 - so it
-       gains 19% chroma and loses some contrast on dark: 13.06:1 against 14.99.
-       The measurement, recorded rather than buried: as INK on this panel it reads 1.34:1, where AA
-       asks 4.5 for text. A green cannot be both this bright and readable on white - that trade is
-       the whole history of this token, and brightness won on the operator's call. The paint
-       swatches sit at the same level and look right for the same reason: at that lightness a green
-       is something you SEE rather than read. */
-    --green:#00FF00;
+       Darker again, and further than dark went: L* 87.8 -> 60, because this is the theme that
+       needed it. Same hue as dark's, same purity, one family at two depths - #00D600 there, this
+       here.
+       It buys something nameable rather than just looking better: 3.10:1 against the panel, which
+       clears the 3:1 WCAG asks of a non-text indicator, so the BORDER of this button is now
+       compliant where at #00FF00 it read 1.34. The LABEL still is not - text wants 4.5, and that
+       is L* 50, #008B00, 4.36 - close but not there. That last step is available and it is a
+       decision, not an oversight. */
+    --green:#00A800;
     --green-bg:transparent;
     --green-label:var(--green);
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
