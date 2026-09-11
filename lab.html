@@ -256,12 +256,13 @@
   :root[data-theme="light"] .logo.logo-dark{display:none;}
   /* The light mascot ships as near-white artwork, which on paper is a shape you cannot see, so the
      SVG is a mask here and a token fills it.
-     It was set to the panel colour on request; at any value on this ramp that is a watermark
-     (1.1:1 against the page), and an invisible brand mark was part of why the light theme read as
-     unfinished. It takes the ink now, which is what dark does — a white mascot on black there, a
-     black one on paper here. One line back to --tool-background if the watermark was the point. */
+     It takes the accent now, on request, and so does the wordmark beside it - the brand is the one
+     place in this theme where colour is not a state, so it can hold the accent without competing
+     with anything that means something. 5.27:1 on the page: over the 4.5 the wordmark needs as
+     text and the 3 the mascot needs as a graphic. Dark is untouched, because there the mascot is
+     already a white raster and the words are already the ink. */
   :root[data-theme="light"] .logo.logo-light{
-    display:block;background-color:var(--main-text);
+    display:block;background-color:var(--accent);
     -webkit-mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;
             mask:url("logo-blockmode-white-56x56.svg") center/56px 56px no-repeat;}
 
@@ -282,6 +283,7 @@
   .theme svg{width:15px;height:15px;}
   .logo{width:56px;height:56px;display:block;flex:none;}
   .title{font-size:18px;font-weight:500;line-height:1.3;margin:0;color:var(--main-text);}
+  :root[data-theme="light"] .title{color:var(--accent);}
 
   /* ---------------- bars & tool sections ---------------- */
   .bars{display:flex;flex-direction:column;gap:var(--space-cluster);margin-bottom:var(--space-section);}
