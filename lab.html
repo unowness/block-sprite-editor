@@ -69,7 +69,7 @@
        that from 92.6 and keeps its own chroma ceiling (89.8), so it stops out-shouting the thing it
        is supposed to sit beside. It is no longer Marathon's #C0FE04 - that provenance loses to the
        palette it has to live in. */
-    --green:#A4DB00;
+    --green:#C1FF00;
     --green-bg:transparent;
     --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
@@ -224,14 +224,19 @@
        All three signals now share ONE lightness, the accent's L* 42.9, each at the maximum chroma
        its hue can reach there: blue C 90.6, red C 87.9, green C 54.2. The green is the quiet one
        not by choice but because sRGB has no more green than that at this depth. */
-    /* One green now, #A4DB00, the same value in both themes - built like Clear, the colour on the
-       border and the label, nothing filled.
-       This is the operator's call over the measurement, and the measurement is written down rather
-       than buried: as INK on this panel it reads 1.61:1, where AA asks 4.5 for text. A bright green
-       cannot be both bright and readable on white - that trade is the whole history of this token,
-       and brightness won. The paint swatches sit at the same level and look right for the same
-       reason: at that lightness a green is something you SEE rather than read. */
-    --green:#A4DB00;
+    /* One green, the same value in both themes - built like Clear, the colour on the border and
+       the label, nothing filled.
+       #C1FF00 is the END of this road: hue 117 is exactly where it was, and C 100.9 at L* 93 is the
+       most chroma sRGB has at that hue. Every other lightness holds less - 89.9 at L* 81, 95.3 at
+       87, and above 93 the gamut collapses fast (71.9 by L* 95). More saturation exists only by
+       turning the hue towards the green primary, which would be a different colour rather than a
+       stronger one.
+       The measurement, recorded rather than buried: as INK on this panel it reads 1.16:1, where AA
+       asks 4.5 for text. A green cannot be both this bright and readable on white - that trade is
+       the whole history of this token, and brightness won on the operator's call. The paint
+       swatches sit at the same level and look right for the same reason: at that lightness a green
+       is something you SEE rather than read. */
+    --green:#C1FF00;
     --green-bg:transparent;
     --green-label:var(--green);
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
