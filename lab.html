@@ -65,14 +65,18 @@
     /* Marathon's own --primary, read from the game site's stylesheet rather than described:
        hue 75, chroma .98, L* 92.6, 14.13:1 on this surface. Their --surface is #1C1C1C and
        ours is #1C1C1D, so the two systems already agreed about the ground. */
-    /* Down from the primary: L* 87.8 -> 75, and the chroma follows it down because the ceiling
-       does - 119.8 -> 105.1, which is the 12% off saturation that was asked for without having to
-       mix anything INTO the hue.
-       Kept pure (R and B at zero) on purpose. Desaturating by adding red lands straight on the
-       default Extra paint, #5CE422 at L* 80 - and --green being the exact hex of a paint is a bug
-       this project has already had: chrome and artwork became indistinguishable. A green with no
-       red in it cannot be mistaken for a paint, because the generated ones all carry some. */
-    --green:#00D600;
+    /* Paired with Clear, which is the anchor here: same lightness, same chroma, its own hue.
+       Clear is L* 69.0 C 57.2 at hue 41; this is L* 69.0 C 57.3 at hue 136. Both read 7.56:1 on
+       the panel - the same number, because equal lightness IS equal contrast. Two signals of one
+       weight, and the accent sits 12 points above them at a lower chroma, which keeps it the
+       anchor rather than a third sibling.
+       It costs the saturation the green had been climbing towards: C 104.9 -> 57.3, the ceiling
+       at this lightness being 98.2. Pairing with a red means accepting the red's ceiling, because
+       sRGB gives red far less room than green.
+       This one is no longer pure, so the old paint-collision guard does not apply and was checked
+       instead: the default Extra paint is #5CE422 at L* 80.7 C 99.7, which is 11.7 lightness and
+       42 chroma away. Not confusable. */
+    --green:#6FBA5D;
     --green-bg:transparent;
     --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
