@@ -27,7 +27,13 @@
     --page:#0A0A0A;
     --stage-bg:#141415;    /* the drawing section is a panel too, not a hole in the page */
     --tool-background:#171718;
-    --input-background:#1C1C1D;
+    /* A field is not a control: it is a hole in the panel you type into, so it steps AWAY from the
+       panel it sits in - up in dark, down in light - and lands 10 levels of 255 from it either way.
+       Dark moves less than light in RGB (5 against 13) because near black a level is worth far
+       more: this is +2.5 L*, light's is -4.5. It stops there because --stroke is 42, and a field
+       lifted to the 37 that would have matched light perceptually swallows its own hairline -
+       measured, the border falls from 1.19:1 to 1.07:1. */
+    --input-background:#212122;
     --stroke:#2A2A2B;
     --stroke-focus:#707071;
     --stroke-hover:#3C3C3D;
@@ -142,7 +148,7 @@
     --stage-bg:#FCFCFC;          /* gray-1 */
     --tool-background:#FCFCFC;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
-    --input-background:#FFFFFF;
+    --input-background:#F2F2F2;   /* 5% off white, 10 below the panel */
     --canvas:#FFFFFF;
     --shadow-section:none;       /* shadows removed on request */
     --shadow-control:none;
@@ -480,7 +486,9 @@
   #export{min-width:116px;}  /* Export button width (Figma 42:363) */
 
   /* ---------------- import / output box ---------------- */
-  .iobox{position:relative;margin-top:var(--space-section);background:var(--tool-background);box-shadow:var(--shadow-section);
+  /* The JSON box is a field you type into, not a panel, and it was painted as a panel. Same
+     surface as every other input now. */
+  .iobox{position:relative;margin-top:var(--space-section);background:var(--input-background);box-shadow:var(--shadow-section);
          border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   /* no bottom reserve for the buttons: that left a dead band across the box once the JSON ran out.
      The text fills the full height and Copy/Paste float over the bottom-right, which the JSON's
