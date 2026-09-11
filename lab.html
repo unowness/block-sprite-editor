@@ -75,7 +75,6 @@
     --alert:#FF5634;
     --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
-    --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
        than the surface to fall on, and here there is nothing darker. This is the one place the two
        themes are built differently on purpose — see the light block. */
@@ -160,7 +159,6 @@
     --shadow-control:none;
     /* 5% takes a control to L* 94.7, under its tray at 96.5 — hovering presses it back into the
        surface it came from, without ever making it look switched off */
-    --hover-veil:color-mix(in srgb,var(--main-text) 5%,transparent);
     --stroke:#CECECE;            /* gray-7, their border step */
     --stroke-focus:#8D8D8D;      /* gray-9 */
     --stroke-hover:#BBBBBB;      /* gray-8, their hovered border */
@@ -272,26 +270,6 @@
        font-family:var(--font-ui);font-size:13px;line-height:1;color:var(--main-text);
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
-  /* Hover states the accent at half strength, so pointing at a control is a weaker version of
-     selecting it rather than a separate idea. One rule for every control family, because there
-     were three of them saying the same thing in three places.
-     :not(.on) is not decoration. A selected control keeps its full accent outline - and the guard
-     also settles a cascade race that had been quietly turning the selected TAB grey on hover:
-     .tab.on was declared BEFORE .tab:hover at equal specificity, so the later rule won. The tab was
-     the only family ordered that way; .btn, .paint and .gbtn all had .on after :hover and were
-     fine. With the state excluded from the selector, the order stops mattering anywhere. */
-  .btn:not(.on):not(.alert):not(.green):not(:disabled):hover,
-  .tab:not(.on):hover,
-  .paint:not(.on):hover,
-  .gbtn:not(.on):hover,
-  .fbtn:not(.on):hover{border-color:color-mix(in srgb,var(--accent) 50%,transparent);}
-  /* ...plus a 5% fill lift, layered over the base colour (as a flat gradient) so it stacks on every
-     button variant without replacing its background-color. Export brightens via its own filter, and
-     disabled buttons opt out. */
-  /* Hover veils the control towards the ink. In dark that lifts it off its panel; in light it
-     pushes it under the section, which is the direction the operator asked for. */
-  .btn:hover,.paint:hover,.gbtn:hover,.tab:hover{background-image:linear-gradient(var(--hover-veil),var(--hover-veil));}
-  #export:hover,.btn:disabled:hover{background-image:none;}
   .btn.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
   .btn.icon{padding:0;width:32px;}
   .btn.icon svg{width:14px;height:14px;display:block;}
@@ -304,10 +282,6 @@
   .btn.green{background:var(--green-bg);border-color:var(--green);color:var(--green-label);}
   /* Coloured/active buttons brighten by the same 10% — they used to FADE to 50% opacity, which
      read as the button going away under the cursor instead of lighting up. */
-  /* A selected control answers the pointer the same way Clear and Export do: a wash of its own
-     colour behind it, not a change of outline. --accent-wash lets light opt out, since its
-     selection is already a grey fill. */
-  .btn.on:hover,.tab.on:hover,.paint.on:hover,.gbtn.on:hover,.fbtn.on:hover{background:var(--accent-wash);}
   .btn.alert:hover{background:color-mix(in srgb,var(--alert) 10%,transparent);}
   /* Export is the exception: no separate outline rule — the whole button, fill, outline and label
      together, lifts 20%. Adding the 10% mix on top would brighten its border twice. */
@@ -595,6 +569,29 @@
   .gbtn.custom:focus{border-color:var(--stroke-focus);}
   .gbtn.custom:focus:not(:focus-visible){outline:none;}
   .gbtn.custom.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
+
+  /* ============================================================
+     Hover — one state, the same whether the control is on or off
+     ============================================================
+     Three resting states: OFF is a grey outline and plain text; ON is an accent outline, an accent
+     wash and an accent label; DISABLED answers nothing. Hover is a fourth, and it reads the same
+     on OFF and ON: the outline goes to the accent at half strength, the label goes to the accent,
+     and the fill takes the accent wash. On an OFF control all three move; on an ON control the
+     label is already there and only the outline and the fill do.
+     It lives HERE, below every resting rule, on purpose. .tab:hover and .tab.on are both one class
+     plus one pseudo/class, so the cascade settles them by order - and when this rule sat above,
+     .tab.on won and pointing at a selected tab did nothing. :not(:disabled) raises the count as
+     well, so the two guards are independent.
+     The coloured buttons keep their own colour: Clear and Export answer the pointer in red and
+     green, which is the whole reason they are not grey. */
+  .btn:not(.alert):not(.green):not(:disabled):hover,
+  .tab:not(:disabled):hover,
+  .paint:not(:disabled):hover,
+  .gbtn:not(:disabled):hover,
+  .fbtn:not(:disabled):hover{
+    border-color:color-mix(in srgb,var(--accent) 50%,transparent);
+    background:var(--accent-wash);
+    color:var(--accent);}
 
   /* ============================================================
      Mobile (<=600px): icon controls, stacked tools/palette, common label column
