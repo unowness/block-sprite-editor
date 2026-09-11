@@ -94,6 +94,9 @@
     /* radius / metrics straight from the mockup */
     --r-tool:12px;   /* tool_section / panels */
     --r-btn:4px;     /* Button / input */
+    /* The ID field and the Export button are the two ends of the page - name it, export it - and
+       the operator wants them the same width. One token, so they cannot drift apart. */
+    --w-name:168px;
 
     /* vertical rhythm */
     --space-cluster:8px;  /* inside a cluster: bar rows, animbar/stage/hint, palette groups, footer */
@@ -148,7 +151,10 @@
     --stage-bg:#FCFCFC;          /* gray-1 */
     --tool-background:#FCFCFC;
     --btn-background:#FFFFFF;    /* controls stay the brightest thing — L* 100 */
-    --input-background:#F2F2F2;   /* 5% off white, 10 below the panel */
+    /* Deeper again, on request: a field should read as a hole in the panel, and at 242 it was only
+       two levels under the PAGE - the step was visible against the panel it sits in and invisible
+       against the page behind it. 236 is eight under the page and sixteen under the panel. */
+    --input-background:#ECECEC;
     --canvas:#FFFFFF;
     --shadow-section:none;       /* shadows removed on request */
     --shadow-control:none;
@@ -318,7 +324,7 @@
   .input.num{width:48px;text-align:left;-moz-appearance:textfield;}
   .input.num::-webkit-outer-spin-button,
   .input.num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-  #sid{width:168px;}   /* the name of the file you are working on — long enough to read one back */
+  #sid{width:var(--w-name);}   /* the name of the file you are working on — long enough to read one back */
 
   /* focus states — design-system, not native */
   .input:focus{outline:none;border-color:var(--stroke-focus);}
@@ -504,8 +510,10 @@
   /* Every other row on the page sets its tools 8px apart. space-between made this one row split
      into two islands 316px apart at 960px, so the same 8px rhythm read as a mistake here and only
      here. Hug left, like Row A and Row B. */
-  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:8px;margin-top:var(--space-cluster);}
-  #export{min-width:116px;}  /* Export button width (Figma 42:363) */
+  /* Type on the left, Scale+Export pushed to the right edge of the page - the same right edge the
+     stage and the JSON box end on. */
+  .exportbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:var(--space-cluster);}
+  #export{width:var(--w-name);}   /* same width as the ID field */
 
   /* ---------------- import / output box ---------------- */
   /* The JSON box is a field you type into, not a panel, and it was painted as a panel. Same
@@ -1881,9 +1889,26 @@
     else if(ui.exportType==='png')exportPNG();
     else if(ui.exportType==='mp4')exportMp4();
   }
+  /* The types the scale does not reach. JSON is the only one: it carries no picture at all.
+     SVG is NOT here on purpose - the scale writes its width and height attributes (the viewBox
+     stays 1:1), so choosing 8x there really does change the file it hands you. */
+  var SCALE_FREE={json:1};
   function setExportType(t){
     ui.exportType=t;
     [].forEach.call(document.querySelectorAll('[data-type]'),function(b){setOn(b,b.dataset.type===t);});
+    refreshScale();
+  }
+  /* Offering a choice that changes nothing is worse than offering none, so on a scale-free type
+     the four buttons go disabled and none of them reads as chosen. ui.scale itself is left alone -
+     the value is remembered, only its display is withdrawn, so coming back to PNG lands on the
+     same 4x you left. */
+  function refreshScale(){
+    var off=!!SCALE_FREE[ui.exportType];
+    [].forEach.call(document.querySelectorAll('[data-s]'),function(b){
+      b.disabled=off;
+      setOn(b,!off&&+b.dataset.s===ui.scale);
+      b.title=off?('Scale does not change a '+ui.exportType.toUpperCase()+' export'):(b.dataset.s+'x raster scale');
+    });
   }
 
   /* ============================================================
@@ -2289,8 +2314,7 @@
 
   /* export */
   document.querySelectorAll('[data-type]').forEach(function(b){b.onclick=function(){setExportType(b.dataset.type);};});
-  document.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){ui.scale=+b.dataset.s;
-    document.querySelectorAll('[data-s]').forEach(function(x){setOn(x,false);});setOn(b,true);};});
+  document.querySelectorAll('[data-s]').forEach(function(b){b.onclick=function(){ui.scale=+b.dataset.s;refreshScale();};});
   $('export').onclick=doExport;
 
   /* The box mirrors the live sprite JSON, so Copy works at any time. Its second button is
