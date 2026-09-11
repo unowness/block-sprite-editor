@@ -69,7 +69,7 @@
        that from 92.6 and keeps its own chroma ceiling (89.8), so it stops out-shouting the thing it
        is supposed to sit beside. It is no longer Marathon's #C0FE04 - that provenance loses to the
        palette it has to live in. */
-    --green:#C1FF00;
+    --green:#00FF00;
     --green-bg:transparent;
     --green-label:var(--green);
     /* Clear destroys work, and it is the single control allowed to shout about it. */
@@ -226,17 +226,19 @@
        not by choice but because sRGB has no more green than that at this depth. */
     /* One green, the same value in both themes - built like Clear, the colour on the border and
        the label, nothing filled.
-       #C1FF00 is the END of this road: hue 117 is exactly where it was, and C 100.9 at L* 93 is the
-       most chroma sRGB has at that hue. Every other lightness holds less - 89.9 at L* 81, 95.3 at
-       87, and above 93 the gamut collapses fast (71.9 by L* 95). More saturation exists only by
-       turning the hue towards the green primary, which would be a different colour rather than a
-       stronger one.
-       The measurement, recorded rather than buried: as INK on this panel it reads 1.16:1, where AA
+       #00FF00. The hue was turned to the green primary on the operator's call, and this is the
+       floor of the barrel: 119.8 is the single largest chroma sRGB can express in the green
+       region, because it IS the primary - there is no colour past a primary, in any hue.
+       The walk that got here, each stop at its own chroma peak: 117 #C1FF00 C100.9, 120 #B3FF00
+       C102.4, 124 #9DFF00 C105.4, 128 #82FF00 C109.1, 132 #5EFF00 C114.0, 136 #00FF00 C119.8.
+       Note the primary is DARKER than the chartreuse it replaced - L* 87.8 against 93 - so it
+       gains 19% chroma and loses some contrast on dark: 13.06:1 against 14.99.
+       The measurement, recorded rather than buried: as INK on this panel it reads 1.34:1, where AA
        asks 4.5 for text. A green cannot be both this bright and readable on white - that trade is
        the whole history of this token, and brightness won on the operator's call. The paint
        swatches sit at the same level and look right for the same reason: at that lightness a green
        is something you SEE rather than read. */
-    --green:#C1FF00;
+    --green:#00FF00;
     --green-bg:transparent;
     --green-label:var(--green);
     --alert:#CE0005;        /* L* 42.9 like the accent, and its hue's chroma ceiling: C 87.9 */
