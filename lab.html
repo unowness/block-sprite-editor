@@ -194,8 +194,16 @@
     --accent:#0057F0;
     --accent-edge:var(--accent);   /* the outline carries the state, now in colour */
     --accent-label:var(--accent);
-    --accent-bg:var(--page);       /* the fill is still the page, exactly as before */
-    --accent-wash:#E7ECF7;         /* selected and hovered: one step under the page, tinted blue */
+    /* The fill is the accent at 10%, and it is left TRANSPARENT rather than pre-mixed so it
+       composites on whatever section the control actually sits in - a panel, the stage, a palette
+       group - instead of on one assumed surface.
+       Hover deepens it to 14% and stops there, which is a smaller step than it looks like it
+       should be. The reason is structural: the label is the same blue as the fill, so every
+       darkening of the fill spends the label's own contrast. 10% reads 4.86:1, 14% reads 4.56:1,
+       20% would read 4.15:1 and fail. If the hover needs more travel than that, the label has to
+       darken with it - that is a second colour, not a second percentage. */
+    --accent-bg:color-mix(in srgb,var(--accent) 10%,transparent);
+    --accent-wash:color-mix(in srgb,var(--accent) 14%,transparent);
     --alert-bg:transparent;
     --alert-label:var(--alert);
     /* The same apple, pushed to where white lets it live. A yellow-green is intrinsically
