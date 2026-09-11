@@ -450,7 +450,13 @@
         background-size:var(--cw) var(--ch);
         background-position:0 0;
         box-shadow:inset -1px -1px 0 0 var(--grid-line);}   /* the two edges the gradient cannot reach */
-  .cell{background:transparent;}
+  /* Every cell is pinned to the grid step. A monospace font is only monospace for the characters
+     it actually HAS: ◤ and the whole Decor and Square rows come from a fallback face at a slightly
+     narrower advance, and as plain inline spans they dragged the row with them - measured 19.27
+     against 19.78, unequal steps, and art that slides off the gridlines the further right it goes.
+     inline-block with an explicit width makes the DOM agree with the arithmetic the rest of the
+     editor already does from measure(). */
+  .cell{display:inline-block;width:var(--cw);text-align:center;vertical-align:top;background:transparent;}
   /* The accent carried nine separate jobs, and this was the one that put it inside the artwork:
      hovering a cell laid the interface's own colour over the drawing. A cursor highlight only has
      to say "here" — a shift in value does that without lending the picture a hue it never chose. */
@@ -503,6 +509,12 @@
   /* Paint -> palette is one block: a cluster gap inside it, the section gap above it */
   .paintbar{margin-top:var(--space-section);}
   .palette{display:flex;flex-wrap:wrap;gap:var(--space-cluster);margin-top:var(--space-cluster);}
+  /* The built-in rows are a selection, not the alphabet. This says where the rest lives, and it
+     sits at the END of the palette because that is where you arrive having not found what you
+     wanted. Footer-link metrics, so it reads as a note rather than as another control. */
+  .pal-note{width:100%;margin:0;padding:0 12px;color:var(--tool-text-id);font-size:13px;line-height:1.5;}
+  .pal-note a{color:var(--tool-text-id);text-decoration:underline;text-underline-offset:2px;}
+  .pal-note a:hover{color:var(--accent);}
   .pgroup{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -982,7 +994,11 @@
     {label:'Pairs',    g:['<','>','^','v','(',')','[',']','{','}','‹','›','«','»']},
     {label:'Joins',    g:['├','┤','┬','┴','┼','┣','┫','┳','┻','╋','┝','┥','┞','┦','┟','┧','┠','┨','┰','┸']},
     {label:'Double',    g:['═','║','╔','╗','╚','╝','╠','╣','╦','╩','╬']},
-    {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']}
+    {label:'Square',   g:['■','□','▢','▣','▤','▥','▦','▧','▨','▩','▪','▫','◧','◨','◩','◪','◫','◰','◱','◲']},
+    /* The one primitive a block editor was missing: everything above is square, so a diagonal
+       could only be staircased out of half-blocks. Filled corner triangles make a real slope, and
+       the arcs make a curve the box-drawing corners cannot. */
+    {label:'Slope',    g:['▲','▼','◀','▶','△','▽','◁','▷','◤','◥','◣','◢','◜','◝','◞','◟','◠','◡']}
   ];
 
   /* The four paints this editor shipped with. Their KEYS are frozen forever: a cell stores one
@@ -1573,6 +1589,11 @@
       });
       box.appendChild(pg);pal.appendChild(box);
     });
+    var note=document.createElement('p');note.className='pal-note';
+    note.innerHTML='These rows are a selection, not the alphabet. '+
+      '<a href="https://glyphy.io/cool-symbols" target="_blank" rel="noopener">glyphy.io</a>'+
+      ' keeps thousands more \u2014 copy one and paste it into a Custom cell to keep it here.';
+    pal.appendChild(note);
     sizePaletteColumns();
     buildCustomRow();
   }
