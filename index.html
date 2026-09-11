@@ -487,25 +487,26 @@
      The palette one needs a rule to hold that 40 open (the flex gap is only 8); the drawing one
      needs nothing at all, because .paintbar already carries the 40 and simply reaches the stage
      again the moment the hint leaves the flow. */
-  /* A hint is as wide as what it says. fit-content sizes it to the sentence; max-width keeps it
-     inside its container so a narrow screen wraps instead of overflowing. The gap to the X equals
-     the X's own padding to the edge, so the cross sits in an even well rather than tight on one
-     side. */
+  /* Full width again, and no fill: the border alone. A note is not a surface you put things on,
+     and with nothing painted behind it the text sits on whatever section it belongs to instead of
+     on a slab of its own.
+     The gap to the X still equals the X's own padding to the edge, so the cross sits in an even
+     well rather than tight on one side. */
   .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:9px;
-        width:fit-content;max-width:100%;
-        /* the same surface a field gets, in whichever theme is on: the note reads as something
-           written INTO the interface rather than as one more panel sitting on it */
-        background:var(--input-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
+        width:100%;
+        background:transparent;border:1px solid var(--stroke);border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   #hint{margin:0 0 32px;}       /* + the palette's own 8px gap = 40 to the first glyph group */
   #hintdraw{margin:8px 0 0;}    /* a cluster gap under the stage; .paintbar's 40 does the rest */
   /* This one rides INSIDE a bar, beside a .tool, so it takes the row's spacing from the row's own
      8px gap and its height from the tool it sits next to: 8px padding instead of 9 makes it the
      same 50px box, not a 52px one that would sit 1px proud top and bottom.
-     It no longer stretches to fill the row: it is the width of its sentence, and when the
-     Animation controls leave less room than that beside it, the bar's own wrap drops it to the
-     next line. The gap matches this one's 8px edge, not the 9px the section hints use. */
-  .hint-inline{margin:0;padding:8px 8px 8px 16px;gap:8px;}
+     flex:1 fills the half of the row that was empty. The min-width is measured, not guessed: with
+     FPS and Preview up, the row leaves 325px beside them, and at 325 the sentence wraps and makes
+     the hint taller than the tools it sits with. 340 is just past that, so it drops to its own
+     full-width line instead of being crushed.
+     The gap matches this one's 8px edge, not the 9px the section hints use. */
+  .hint-inline{margin:0;flex:1;min-width:340px;padding:8px 8px 8px 16px;gap:8px;}
   .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
