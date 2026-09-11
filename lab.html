@@ -386,17 +386,27 @@
   .fspanel .pgrid{max-width:none;flex-wrap:nowrap;}
   .fspanel .paints{flex-wrap:nowrap;}
 
-  /* canvas frame: a 1px stroke border (always shown) around the drawing field, grid lines inside. */
+  /* The lattice was drawn by two semi-transparent gradient layers, so every crossing composited
+     twice: 0.45 per layer became 0.6975 where they met, a line 1.55x denser at every intersection.
+     And the rectangle around it came from three different places — the frame's border in
+     --grid-line, the grid's own right and bottom borders in --stroke — so opposite sides of one
+     rectangle were different colours.
+     Now: --grid-line is OPAQUE and computed per render from the canvas colour itself (see
+     gridLineFor), so overlapping cannot compound and the line still adapts to whatever background
+     the user paints. The lattice draws left and top from the gradient and closes right and bottom
+     with an inset shadow in the same colour. The frame's border is the rectangle only while the
+     grid is off; while it is on, the lattice owns all four edges and the border steps aside so the
+     left and top are not drawn twice. */
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--grid-line);border-radius:2px;overflow:hidden;background:var(--canvas-empty);}
+  .canvas-frame:has(.grid.show-grid){border-color:transparent;}
   .grid{display:inline-block;background:var(--canvas-empty);cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);touch-action:none;}  /* single-finger draws, no page scroll */
-  /* left+top edges come from the gradient line at 0; right+bottom from the border — all 1px --stroke */
   .grid.show-grid{background-image:
         linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
         linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
         background-size:var(--cw) var(--ch);
         background-position:0 0;
-        border-right:1px solid var(--stroke);border-bottom:1px solid var(--stroke);}
+        box-shadow:inset -1px -1px 0 0 var(--grid-line);}   /* the two edges the gradient cannot reach */
   .cell{background:transparent;}
   /* The accent carried nine separate jobs, and this was the one that put it inside the artwork:
      hovering a cell laid the interface's own colour over the drawing. A cursor highlight only has
@@ -1038,14 +1048,29 @@
     for(var i=0;i<kids.length;i++){var c=kids[i],x=+c.dataset.x,y=+c.dataset.y,cell=g[y][x];
       c.textContent=cell.g;c.style.color=colorOf(cell.l);}
   }
+  /* One opaque line colour, derived from whatever the canvas actually is.
+     Opaque because two semi-transparent layers crossing compound; derived because the user paints
+     their own background and a fixed grey would either vanish on black or shout on white. The
+     canvas decides which way to step: a light field gets a darker line, a dark field a lighter one.
+     Like ruling a page — you pick the pencil after you see the paper, not before. */
+  function gridLineFor(el){
+    var probe=window.getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+    if(!probe)return 'rgba(128,128,128,1)';
+    var c=[+probe[0],+probe[1],+probe[2]];
+    function lin(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}
+    var Y=0.2126*lin(c[0])+0.7152*lin(c[1])+0.0722*lin(c[2]);
+    var dark=Y<0.35, toward=dark?255:0, k=dark?0.26:0.17;
+    return 'rgb('+c.map(function(v){return Math.round(v*(1-k)+toward*k);}).join(',')+')';
+  }
   function render(){
     var d=D();
     var g=ui.playing?d.frames[ui.playIdx]:curGrid();
     paintCells(ui.selBuf?overlayBuf(g):g);     /* show the floating selection on top while moving */
     gridEl.style.backgroundColor=d.bgOn?d.bgColor:'var(--canvas-empty)';
-    /* the frame's background sits under its 1px border; keep it equal to the grid's so a
-       semi-transparent --grid-line blends the same on the outer edge as on the inner lines */
-    if(frameEl)frameEl.style.backgroundColor=gridEl.style.backgroundColor;
+    if(frameEl){
+      frameEl.style.backgroundColor=gridEl.style.backgroundColor;
+      frameEl.style.setProperty('--grid-line',gridLineFor(frameEl));
+    }
     $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');
     positionSelRect();
     if(!ui.drawing&&!ui.playing&&!ui.selMoving&&!ui.sideDrag)updateOut();   /* keep the JSON box in sync (skip mid-gesture/playback) */
