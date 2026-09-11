@@ -400,10 +400,10 @@
   .canvas-frame{display:inline-block;line-height:0;border:1px solid var(--grid-line);border-radius:2px;overflow:hidden;background:var(--canvas-empty);}
   /* Transparent was not enough: a border box still paints the element's own background under it,
      so the frame's 1px ring kept showing the canvas colour and read as a heavy dark outline
-     against a light page. With the grid on the border has no job at all, so it has no width —
-     and no radius either, because the lattice inside it has square corners and a 2px round was
-     clipping them. */
-  .canvas-frame:has(.grid.show-grid){border-width:0;border-radius:0;}
+     against a light page. With the grid on the border has no job at all, so it has no width.
+     The radius stays: overflow:hidden clips the lattice to it, so the artboard keeps the same
+     rounded outer corners whether the grid is on or off. */
+  .canvas-frame:has(.grid.show-grid){border-width:0;}
   .grid{display:inline-block;background:var(--canvas-empty);cursor:crosshair;white-space:pre;
         font-family:var(--font-mono);touch-action:none;}  /* single-finger draws, no page scroll */
   .grid.show-grid{background-image:
@@ -1067,15 +1067,20 @@
     var dark=Y<0.35, toward=dark?255:0, k=dark?0.26:0.17;
     return 'rgb('+c.map(function(v){return Math.round(v*(1-k)+toward*k);}).join(',')+')';
   }
+  /* Re-derived, not stored: with the background off the canvas is var(--canvas-empty), which is a
+     different colour in each theme, so the line has to be recomputed whenever either the canvas
+     colour or the theme changes. */
+  function paintGridLine(){
+    if(!frameEl)return;
+    frameEl.style.setProperty('--grid-line',gridLineFor(frameEl));
+  }
   function render(){
     var d=D();
     var g=ui.playing?d.frames[ui.playIdx]:curGrid();
     paintCells(ui.selBuf?overlayBuf(g):g);     /* show the floating selection on top while moving */
     gridEl.style.backgroundColor=d.bgOn?d.bgColor:'var(--canvas-empty)';
-    if(frameEl){
-      frameEl.style.backgroundColor=gridEl.style.backgroundColor;
-      frameEl.style.setProperty('--grid-line',gridLineFor(frameEl));
-    }
+    if(frameEl)frameEl.style.backgroundColor=gridEl.style.backgroundColor;
+    paintGridLine();
     $('filled').style.setProperty('--fillbg', d.bgOn?d.bgColor:'transparent');
     positionSelRect();
     if(!ui.drawing&&!ui.playing&&!ui.selMoving&&!ui.sideDrag)updateOut();   /* keep the JSON box in sync (skip mid-gesture/playback) */
@@ -1904,6 +1909,7 @@
   var MOON_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 7C10 10.866 13.134 14 17 14C18.9584 14 20.729 13.1957 21.9995 11.8995C22 11.933 22 11.9665 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C12.0335 2 12.067 2 12.1005 2.00049C10.8043 3.27098 10 5.04157 10 7ZM4 12C4 16.4183 7.58172 20 12 20C15.0583 20 17.7158 18.2839 19.062 15.7621C18.3945 15.9187 17.7035 16 17 16C12.0294 16 8 11.9706 8 7C8 6.29648 8.08133 5.60547 8.2379 4.938C5.71611 6.28423 4 8.9417 4 12Z"/></svg>';
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
+    paintGridLine();   /* the line is derived from the canvas colour, and that colour just changed */
     var b=$('themetog'),toLight=(t!=='light');
     b.innerHTML=toLight?SUN_ICON:MOON_ICON;
     /* the name states the ACTION, because that is what the icon is showing */
