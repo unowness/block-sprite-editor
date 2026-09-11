@@ -293,46 +293,30 @@
   .input:focus{outline:none;border-color:var(--stroke-focus);}
   button:focus,input:focus{outline:none;}
   /* keyboard focus: a ring, not just a border swap, so you can find yourself while tabbing */
-  .btn:focus-visible,.tab-name:focus-visible,.tab .x:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
+  .btn:focus-visible,.tab:focus-visible,.paint:focus-visible,.gbtn:focus-visible,
   .onb__cta:focus-visible,.onb__skip:focus-visible,.links a:focus-visible,.hint-x:focus-visible{
     border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px;}
   /* pressed state — the click gets an immediate answer instead of only a hover tint */
-  .btn:not(:disabled):active,.tab-name:active,.paint:active,.gbtn:active,.ccell:active,
-  .onb__cta:active,.hint-x:active,.tab .x:active{
+  .btn:not(:disabled):active,.tab:active,.paint:active,.gbtn:active,.ccell:active,
+  .onb__cta:active,.hint-x:active{
     background-image:linear-gradient(color-mix(in srgb,var(--main-text) 12%,transparent),
                                      color-mix(in srgb,var(--main-text) 12%,transparent));}
   #export:not(:disabled):active{background:color-mix(in srgb,var(--green) 20%,transparent);}
 
   /* ---------------- tabs ---------------- */
   .tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-  /* same metrics as .fbtn so a numbered tab is exactly as compact as a frame button */
-  /* The chip is a container; the two things you can do to a sprite are two real buttons inside it.
-     As a <span> with a click handler the tab was mouse-only — nothing in the strip could be
-     reached by Tab, so a keyboard user could open sprites and never switch between them. */
-  .tab{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;
+  /* Same metrics as .fbtn, so a numbered tab is exactly as compact as a frame button.
+     The chip used to be a container holding a label button and a close X, and that X was the whole
+     problem: it needed a grab area, the grab area reached back over the label, and the middle of a
+     tab destroyed it instead of selecting it (measured 2026-09-10: 65% of a numbered tab was
+     Close). Closing moved out to the toolbar, next to +, the way frames have always done it - so
+     the chip is one button again, with nothing inside it to aim around.
+     font-family is spelled out because a <button> does not inherit it. */
+  .tab{appearance:none;display:inline-flex;align-items:center;justify-content:center;
+       min-width:32px;height:32px;padding:0 7px;
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
-       padding:0 8px 0 0;font-size:13px;color:var(--main-text);}
+       font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   .tab.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
-  /* the label button carries what used to be the chip's left padding and the 6px gap, so every
-     pixel that is not the close X selects the sprite */
-  .tab-name{appearance:none;background:none;border:0;margin:0;padding:0 6px 0 8px;height:100%;
-            display:inline-flex;align-items:center;justify-content:center;min-width:32px;
-            font:inherit;color:inherit;cursor:pointer;border-radius:var(--r-btn) 0 0 var(--r-btn);}
-  .tab .x{appearance:none;background:none;border:0;padding:0;font:inherit;
-          position:relative;display:inline-flex;width:13px;height:13px;align-items:center;justify-content:center;
-          border-radius:3px;color:var(--tool-text-id);font-size:13px;line-height:1;cursor:pointer;}
-  /* The X keeps a comfortable grab area, but it grows away from the label, never back over it.
-     With a symmetric -6px it reached 6px left of the chip, and on a numbered tab (43px wide) that
-     put the tab's own visual centre inside the close target: aiming at the middle of a tab
-     destroyed it instead of selecting it. Measured 2026-09-10: 65% of a numbered tab was Close. */
-  .tab .x::before{content:'';position:absolute;inset:-6px -6px -6px 0;}
-  .tab .x:hover{color:var(--main-text);background:color-mix(in srgb,var(--main-text) 8%,transparent);}
-  .tab .x svg{width:12px;height:12px;display:block;}
-  /* One open sprite has no close button, and the chip's 8px right padding — which exists to clear
-     that button — was left behind: the numeral sat 8px off centre in a 40x32 box. With nothing to
-     clear, the chip is the 32px square every other control in the row is. */
-  .tab:not(:has(.x)){padding:0;}
-  .tab:not(:has(.x)) .tab-name{flex:1;min-width:0;padding:0 7px;border-radius:var(--r-btn);}
 
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
@@ -668,7 +652,6 @@
      the decoration transparent to the pointer leaves the control as the single, stable target.
      The tab's close X and the colour <input> inside a swatch stay clickable on purpose. */
   .btn .iw,.btn>svg,.btn .lbl,.hint-x>svg,.fbtn>*,
-  .tab .x>svg,
   .onb__cta>*,.onb__skip>*{pointer-events:none;}
 </style>
 </head>
@@ -696,6 +679,7 @@
         <span class="tool-label">Tabs</span>
         <div class="tabs" id="tabs" role="group" aria-label="Open sprites"></div>
         <button class="btn icon" id="addtab" title="New sprite" aria-label="New sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg></button>
+        <button class="btn icon" id="deltab" title="Close sprite" aria-label="Close sprite"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg></button>
       </div>
       <div class="tool">
         <span class="tool-label">Canvas</span>
@@ -1057,23 +1041,18 @@
   function renderTabs(){
     var box=$('tabs');box.innerHTML='';
     docs.forEach(function(d,i){
-      var t=document.createElement('span');t.className='tab'+(i===activeDoc?' on':'');
       /* unnamed tabs read as their position — 1 2 3 4 5 — so closing one renumbers the rest;
          typing a file name into ID takes over the label (operator, Figma 42:363). */
-      var label=(d.id&&d.id.trim())?d.id:String(i+1);
-      var name=document.createElement('button');name.type='button';name.className='tab-name';
-      name.textContent=label;
-      name.setAttribute('aria-pressed',i===activeDoc?'true':'false');
-      name.onclick=function(){selectTab(i);};
-      t.appendChild(name);
-      if(docs.length>1){
-        var x=document.createElement('button');x.type='button';x.className='x';
-        x.innerHTML='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M11 3L3 11"/><path d="M11 11L3 3"/></svg>';
-        x.title='Close '+label;x.setAttribute('aria-label','Close '+label);
-        x.onclick=function(e){e.stopPropagation();closeTab(i);};t.appendChild(x);
-      }
+      var t=document.createElement('button');t.type='button';t.className='tab'+(i===activeDoc?' on':'');
+      t.textContent=(d.id&&d.id.trim())?d.id:String(i+1);
+      t.setAttribute('aria-pressed',i===activeDoc?'true':'false');
+      t.onclick=function(){selectTab(i);};
       box.appendChild(t);
     });
+    var dt=$('deltab');
+    dt.disabled=docs.length<=1;
+    dt.title=dt.disabled?'A workspace keeps at least one sprite':'Close sprite';
+    dt.setAttribute('aria-label',dt.title);
   }
   function selectTab(i){if(i===activeDoc)return;commitSelection();stop();activeDoc=i;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
   function addTab(){commitSelection();stop();docs.push(newDoc('untitled '+docs.length));activeDoc=docs.length-1;ui.view='ascii';applyView();syncInputs();build();renderFrames();renderTabs();updateHist();}
@@ -1540,6 +1519,7 @@
     });
   }
   var PLUS_SVG='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg>';
+  var TRASH_SVG='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg>';
   function renderPaints(){
     var box=$('paints');if(!box)return;
     var d=D(),pal=paletteOf(d);
@@ -1568,6 +1548,13 @@
     add.setAttribute('aria-label',add.title);
     add.addEventListener('click',addPaint);
     box.appendChild(add);
+    var del=document.createElement('button');del.type='button';del.className='btn icon';del.id='delpaint';
+    del.innerHTML=TRASH_SVG;
+    del.disabled=pal.length<=1;
+    del.title=del.disabled?'A sprite keeps at least one paint':'Delete paint';
+    del.setAttribute('aria-label',del.title);
+    del.addEventListener('click',delPaint);
+    box.appendChild(del);
     setOn(box.querySelector('.paint[data-l="'+ui.curLayer+'"]'),true);
   }
   /* A new paint needs a key, a name and a colour, and none of the three is asked of the user.
@@ -1588,6 +1575,24 @@
     pal.push({k:k,name:name,color:color});
     renderPaints();selectLayer(k);scheduleSave();
   }
+  /* Deletes the paint you have selected, the way the trash in Frames deletes the frame you are on.
+     Cells drawn with it are not erased - they change hands and keep their glyph, landing on the
+     first paint, which is the same thing that happens to a cell naming a paint a file never
+     defined. One undo step puts the paint and the cells back together. */
+  function delPaint(){
+    var d=D(),pal=paletteOf(d),i=-1;
+    for(var n=0;n<pal.length;n++)if(pal[n].k===ui.curLayer)i=n;
+    if(pal.length<=1||i<0)return;
+    pushUndo();
+    var gone=pal[i].k;
+    pal.splice(i,1);
+    var fb=pal[0].k;
+    function remap(g){for(var y=0;y<g.length;y++)for(var x=0;x<g[y].length;x++)if(g[y][x].l===gone)g[y][x].l=fb;}
+    d.frames.forEach(remap);
+    if(ui.selBuf)remap(ui.selBuf);   /* a floating selection is cells too */
+    ui.curLayer=pal[Math.min(i,pal.length-1)].k;
+    renderPaints();build();scheduleSave();
+  }
 
   /* ============================================================
      13. Presets-free JSON / SVG / PNG / MP4 export
@@ -1606,13 +1611,14 @@
      degrades: the drawing survives, the extra paints merge. */
   function stringsToGrid(glyphs,colors,mask,w,h,keys){
     keys=keys||'bade';
+    var fb=keys.charAt(0)||'b';   /* Main, unless this sprite deleted Main */
     var g=blankGrid(w,h);
     for(var y=0;y<h;y++)for(var x=0;x<w;x++){
-      var ch=(glyphs[y]&&glyphs[y][x])||' ',l='b';
+      var ch=(glyphs[y]&&glyphs[y][x])||' ',l=fb;
       if(colors&&colors[y]&&colors[y][x]&&colors[y][x]!==' ')l=colors[y][x];
       else if(mask&&mask[y]&&mask[y][x]==='X')l='a';
-      if(keys.indexOf(l)<0)l='b';
-      g[y][x]={g:ch,l:ch===' '?'b':l};
+      if(keys.indexOf(l)<0)l=fb;
+      g[y][x]={g:ch,l:ch===' '?fb:l};
     }
     return g;
   }
@@ -2224,6 +2230,7 @@
   $('link-onboarding').onclick=function(e){e.preventDefault();onbOpen(0);};   /* footer link re-opens it */
 
   /* animation */
+  $('deltab').onclick=function(){closeTab(activeDoc);};
   $('addframe').onclick=addFrame;$('delframe').onclick=delFrame;
   $('play').onclick=play;$('stop').onclick=stop;
   /* `Math.round(+v)||fps` treated a typed 0 as "nothing entered" and quietly restored the old
