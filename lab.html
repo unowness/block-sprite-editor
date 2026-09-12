@@ -480,10 +480,9 @@
      The palette one needs a rule to hold that 40 open (the flex gap is only 8); the drawing one
      needs nothing at all, because .paintbar already carries the 40 and simply reaches the stage
      again the moment the hint leaves the flow. */
-  /* No fill, and no empty edge either: the border alone, drawn around the sentence. A note is not
-     a surface you put things on, so nothing is painted behind it, and fit-content keeps the frame
-     from running past the words. max-width holds it inside its container, so a narrow screen wraps
-     instead of overflowing.
+  /* Sized to its sentence: fit-content keeps the frame from running past the words, and max-width
+     holds it inside its container so a narrow screen wraps instead of overflowing. #hintdraw is
+     the exception and takes the stage's width instead - its own rule below says why.
      The gap to the X equals the X's own padding to the edge, so the cross sits in an even well
      rather than tight on one side. */
   .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:9px;
@@ -499,7 +498,12 @@
         border:1px solid transparent;border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   #hint{margin:0 0 32px;}       /* + the palette's own 8px gap = 40 to the first glyph group */
-  #hintdraw{margin:8px 0 0;}    /* a cluster gap under the stage; .paintbar's 40 does the rest */
+  /* The one hint that does NOT shrink to its sentence. It sits directly under the stage and
+     reads as that block's caption, so it takes the stage's width and its cross lands on the
+     stage's own right edge rather than floating in the middle of the column. The line below
+     is written long enough to reach across it: 881 of the 892 it has at 960 content.
+     The other two stay fit-content - they caption a row, not a block. */
+  #hintdraw{margin:8px 0 0;width:auto;}   /* a cluster gap under the stage; .paintbar's 40 does the rest */
   /* This one rides INSIDE a bar, beside a .tool, so it takes the row's spacing from the row's own
      8px gap and its height from the tool it sits next to: 8px padding instead of 9 makes it the
      same 50px box, not a 52px one that would sit 1px proud top and bottom.
@@ -2434,12 +2438,13 @@
   /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
      the section gap down to the paint bar */
   $('hintx').onclick=function(){$('hint').hidden=true;};
-  /* Both cut to one line. Measured against the widest a section hint can be at 960 content -
-     892px once the left padding, the gap and the 32px X are taken out. The old pointer line was
-     1262 and the old touch line 1062; these are 798 and 515. */
+  /* Both one line. The pointer line is written to the width of the box rather than trimmed to
+     its own: 881 of the 892 available at 960 content, once the left padding, the gap and the
+     32px X are taken out. The touch line stays short - it wraps on a phone whatever it says,
+     and every word added there is another line under the stage. */
   $('hintdrawtext').textContent=isCoarse()
     ? 'Drag to paint. Hold a cell to sample its glyph and paint — hold an empty one to erase.'
-    : 'Left button paints. Right button, or Alt-click, samples a cell: its glyph and paint become your brush — sample an empty cell to erase.';
+    : 'Left button paints, click or drag. Right button, or Alt-click, samples a cell: its glyph and paint become your brush — sample an empty cell to erase.';
   $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
   /* No pointer/touch split here: losing your work to a cleared browser is the same on both. */
   /* Names the button by its label rather than describing what it writes. "Export JSON" stopped
