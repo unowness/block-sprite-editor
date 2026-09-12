@@ -12,9 +12,10 @@ It is one self-contained HTML file with no build step and no backend — copy
 
 ## Drawing
 
-- Pick a **glyph** from the palette and a **paint** (Main, Accent, Detail, Extra),
-  then draw on the grid. **Right-click** erases with a mouse; the **Eraser**
-  tool does the same thing on any device.
+- Pick a **glyph** from the palette and a **paint** (Main, Accent, Detail, Extra,
+  plus any you add), then draw on the grid with the left button. The **Eraser**
+  tool clears cells on any device; right-click is the eyedropper, not an eraser
+  (see Sampling below).
 - **Custom panel** — 20 slots for glyphs you use often. Select a glyph in the
   palette, then click an empty slot to store it there. Click a filled slot to
   draw with it; **Backspace** clears it. Pasting or typing into a slot also works.
