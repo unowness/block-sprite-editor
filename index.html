@@ -507,7 +507,14 @@
      no min-width needed, because its natural width already is the threshold.
      The gap matches this one's 8px edge, not the 9px the section hints use. */
   .hint-inline{margin:0;padding:8px 8px 8px 16px;gap:8px;}
-  .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:flex;align-items:center;}   /* even lines when wrapped; vertically centred (matches the 32px X) on one line */
+  /* Block, not flex. It WAS a flex container, to centre one line against the 32px X - and that is
+     exactly what ate the space before the link: a flex container turns each run of text into an
+     anonymous item and strips the whitespace at its edges, so "more at " + <a> rendered as
+     "more atglyphy.io". The same centring, done with padding, leaves the line as ordinary inline
+     text where a space is a space and the link wraps with the sentence instead of standing beside
+     it as its own box.
+     6.25 + 19.5 + 6.25 = 32, the height of the X it sits next to. */
+  .hint span{text-wrap:balance;line-height:1.5;min-height:32px;display:block;padding:6.25px 0;}
   /* Just the cross. The 32px box stays — it is the hit target — but nothing draws it. */
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
           background:transparent;border:1px solid transparent;border-radius:var(--r-btn);
