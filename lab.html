@@ -370,7 +370,11 @@
 
   /* ---------------- paint pills ---------------- */
   .paints{display:flex;gap:8px;flex-wrap:wrap;}
-  .paint{display:inline-flex;align-items:center;gap:8px;height:32px;
+  /* flex:none because a paint pill is as wide as its name. Without it the default flex-shrink
+     squashed them to fit the line instead of wrapping to the next one - on a phone sixteen pills
+     came out 34px wide each, the width of the swatch and a sliver, with the name clipped inside.
+     Wrapping is the right answer and it was one property away. */
+  .paint{display:inline-flex;align-items:center;gap:8px;height:32px;flex:none;
          background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
          padding:0 9px;font-family:var(--font-ui);font-size:13px;color:var(--main-text);cursor:pointer;}
   .paint.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
@@ -405,28 +409,54 @@
      (box-shadow paints the dark backdrop around it); controls keep their corner docking.
      Esc or the X closes it. */
   body.fs-lock{overflow:hidden;position:fixed;left:0;right:0;width:100%;}  /* scroll-lock (top offset set in JS to avoid jump) */
-  .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:110px;z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
+  /* 110 was 40 of bottom offset + a 50px bar + a 20px gap, true while the bar was always one row
+     of one line. --fsbar is that bar measured in JS, so a palette that needs a second row takes
+     the height from the stage and a palette that does not pays nothing. */
+  .stage.fullscreen{position:fixed;top:20px;left:20px;right:20px;bottom:calc(var(--fsbar,50px) + 60px);
+                    z-index:9999;box-shadow:0 0 0 100vmax var(--page);}
   .stage.fullscreen .stage-canvas{position:absolute;inset:0;min-height:0;max-height:none;max-width:none;padding:54px 12px;}
   /* hide the page content behind the fullscreen overlay (only the stage + Custom panel stay) */
   body.fs-lock .wrap>*:not(.stage):not(.fsbottom){visibility:hidden;}
   /* Fullscreen bottom bar: Paint panel (left) + Custom panel (right), in the backdrop below the stage.
      Both panels host the REAL #paints / #customgrid elements, moved in on enter and back on exit. */
   .fsbottom{display:none;}
+  /* Spans the window and centres its lines, rather than being a shrink-to-fit box pinned at
+     left:50%. That box could only ever be half the window wide - the available width for a
+     fixed element with left:50% and no right IS the other 50% - which a nowrap row hid by
+     overflowing, and a wrapping one could not. The bar itself paints nothing; only the panels
+     inside it are visible, so a full-width bar looks exactly like a centred one. */
   body.fs-lock .fsbottom{display:flex;align-items:flex-start;gap:8px;position:fixed;z-index:10000;
-           left:50%;transform:translateX(-50%);bottom:40px;}
+           left:16px;right:16px;bottom:40px;}
   .fspanel{display:flex;align-items:flex-start;gap:10px;background:var(--tool-background);
            border:1px solid var(--stroke);border-radius:var(--r-tool);padding:8px;}
   .fscustom-label{color:var(--tool-text-id);font-size:10px;letter-spacing:.6px;text-transform:uppercase;
            white-space:nowrap;line-height:32px;width:48px;flex:none;}
-  .fspanel .pgrid{max-width:none;flex-wrap:nowrap;}
-  .fspanel .paints{flex-wrap:nowrap;}
-  /* The fullscreen bar is content-sized and centred on the window, which was fine while a palette
-     was always four pills wide. Measured at sixteen: 2294px of panels in a 1440px window, with
-     Main through Extra off the left edge and half the Custom grid off the right - unreachable, not
-     merely clipped. Cap it to the window and let it scroll sideways. Room for a real treatment of
-     a wide palette in here (swatch-only pills, a taller bar) - this only stops it being broken. */
-  body.fs-lock .fsbottom{max-width:calc(100vw - 32px);overflow-x:auto;overflow-y:hidden;}
-  body.fs-lock .fsbottom>.fspanel{flex:none;}
+  .fspanel .pgrid{max-width:none;}
+  /* The bar is content-sized and centred, which was fine while a palette was always four pills
+     wide. At sixteen it measured 2330px of panels in a 1440px window - Main through Extra off the
+     left edge, half the Custom grid off the right, unreachable rather than merely clipped. It was
+     capped to the window with a sideways scroll, which stopped it being broken without making it
+     good: a scrollbar is a place to hide a control, and these are the controls you draw with.
+     Now it wraps. The panels sit side by side while they fit - four paints look exactly as they
+     did - and the Custom panel drops to a second line when they do not. Anything still too wide
+     for one line wraps inside its own panel, so nothing leaves the window in either direction. */
+  body.fs-lock .fsbottom{flex-wrap:wrap;justify-content:center;}
+  body.fs-lock .fsbottom>.fspanel{flex:0 1 auto;min-width:0;}
+  body.fs-lock .fspanel .paints,
+  body.fs-lock .fspanel .pgrid{flex-wrap:wrap;min-width:0;}
+  /* .compact: a pill is just its colour. Sixteen names is 560px of text the bar cannot spare, and
+     added paints are named from a placeholder list by design - the swatch IS the identity, the
+     word is only a handle for talking about it, and in fullscreen there is nobody to talk to.
+     The class is put on by measurement, not by a paint count: see syncFsBar. Names are worth a
+     row and nothing more, so they stay whenever dropping them would not buy one - which on a
+     four-paint palette, or a wide enough window, is always.
+     The colour input stops taking clicks along with the label. It carries a -6px grab area round
+     a 14px swatch, which is most of a 32px chip, and clicking a chip has to mean draw with this,
+     not recolour this. Recolouring stays where the pill is wide enough to hold both. */
+  .fsbottom.compact .paint{width:32px;padding:0;justify-content:center;gap:0;}
+  .fsbottom.compact .paint .pname{display:none;}
+  .fsbottom.compact .paint .swatch{width:18px;height:18px;}
+  .fsbottom.compact .paint .swatch input{pointer-events:none;}
 
   /* The lattice was drawn by two semi-transparent gradient layers, so every crossing composited
      twice: 0.45 per layer became 0.6975 where they met, a line 1.55x denser at every intersection.
@@ -701,7 +731,14 @@
   @media (max-width:600px){
     .wrap{padding:var(--space-page) 16px 48px;}      /* 48px below the footer to page end */
     /* tools HUG their content (don't stretch full-width) and wrap as needed — Figma mobile */
-    .paints .paint:not([data-l="bg"]){font-size:0;gap:0;}   /* paint -> swatch-only */
+    /* The paint pills used to go swatch-only here, with font-size:0 on the pill. Two things were
+       wrong with it. It hid the name without giving the room back the way display:none does, and
+       it left the colour input holding the tap: measured at 390, the centre of the 34px pill that
+       remained hit the INPUT, so choosing a paint on a phone opened the OS colour picker instead
+       of selecting anything. Choosing a paint is the thing you do constantly here.
+       So the names stay on the page at every width and the pills wrap - that is what flex:none on
+       .paint is for - and the chip treatment lives only where it is paid for, in the fullscreen
+       bar, where syncFsBar turns it on by measurement and turns the input off with it. */
     .stage-tl .tw, .stage-bl .tw, .stage-br .tw{display:none;}  /* stage controls icon-only (Zoom already is) */
     .animbar,.exportbar{justify-content:flex-start;}        /* hug-left instead of space-between */
     /* A .tool never wrapped its own controls, so the Scale tool stayed a rigid 364px row: at
@@ -719,10 +756,14 @@
     .links{flex-direction:column;align-items:flex-start;gap:12px;}
     /* fullscreen: tight insets; reserve room at the bottom for the taller Custom+Paint bar (+safe-area)
        so the stage's bottom-docked controls clear it */
-    .stage.fullscreen{top:16px;left:16px;right:16px;bottom:calc(190px + env(safe-area-inset-bottom));}
+    /* Same --fsbar as the desktop rule with this branch's own numbers. The bar sits 24 above the
+       safe area, so a bottom of fsbar + 36 leaves 12px of air between the stage and it - the gap
+       the old fixed 190 left, which is what the 154 fallback reproduces. */
+    .stage.fullscreen{top:16px;left:16px;right:16px;
+                      bottom:calc(var(--fsbar,154px) + 36px + env(safe-area-inset-bottom));}
     /* mobile: stretch handles sit 8px OUTSIDE the field (14px handle + 8px gap) */
     .sh-l{left:-22px;} .sh-r{right:-22px;} .sh-t{top:-22px;} .sh-b{bottom:-22px;}
-    body.fs-lock .fsbottom{left:16px;right:16px;bottom:calc(24px + env(safe-area-inset-bottom));transform:none;flex-direction:column-reverse;align-items:stretch;gap:8px;}
+    body.fs-lock .fsbottom{bottom:calc(24px + env(safe-area-inset-bottom));flex-direction:column-reverse;align-items:stretch;gap:8px;}
     .fspanel{justify-content:center;flex-wrap:wrap;gap:8px;padding:6px;}
     body.fs-lock .fspanel .fscustom-label{display:none;}
     body.fs-lock .fspanel .pgrid{flex-wrap:wrap;justify-content:center;}
@@ -1726,7 +1767,11 @@
       var inp=document.createElement('input');inp.type='color';inp.id='col-'+pnt.k;inp.value=pnt.color;
       inp.setAttribute('aria-label',pnt.name+' colour');inp.title=pnt.name+' colour';
       sw.appendChild(inp);
-      b.appendChild(sw);b.appendChild(document.createTextNode(pnt.name));
+      /* The name in its own element so fullscreen can hide it, and on the button as well so that
+         hiding it does not take the button's accessible name with it. */
+      var nm=document.createElement('span');nm.className='pname';nm.textContent=pnt.name;
+      b.appendChild(sw);b.appendChild(nm);
+      b.title=pnt.name;b.setAttribute('aria-label',pnt.name);
       b.addEventListener('click',function(){selectLayer(pnt.k);});
       wireColor(pnt.k,inp);
       box.appendChild(b);
@@ -1744,6 +1789,7 @@
     box.appendChild(del);
     setOn(box.querySelector('.paint[data-l="'+ui.curLayer+'"]'),true);
     refreshPaintTrash();
+    syncFsBar();   /* adding or deleting a paint can add or drop a row */
   }
   /* The four originals stay. Their keys are what every saved sprite spells out, and they are the
      floor the others fall back to - so the trash goes quiet on them rather than arguing after the
@@ -2394,6 +2440,27 @@
     ui.fs=Math.max(10,Math.min(200,fs));build();
   }
   /* the REAL Paint pills + Custom row, moved into the fullscreen bottom bar and back (no duplicates) */
+  /* Two jobs, both of them layout results rather than constants.
+     First: are the paint names worth what they cost here? Ask the page instead of guessing -
+     measure the bar with them and without them, and keep them unless dropping them saves a row.
+     That answer depends on the window as much as on the palette, which is why it is not a count:
+     five paints wrap a 1440 window and sit comfortably on a 1920 one.
+     Second: how tall did the bar end up. Hand that to the stage as --fsbar so it gives up height
+     only when the bar actually took some. Guarded on the value, so a resize that changes neither
+     does not churn the canvas. */
+  function syncFsBar(){
+    if(!ui.fsOpen)return;
+    var bar=$('fsbottom');
+    bar.classList.remove('compact');
+    var full=bar.getBoundingClientRect().height;
+    bar.classList.add('compact');
+    if(bar.getBoundingClientRect().height>=full)bar.classList.remove('compact');
+    var h=Math.round(bar.getBoundingClientRect().height);
+    if(h===ui.fsBarH)return;
+    ui.fsBarH=h;
+    document.documentElement.style.setProperty('--fsbar',h+'px');
+    updateScrollbars();
+  }
   function relocateFsPanels(toFs){
     var grid=$('customgrid');if(grid)(toFs?$('fscustom'):$('customgroup')).appendChild(grid);
     var paints=$('paints');   if(paints)(toFs?$('fspaint'):$('paintgroup')).appendChild(paints);
@@ -2405,12 +2472,15 @@
     document.body.style.top=(-ui.fsScrollY)+'px';   /* pin scroll position while body is fixed (no page jump) */
     $('fs').innerHTML=CLOSE_ICON;$('fs').title='Close (Esc)';
     $('fs').setAttribute('aria-label','Close fullscreen');$('fs').setAttribute('aria-pressed','true');
+    ui.fsBarH=null;syncFsBar();   /* before build(), so the canvas is sized against the real stage */
     build();updateScrollbars();   /* 1:1 — no auto-zoom; large art scrolls */
   }
   function exitFullscreen(){
     ui.fsOpen=false;
     document.querySelector('.stage').classList.remove('fullscreen');document.body.classList.remove('fs-lock');
     document.body.style.top='';
+    ui.fsBarH=null;$('fsbottom').classList.remove('compact');
+    document.documentElement.style.removeProperty('--fsbar');
     if(ui.fsScrollY!=null)window.scrollTo(0,ui.fsScrollY);
     relocateFsPanels(false);
     $('fs').innerHTML=FS_ICON;$('fs').title='Fullscreen';
@@ -2418,7 +2488,7 @@
     build();updateScrollbars();
   }
   $('fs').onclick=function(){ui.fsOpen?exitFullscreen():enterFullscreen();};
-  window.addEventListener('resize',updateScrollbars);
+  window.addEventListener('resize',function(){syncFsBar();updateScrollbars();});
   document.querySelector('.stage-canvas').addEventListener('scroll',updateScrollbars);
   wireScrollThumb($('fsthumb-h'),'x');
   wireScrollThumb($('fsthumb-v'),'y');
