@@ -82,17 +82,21 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
     --sig-press:20%;
     --sig-edge:100%;    /* hover keeps the full outline */
     --sig-ink:100%;     /* and the full label */
-    /* One red and one green for the whole product, taken from the light theme. They were a pale
-       sage and a pale salmon here, tuned to the dark accent's L* 81 - harmonious, and a
-       different pair of colours from the ones the same two buttons wear on paper. A signal
-       should be the same signal in both themes; that is worth more than the local harmony.
-       Measured against this panel (#171718): the green reads 5.63:1, which clears AA for text.
-       The red reads 3.09:1 - the BORDER clears the 3:1 a non-text indicator needs, the LABEL
-       does not clear 4.5. That is not a flaw in this particular red: pure #FF0000 on this panel
-       is 4.48, so NO red reaches AA text here, which is exactly why the old one was a salmon.
-       Named, not hidden. Lifting it means leaving red. */
-    --green:#00A800;
-    --alert:#CE0005;
+    /* The light theme's two signals, each lifted to carry on this ground. Same hues - the red at
+       36 against its 39, the green at 136 against its 136 - so Clear is the same red and Save
+       File the same green in both themes, which is the point; only the lightness moves.
+       The red had to move. At the light theme's own L* 43 it measured 3.09:1 on this panel:
+       the border cleared the 3:1 a non-text indicator needs, the label did not clear 4.5. At
+       L* 56.7 it reads 5.05:1 and the label clears, while keeping the full chroma the hue can
+       hold there (C 89, against the light red's 88). That is the whole reason for the lift,
+       and it is why this cannot simply BE the light hex: pure #FF0000 on this panel is 4.48,
+       so a red only reaches AA text here by being lighter than red.
+       The green went up with it rather than for a reason of its own - it already cleared at
+       5.63:1 - because a pair that moves together still reads as a pair. L* 67.5, C 96, 7.21:1.
+       Both stay clear of the default paints: the green is 16 lightness points and 10 degrees of
+       hue off the Detail plate, so artwork never looks like chrome. */
+    --green:#00BF00;
+    --alert:#FF3B30;
     --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
