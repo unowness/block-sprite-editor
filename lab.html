@@ -71,23 +71,17 @@ try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentEle
     --sig-press:20%;
     --sig-edge:100%;    /* hover keeps the full outline */
     --sig-ink:100%;     /* and the full label */
-    /* Marathon's own --primary, read from the game site's stylesheet rather than described:
-       hue 75, chroma .98, L* 92.6, 14.13:1 on this surface. Their --surface is #1C1C1C and
-       ours is #1C1C1D, so the two systems already agreed about the ground. */
-    /* On the accent too: L* 81, and the accent's own chroma of 35.9 - which green can reach
-       easily, its ceiling here being 112. So the green is held back to the anchor rather than
-       capped by the gamut, the opposite of the red's problem.
-       Sits 0.2 of a lightness point from the default Extra paint (#5CE422, L* 80.7) but 64 chroma
-       away: a pale sage against a vivid green. Checked because --green once WAS a paint's hex and
-       chrome became indistinguishable from artwork. */
-    --green:#A8D59A;
-    /* Both signals now sit ON the accent: its lightness, and its chroma wherever the hue can
-       reach it. L* 81 for all three, and the contrasts land within 0.3 of each other - 10.82 for
-       the accent, 11.09 for this, 10.79 for the green.
-       The cost is named rather than hidden: sRGB has almost no red chroma at L* 81. The ceiling
-       there is C 30.8, so this is a pale salmon and it is quieter than a control that destroys
-       work would normally be. That is what harmony with a light, low-chroma cyan costs a red. */
-    --alert:#FFB8A5;
+    /* One red and one green for the whole product, taken from the light theme. They were a pale
+       sage and a pale salmon here, tuned to the dark accent's L* 81 - harmonious, and a
+       different pair of colours from the ones the same two buttons wear on paper. A signal
+       should be the same signal in both themes; that is worth more than the local harmony.
+       Measured against this panel (#171718): the green reads 5.63:1, which clears AA for text.
+       The red reads 3.09:1 - the BORDER clears the 3:1 a non-text indicator needs, the LABEL
+       does not clear 4.5. That is not a flaw in this particular red: pure #FF0000 on this panel
+       is 4.48, so NO red reaches AA text here, which is exactly why the old one was a salmon.
+       Named, not hidden. Lifting it means leaving red. */
+    --green:#00A800;
+    --alert:#CE0005;
     --btn-background:#1C1C1D;   /* neutral like the rest of the ramp — this one was missed */
     --canvas:#1C1C1D;  /* glyph tiles are controls too */
     /* Dark carries depth in lightness and declares no shadows: a shadow needs something darker
@@ -1114,11 +1108,22 @@ try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentEle
   /* The four paints this editor shipped with. Their KEYS are frozen forever: a cell stores one
      of these characters, and so does every `colors` row of every sprite anyone has saved. Rename
      them, recolour them, but b/a/d/e can never mean anything else. */
+  /* CMYK, with the plates an editor like this one actually needs.
+     C -> our own blue, which is whatever accent the theme is wearing (see defaultPalette).
+     M -> Process Magenta, verbatim.
+     Y -> green instead. Yellow on white paper is a colour you cannot see, and this canvas is
+          paper by default now.
+     K -> black.
+     Magenta and the green are pinned to the SAME lightness, L* 51.5, so they carry the same
+     weight in a drawing: 3.86 and 3.87 against the light canvas, 4.66 and 4.65 against the
+     dark one - the pair agrees to a hundredth on both grounds. Chroma is left wherever each
+     hue can reach (82 and 61); flattening THAT drags every colour down to the weakest hue.
+     The green sits at hue 150, clear of the chrome green's 136, so artwork never reads as UI. */
   var BASE_PALETTE=[
-    {k:'b',name:'Main',   color:'#6f74c0'},
-    {k:'a',name:'Accent', color:'#b9a5f0'},
-    {k:'d',name:'Detail', color:'#f0a5c0'},
-    {k:'e',name:'Extra',  color:'#5CE422'}
+    {k:'b',name:'Main',   color:'#0057F0'},   /* replaced per theme; this is the light accent */
+    {k:'a',name:'Accent', color:'#EC008C'},
+    {k:'d',name:'Detail', color:'#008E3C'},
+    {k:'e',name:'Extra',  color:'#000000'}
   ];
   var BASE_KEYS=BASE_PALETTE.map(function(p){return p.k;}).join('');   /* 'bade' - never deletable */
   var EXTRA_KEYS='123456789ABC';      /* twelve more one-character cell keys */
@@ -1176,7 +1181,15 @@ try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentEle
      them the user added. Everything that used to read d.body / d.accent / d.decoration / d.extra
      reads this instead, and those four field names now exist only at the file boundary, where old
      sprites still speak them. */
-  function defaultPalette(){return BASE_PALETTE.map(function(p){return {k:p.k,name:p.name,color:p.color};});}
+  /* The C plate is the theme's accent, resolved to a literal hex HERE rather than left as a
+     token. A paint colour is data: it goes into the file, into every saved cell and into the
+     PNG, so it must not move when someone flips the theme afterwards. The theme decides what
+     a NEW sprite starts with, and nothing more. */
+  function accentHex(){
+    var v='';try{v=(getComputedStyle(document.documentElement).getPropertyValue('--accent')||'').trim();}catch(e){}
+    return /^#[0-9a-f]{6}$/i.test(v)?v:BASE_PALETTE[0].color;
+  }
+  function defaultPalette(){return BASE_PALETTE.map(function(p,i){return {k:p.k,name:p.name,color:i===0?accentHex():p.color};});}
   function paletteOf(d){if(!Array.isArray(d.palette)||!d.palette.length)d.palette=defaultPalette();return d.palette;}
   function paletteKeys(d){return paletteOf(d).map(function(p){return p.k;}).join('');}
   function paintByKey(k){var pal=paletteOf(D());for(var i=0;i<pal.length;i++)if(pal[i].k===k)return pal[i];return null;}
