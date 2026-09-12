@@ -8,8 +8,11 @@
 <meta name="description" content="Draw block-ASCII sprites in your browser — up to 16 paints, animation, and JSON/SVG/PNG/MP4/TXT export. No install, no account.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<!-- Set data-theme before first paint, or a stored Light renders one dark frame and then flips. -->
-<script>try{if(localStorage.getItem('blockmode:lab:theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
+<!-- Set data-theme before first paint, or the first frame is the wrong theme and then flips.
+     Light is written FIRST and only a stored Dark takes it back, so a browser that refuses to
+     answer about storage lands on the default rather than on the other one. -->
+<script>document.documentElement.setAttribute('data-theme','light');
+try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <style>
   /* ============================================================
      Design system tokens — names mirror the Figma variables
@@ -115,7 +118,7 @@
 
   /* Light theme — adapted, not a raw inversion: warm paper (not clinical white),
      deeper accent for WCAG-AA text, everything else re-tuned. Toggled via
-     data-theme on <html>; absence = dark (default). */
+     data-theme on <html>, which is now always present: light is the default a first visit gets. */
   /* Measured before this pass: panel against page 1.06:1, input against panel 1.03:1, border
      against panel 1.33:1. Every surface was the same value, so the light theme was a set of nested
      boxes you could not see — the structure was there in the markup and absent on screen.
@@ -851,7 +854,7 @@
     <div class="bar">
       <div class="tool">
         <span class="tool-label">ID</span>
-        <input class="input" type="text" id="sid" placeholder="File name" aria-label="Sprite file name">
+        <input class="input" type="text" id="sid" placeholder="New file" aria-label="Sprite file name">
       </div>
       <div class="tool">
         <span class="tool-label">Tabs</span>
@@ -1126,7 +1129,10 @@
   var PAINT_NAMES=['Wren','Lark','Dove','Crow','Swan','Ibis','Kite','Rook','Myna','Hawk','Gull','Loon',
                    'Tern','Finch','Robin','Egret','Heron','Stork','Quail','Snipe','Eider','Pipit',
                    'Junco','Vireo','Booby','Macaw'];
-  var DEFAULTS={bgColor:'#101018'};
+  /* Mid grey rather than near-black: it is the one background that belongs to neither theme, so
+     a sprite drawn on it reads the same whichever one you are in. It starts switched OFF - the
+     canvas shows the page through it - and picking any colour turns it on (see wireColor). */
+  var DEFAULTS={bgColor:'#808080'};
   var HISTORY_LIMIT=200;
   var IMG_PX=22;   /* base raster cell font px (= 1x) */
 
@@ -1138,13 +1144,15 @@
     w=w||8; h=h||6;
     return { name:name||'untitled', id:'', w:w, h:h,
              palette:defaultPalette(),
-             bgOn:true, bgColor:DEFAULTS.bgColor, custom:[],
+             bgOn:false, bgColor:DEFAULTS.bgColor, custom:[],
              frames:[blankGrid(w,h)], active:0, fps:8, _undo:[], _redo:[] };
   }
 
   var docs=[ newDoc('Current') ];
   var activeDoc=0;
-  var ui={ curGlyph:'█', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
+  /* A glyph is selected from the start, so the first click on the canvas draws something. The
+     star rather than the full block: it says the palette is glyphs and not just fill. */
+  var ui={ curGlyph:'★', curLayer:'b', mirror:true, showGrid:true, fs:32, scale:4,
            view:'ascii', exportType:'json', fsOpen:false, fsPrev:32,
            drawing:false, holdTimer:null, playing:false, playIdx:0, playTimer:null,
            cellW:0, cellH:0,
@@ -2393,9 +2401,12 @@
   $('themetog').onclick=function(){
     applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light');
   };
-  /* Dark is the default; a stored choice wins. The <head> script already set the attribute, so
-     this only draws the button and never overwrites a preference it did not read. */
-  applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'light':'dark');
+  /* Light is the default; a stored choice wins. The <head> script already set the attribute, so
+     this only draws the button and never overwrites a preference it did not read.
+     Nobody who has opened this before is moved: applyTheme writes on every boot, so a returning
+     visitor already has a value stored - 'dark' for everyone who never touched the toggle - and
+     the new default reaches first visits only. */
+  applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light');
 
   /* paint layers + colors */
   wireColor('bg');   /* the paint swatches are wired as renderPaints creates them */
@@ -2711,7 +2722,7 @@
   renderPaints();
   setExportType('json');
   selectLayer(paletteOf(D())[0].k);
-  setGlyph('█');
+  setGlyph(ui.curGlyph);   /* the default lives in ui, not twice: '█' was hardcoded here */
   syncInputs();
   renderTabs();
   applyView();
