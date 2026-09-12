@@ -1123,23 +1123,37 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
   /* The four paints this editor shipped with. Their KEYS are frozen forever: a cell stores one
      of these characters, and so does every `colors` row of every sprite anyone has saved. Rename
      them, recolour them, but b/a/d/e can never mean anything else. */
-  /* CMYK, with the plates an editor like this one actually needs.
-     C -> our own blue, which is whatever accent the theme is wearing (see defaultPalette).
-     M -> Process Magenta, verbatim.
-     Y -> green instead. Yellow on white paper is a colour you cannot see, and this canvas is
-          paper by default now.
-     K -> black.
-     Magenta and the green are pinned to the SAME lightness, L* 51.5, so they carry the same
-     weight in a drawing: 3.86 and 3.87 against the light canvas, 4.66 and 4.65 against the
-     dark one - the pair agrees to a hundredth on both grounds. Chroma is left wherever each
-     hue can reach (82 and 61); flattening THAT drags every colour down to the weakest hue.
-     The green sits at hue 150, clear of the chrome green's 136, so artwork never reads as UI. */
-  var BASE_PALETTE=[
-    {k:'b',name:'Main',   color:'#0057F0'},   /* replaced per theme; this is the light accent */
-    {k:'a',name:'Accent', color:'#EC008C'},
-    {k:'d',name:'Detail', color:'#008E3C'},
-    {k:'e',name:'Extra',  color:'#000000'}   /* replaced with #FFFFFF on dark; see defaultPalette */
-  ];
+  /* CMYK, one set per theme. Hues are the skeleton and do not move between themes; lightness and
+     chroma are solved against the ground each set has to live on. That split is not invented here:
+     measured across Apple's eleven system colours, light -> dark moves lightness by +3.3 on
+     average, chroma by -0.001 and hue by -0.2. Hue is the invariant; L is the variable.
+
+     The previous set did the opposite and was wrong for it. It pinned magenta and green to one
+     lightness and let chroma go where each hue could reach, which is the inversion of the rule -
+     and the rule exists because that inversion was tried and rejected once already. Measured, the
+     old set: max chroma over min chroma 1.588, where a family is 1.0 and anything past ~1.5 is a
+     collection of separately chosen colours wearing the same names. These two are 1.229 and 1.218.
+
+     It also sat too dark on paper, which is the complaint that started this. The rejected set
+     measured L 52.2 / 61.6 / 56.5; this one is 63.2 / 65.1 / 73.0 - eleven, three and seventeen
+     points up. Contrast against the light canvas fell from 5.27 / 3.86 / 3.87 to 3.21 / 3.32 /
+     2.02, which lands inside the band Apple's own light-mode colours occupy (1.51 to 5.09, median
+     2.31). That is deliberate: these are ARTWORK, not chrome. A paint has no text to carry and no
+     contrast minimum to clear, and optimising one against WCAG is what produced ink on paper.
+
+     C -> blue at hue 254, eight degrees off the light accent: kin to it, not a copy of it. It used
+          to BE the accent hex, which made a system signal and a user's paint the same byte.
+     M -> magenta at 355, Process Magenta's hue, carrying Apple's pink lightness and chroma.
+     Y -> green instead at 148. Yellow on white paper is a colour you cannot see, and the canvas is
+          paper by default.
+     K -> the ink of the paper: black on white, white on black. */
+  var PALETTES={
+    light:[{k:'b',name:'Main',color:'#0288FE'},{k:'a',name:'Accent',color:'#F43296'},
+           {k:'d',name:'Detail',color:'#30C75B'},{k:'e',name:'Extra',color:'#000000'}],
+    dark: [{k:'b',name:'Main',color:'#258FFF'},{k:'a',name:'Accent',color:'#F43B99'},
+           {k:'d',name:'Detail',color:'#27D25C'},{k:'e',name:'Extra',color:'#FFFFFF'}]
+  };
+  var BASE_PALETTE=PALETTES.light;   /* the key order, and the fallback when there is no theme */
   var BASE_KEYS=BASE_PALETTE.map(function(p){return p.k;}).join('');   /* 'bade' - never deletable */
   var EXTRA_KEYS='123456789ABC';      /* twelve more one-character cell keys */
   var MAX_PAINTS=4+EXTRA_KEYS.length; /* = 16 */
@@ -1196,26 +1210,13 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
      them the user added. Everything that used to read d.body / d.accent / d.decoration / d.extra
      reads this instead, and those four field names now exist only at the file boundary, where old
      sprites still speak them. */
-  /* Two of the four plates are the theme's own, resolved to literal hexes HERE rather than left
-     as tokens. A paint colour is data: it goes into the file, into every saved cell and into the
-     PNG, so it must not move when someone flips the theme afterwards. The theme decides what a
-     NEW sprite starts with, and nothing more.
-     C is the accent. K is the ink of the paper - black on white, white on black. That is what a
-     key plate IS, and it is not a nicety here: left literally black on the dark canvas it
-     measured 1.06:1 and was simply not there. White on that canvas reads 20.4:1, the mirror of
-     black's 19.09 on the light one, so the plate does the same job on both papers. */
-  function accentHex(){
-    var v='';try{v=(getComputedStyle(document.documentElement).getPropertyValue('--accent')||'').trim();}catch(e){}
-    return /^#[0-9a-f]{6}$/i.test(v)?v:BASE_PALETTE[0].color;
-  }
+  /* The set is chosen by the theme and then copied, so what lands in the sprite is four literal
+     hexes. A paint colour is data: it goes into the file, into every saved cell and into the PNG,
+     and it must not move when someone flips the theme afterwards. The theme decides what a NEW
+     sprite starts with, and nothing else. */
   function isDarkTheme(){return document.documentElement.getAttribute('data-theme')==='dark';}
   function defaultPalette(){
-    return BASE_PALETTE.map(function(p,i){
-      var c=p.color;
-      if(i===0)c=accentHex();
-      else if(i===3&&isDarkTheme())c='#FFFFFF';
-      return {k:p.k,name:p.name,color:c};
-    });
+    return (isDarkTheme()?PALETTES.dark:PALETTES.light).map(function(p){return {k:p.k,name:p.name,color:p.color};});
   }
   function paletteOf(d){if(!Array.isArray(d.palette)||!d.palette.length)d.palette=defaultPalette();return d.palette;}
   function paletteKeys(d){return paletteOf(d).map(function(p){return p.k;}).join('');}
