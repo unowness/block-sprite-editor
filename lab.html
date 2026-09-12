@@ -1127,7 +1127,7 @@ try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentEle
     {k:'b',name:'Main',   color:'#0057F0'},   /* replaced per theme; this is the light accent */
     {k:'a',name:'Accent', color:'#EC008C'},
     {k:'d',name:'Detail', color:'#008E3C'},
-    {k:'e',name:'Extra',  color:'#000000'}
+    {k:'e',name:'Extra',  color:'#000000'}   /* replaced with #FFFFFF on dark; see defaultPalette */
   ];
   var BASE_KEYS=BASE_PALETTE.map(function(p){return p.k;}).join('');   /* 'bade' - never deletable */
   var EXTRA_KEYS='123456789ABC';      /* twelve more one-character cell keys */
@@ -1185,15 +1185,27 @@ try{if(localStorage.getItem('blockmode:lab:theme')==='dark')document.documentEle
      them the user added. Everything that used to read d.body / d.accent / d.decoration / d.extra
      reads this instead, and those four field names now exist only at the file boundary, where old
      sprites still speak them. */
-  /* The C plate is the theme's accent, resolved to a literal hex HERE rather than left as a
-     token. A paint colour is data: it goes into the file, into every saved cell and into the
-     PNG, so it must not move when someone flips the theme afterwards. The theme decides what
-     a NEW sprite starts with, and nothing more. */
+  /* Two of the four plates are the theme's own, resolved to literal hexes HERE rather than left
+     as tokens. A paint colour is data: it goes into the file, into every saved cell and into the
+     PNG, so it must not move when someone flips the theme afterwards. The theme decides what a
+     NEW sprite starts with, and nothing more.
+     C is the accent. K is the ink of the paper - black on white, white on black. That is what a
+     key plate IS, and it is not a nicety here: left literally black on the dark canvas it
+     measured 1.06:1 and was simply not there. White on that canvas reads 20.4:1, the mirror of
+     black's 19.09 on the light one, so the plate does the same job on both papers. */
   function accentHex(){
     var v='';try{v=(getComputedStyle(document.documentElement).getPropertyValue('--accent')||'').trim();}catch(e){}
     return /^#[0-9a-f]{6}$/i.test(v)?v:BASE_PALETTE[0].color;
   }
-  function defaultPalette(){return BASE_PALETTE.map(function(p,i){return {k:p.k,name:p.name,color:i===0?accentHex():p.color};});}
+  function isDarkTheme(){return document.documentElement.getAttribute('data-theme')==='dark';}
+  function defaultPalette(){
+    return BASE_PALETTE.map(function(p,i){
+      var c=p.color;
+      if(i===0)c=accentHex();
+      else if(i===3&&isDarkTheme())c='#FFFFFF';
+      return {k:p.k,name:p.name,color:c};
+    });
+  }
   function paletteOf(d){if(!Array.isArray(d.palette)||!d.palette.length)d.palette=defaultPalette();return d.palette;}
   function paletteKeys(d){return paletteOf(d).map(function(p){return p.k;}).join('');}
   function paintByKey(k){var pal=paletteOf(D());for(var i=0;i<pal.length;i++)if(pal[i].k===k)return pal[i];return null;}
