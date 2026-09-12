@@ -820,7 +820,7 @@
       <div class="tool">
         <span class="tool-label">File</span>
         <button class="btn" id="himport" title="Open a sprite JSON file from your computer"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M10 1H13V3V13H1V1H7V9M10 6L7 9L4 6"/></svg></span>Import</button>
-        <button class="btn" id="hsave" title="Save this sprite as a JSON file"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Save</button>
+        <button class="btn" id="hsave" title="Export this sprite as a JSON file"><span class="iw"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M4 1V6H10V1M1 1V13H13V3L11 1H1Z"/></svg></span>Export</button>
       </div>
       <!-- THEME toggle temporarily removed while the light theme is finished (operator, 2026-08-03).
            To restore: put back the .tool below and re-enable the <head> pre-paint script.
@@ -2046,6 +2046,9 @@
   function setExportType(t){
     ui.exportType=t;
     [].forEach.call(document.querySelectorAll('[data-type]'),function(b){setOn(b,b.dataset.type===t);});
+    /* Two buttons on this page say "Export" now - this one and the File row's, which is always
+       JSON. Naming the type the button will actually produce is what tells them apart on hover. */
+    var ex=$('export');if(ex)ex.title='Export as '+t.toUpperCase();
     refreshScale();
   }
   /* Offering a choice that changes nothing is worse than offering none, so on a scale-free type
