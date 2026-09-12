@@ -501,6 +501,8 @@
   .hint-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
           background:transparent;border:1px solid transparent;border-radius:var(--r-btn);
           color:var(--tool-text-id);cursor:pointer;font-size:15px;line-height:1;}
+  .hint a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
+  .hint a:hover{color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
   .hint-x:hover{color:var(--main-text);}
   .hint-x svg{width:14px;height:14px;display:block;}
 
@@ -535,17 +537,6 @@
      one, but the hint is not - shrunk to its sentence it could have slotted in beside a short
      group. align-items keeps every child at its content width, which is what they already were. */
   .palette{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-cluster);margin-top:var(--space-cluster);}
-  /* The built-in rows are a selection, not the alphabet. This says where the rest lives, and it
-     sits at the END of the palette because that is where you arrive having not found what you
-     wanted. It is the footer note's type, flush with the content edge like that one.
-     The fade is a MIXED colour rather than opacity, which the footer uses: opacity would make a
-     stacking context and drag the link down with it, and the link has to sit at full accent. On
-     the page these render identically - .75 of --tool-text-id over --page is the same value,
-     verified against the footer's own computed colour. */
-  .pal-note{width:100%;margin:0;padding:0;max-width:880px;font-size:13px;line-height:1.3;
-            color:color-mix(in srgb,var(--tool-text-id) 75%,var(--page));}
-  .pal-note a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
-  .pal-note a:hover{color:color-mix(in srgb,var(--main-text) 10%,var(--accent));}
   .pgroup{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;gap:10px;
           background:var(--tool-background);border:1px solid var(--stroke);border-radius:var(--r-tool);
           padding:8px 8px 8px 12px;}
@@ -1638,11 +1629,6 @@
       });
       box.appendChild(pg);pal.appendChild(box);
     });
-    var note=document.createElement('p');note.className='pal-note';
-    note.innerHTML='These rows are a selection, not the alphabet. '+
-      '<a href="https://glyphy.io/cool-symbols" target="_blank" rel="noopener">glyphy.io</a>'+
-      ' keeps thousands more \u2014 copy one and paste it into a Custom cell to keep it here.';
-    pal.appendChild(note);
     sizePaletteColumns();
     buildCustomRow();
   }
@@ -2407,9 +2393,14 @@
   /* hint */
   /* The hint described a keyboard the touch build does not have — Backspace, typing into a cell.
      The code already splits these two worlds with isCoarse(); the copy now splits with it. */
-  $('hinttext').textContent=isCoarse()
-    ? 'Custom panel: pick a glyph, then tap an empty cell to keep it there. Tap a kept glyph to draw with it, tap it again to clear the cell.'
-    : 'Custom panel: pick a glyph and click an empty cell to keep it there, or click the cell and type / paste your own. Backspace clears a cell.';
+  /* The palette used to end with a second note pointing at glyphy.io; it said the same thing this
+     one does, 900px lower down and out of sight of the panel it was about. Folded in here, one
+     line, measured against the 892px a section hint can hold: 824 for the pointer copy, 800 for
+     touch. innerHTML rather than textContent because of the link, and the string is this file's
+     own - nothing typed by anyone reaches it. */
+  $('hinttext').innerHTML=isCoarse()
+    ? 'Custom panel: pick a glyph, then tap an empty cell to keep it. Tap a kept glyph to draw with it, tap again to clear \u2014 more at '+'<a href="https://glyphy.io/cool-symbols" target="_blank" rel="noopener">glyphy.io</a>'+'.'
+    : 'Custom panel: pick a glyph and click an empty cell to keep it, or type / paste your own \u2014 thousands more at '+'<a href="https://glyphy.io/cool-symbols" target="_blank" rel="noopener">glyphy.io</a>'+'. Backspace clears.';
   /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
      the section gap down to the paint bar */
   $('hintx').onclick=function(){$('hint').hidden=true;};
