@@ -302,7 +302,11 @@
        background:var(--btn-background);border:1px solid var(--stroke);border-radius:var(--r-btn);
        cursor:pointer;white-space:nowrap;}
   .btn.on{background:var(--accent-bg);border-color:var(--accent-edge);color:var(--accent-label);}
-  .btn.icon{padding:0;width:32px;}
+  /* flex:none, because an icon button is a flex item wherever it lives and 32px is a size, not a
+     suggestion - without it the glyphy link in the Custom panel shrank to 16px on a phone, where
+     the grid beside it takes the whole row. */
+  .btn.icon{padding:0;width:32px;flex:none;}
+  a.btn{text-decoration:none;}   /* the palette's glyphy link is an anchor wearing a button */
   .btn.icon svg{width:14px;height:14px;display:block;}
   /* was a hardcoded rgba of the dark theme's red, so the light theme drew its Clear tint in the
      dark theme's colour and stopped following the token entirely */
@@ -1628,6 +1632,17 @@
     var cbox=document.createElement('div');cbox.className='pgroup';cbox.id='customgroup';
     var clab=document.createElement('div');clab.className='plabel';clab.textContent='CUSTOM';cbox.appendChild(clab);
     var cgrid=document.createElement('div');cgrid.className='pgrid';cgrid.id='customgrid';cbox.appendChild(cgrid);
+    /* A permanent way out to more characters, at the end of the row it fills. The hint says the
+       same thing but the hint can be dismissed; this cannot, and it sits where the need appears
+       rather than in a sentence you already closed.
+       Remix Icon external-link-line, verbatim in its own 24 box like the theme toggle - and it is
+       an <a>, not a button, so the browser's own "open in new tab" still works on it. */
+    var more=document.createElement('a');more.className='btn icon';more.id='moreglyphs';
+    more.href='https://glyphy.io/cool-symbols';more.target='_blank';more.rel='noopener';
+    more.title='More glyphs at glyphy.io — copy one and paste it into a cell';
+    more.setAttribute('aria-label',more.title);
+    more.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 6V8H5V19H16V14H18V20C18 20.5523 17.5523 21 17 21H4C3.44772 21 3 20.5523 3 20V7C3 6.44772 3.44772 6 4 6H10ZM21 3V11H19L18.9999 6.413L11.2071 14.2071L9.79289 12.7929L17.5849 5H13V3H21Z"/></svg>';
+    cbox.appendChild(more);
     pal.appendChild(cbox);
     var hint=$('hint');if(hint)pal.appendChild(hint);   /* caption goes under the panel it captions */
     GROUPS.forEach(function(grp){
