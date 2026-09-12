@@ -484,7 +484,15 @@
      rather than tight on one side. */
   .hint{box-shadow:var(--shadow-section);display:flex;align-items:flex-start;justify-content:space-between;gap:9px;
         width:fit-content;max-width:100%;
-        background:transparent;border:1px solid var(--stroke);border-radius:var(--r-tool);
+        /* A quiet grey step off the page, and no hairline at all. The fill is mixed from the INK
+           rather than named per theme, so it goes the right way in both: darker than the page on
+           paper, lighter than it on black.
+           The border stays declared and turns transparent instead of being removed - it is worth
+           2px of box, and every gap and height measured around these hints was measured with it
+           there. background-clip is border-box by default, so the fill runs under it and there is
+           no seam where the hairline used to be. */
+        background:color-mix(in srgb,var(--main-text) 5%,var(--page));
+        border:1px solid transparent;border-radius:var(--r-tool);
         padding:9px 9px 9px 16px;color:var(--tool-text-id);font-size:13px;}
   #hint{margin:0 0 32px;}       /* + the palette's own 8px gap = 40 to the first glyph group */
   #hintdraw{margin:8px 0 0;}    /* a cluster gap under the stage; .paintbar's 40 does the rest */
