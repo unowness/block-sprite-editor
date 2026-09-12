@@ -2425,6 +2425,23 @@
   $('clear').onclick=function(){pushUndo();clearSelection();D().frames[D().active]=blankGrid(D().w,D().h);render();renderFrames();};
 
   /* hint */
+  /* A dismissal is remembered, the same way the onboarding is: closing a hint says you have read
+     it, and a note you have read should not come back on the next reload.
+     One key holds the whole set instead of one flag per hint - a fourth hint is then a string in
+     HINT_IDS, not another storage slot and another line in the promote script.
+     The list is matched against HINT_IDS on the way in AND on the way out, so a hand-edited
+     localStorage can only ever hide a hint. Without that check the stored value is a list of
+     element ids handed straight to getElementById, and 'grid' in there would hide the canvas. */
+  var HINT_KEY='blockmode:lab:hints', HINT_IDS=['hintsave','hintdraw','hint'];
+  function hintsClosed(){
+    var raw='';try{raw=localStorage.getItem(HINT_KEY)||'';}catch(e){}
+    return raw.split(',').filter(function(id){return HINT_IDS.indexOf(id)>=0;});
+  }
+  function closeHint(id){
+    $(id).hidden=true;
+    var seen=hintsClosed();
+    if(seen.indexOf(id)<0){seen.push(id);try{localStorage.setItem(HINT_KEY,seen.join(','));}catch(e){}}
+  }
   /* The hint described a keyboard the touch build does not have — Backspace, typing into a cell.
      The code already splits these two worlds with isCoarse(); the copy now splits with it. */
   /* The palette used to end with a second note pointing at glyphy.io; it said the same thing this
@@ -2437,7 +2454,7 @@
     : 'Custom panel: pick a glyph and click an empty cell to keep it, or type / paste your own \u2014 thousands more at '+'<a href="https://glyphy.io/cool-symbols" target="_blank" rel="noopener">glyphy.io</a>'+'. Backspace clears.';
   /* `hidden` rather than an inline display:none, so the stylesheet can see the dismissal and move
      the section gap down to the paint bar */
-  $('hintx').onclick=function(){$('hint').hidden=true;};
+  $('hintx').onclick=function(){closeHint('hint');};
   /* Both one line. The pointer line is written to the width of the box rather than trimmed to
      its own: 881 of the 892 available at 960 content, once the left padding, the gap and the
      32px X are taken out. The touch line stays short - it wraps on a phone whatever it says,
@@ -2445,13 +2462,15 @@
   $('hintdrawtext').textContent=isCoarse()
     ? 'Drag to paint. Hold a cell to sample its glyph and paint — hold an empty one to erase.'
     : 'Left button paints, click or drag. Right button, or Alt-click, samples a cell: its glyph and paint become your brush — sample an empty cell to erase.';
-  $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
+  $('hintdrawx').onclick=function(){closeHint('hintdraw');};
   /* No pointer/touch split here: losing your work to a cleared browser is the same on both. */
   /* Names the button by its label rather than describing what it writes. "Export JSON" stopped
      being true the moment that button became Save File, and a hint that names a control nobody
      can find is worse than no hint. */
   $('hintsavetext').textContent='Tabs live in this browser only — Save File from time to time to keep a sprite for good.';
-  $('hintsavex').onclick=function(){$('hintsave').hidden=true;};
+  $('hintsavex').onclick=function(){closeHint('hintsave');};
+  /* Applied after all three are written, so the restore sees them in their finished state. */
+  hintsClosed().forEach(function(id){$(id).hidden=true;});
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
      Onboarding — 5 pages, shown once (remembered in localStorage). Text is verbatim from Figma.

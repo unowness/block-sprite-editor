@@ -65,7 +65,7 @@ sub_once(NOINDEX_RE, '', 'drop noindex')
 sub_once(r'(?=<meta name="description")', og.replace('\\', '\\\\'), 'restore Open Graph')
 sub_once(r'(?=</body>)', analytics.replace('\\', '\\\\'), 'restore analytics')
 
-for key in ('blockmode:v1', 'blockmode:onboarded', 'blockmode:theme'):
+for key in ('blockmode:v1', 'blockmode:onboarded', 'blockmode:theme', 'blockmode:hints'):
     ns = key.replace('blockmode:', 'blockmode:lab:')
     s, n = re.subn(re.escape("'" + ns + "'"), "'" + key + "'", s)
     steps.append(('un-namespace ' + key, n))
