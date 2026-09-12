@@ -2430,7 +2430,10 @@
     : 'Left button paints. Right button, or Alt-click, samples a cell: its glyph and paint become your brush — sample an empty cell to erase.';
   $('hintdrawx').onclick=function(){$('hintdraw').hidden=true;};
   /* No pointer/touch split here: losing your work to a cleared browser is the same on both. */
-  $('hintsavetext').textContent='Tabs live in this browser only — export JSON to keep a sprite for good.';
+  /* Names the button by its label rather than describing what it writes. "Export JSON" stopped
+     being true the moment that button became Save File, and a hint that names a control nobody
+     can find is worse than no hint. */
+  $('hintsavetext').textContent='Tabs live in this browser only — Save File from time to time to keep a sprite for good.';
   $('hintsavex').onclick=function(){$('hintsave').hidden=true;};
   /* the onboarding itself is not built yet — swallow the jump so the link can't scroll the page */
   /* ============================================================
