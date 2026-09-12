@@ -1799,6 +1799,8 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
   }
   var PLUS_SVG='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M7 2V12"/><path d="M12 7L2 7"/></svg>';
   var TRASH_SVG='<svg viewBox="0 0 14 14" fill="none" stroke="currentColor"><path d="M1.5 5L3 13H11L12.5 5"/><path d="M0.5 3H13.5"/><path d="M5 3V1H9V3"/></svg>';
+  /* Remix Icon reset-left-line, verbatim. */
+  var RESET_SVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12C22 17.5228 17.5229 22 12 22C6.4772 22 2 17.5228 2 12C2 6.47715 6.4772 2 12 2V4C7.5817 4 4 7.58172 4 12C4 16.4183 7.5817 20 12 20C16.4183 20 20 16.4183 20 12C20 9.25022 18.6127 6.82447 16.4998 5.38451L16.5 8H14.5V2L20.5 2V4L18.0008 3.99989C20.4293 5.82434 22 8.72873 22 12Z"/></svg>';
   function renderPaints(){
     var box=$('paints');if(!box)return;
     var d=D(),pal=paletteOf(d);
@@ -1835,8 +1837,13 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
     del.innerHTML=TRASH_SVG;
     del.addEventListener('click',delPaint);
     box.appendChild(del);
+    var rst=document.createElement('button');rst.type='button';rst.className='btn icon';rst.id='resetpaints';
+    rst.innerHTML=RESET_SVG;
+    rst.addEventListener('click',resetPalette);
+    box.appendChild(rst);
     setOn(box.querySelector('.paint[data-l="'+ui.curLayer+'"]'),true);
     refreshPaintTrash();
+    refreshPaintReset();
     syncFsBar();   /* adding or deleting a paint can add or drop a row */
   }
   /* The four originals stay. Their keys are what every saved sprite spells out, and they are the
@@ -1852,6 +1859,39 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
             :pal.length<=1?'A sprite keeps at least one paint'
             :('Delete paint \u2014 its cells keep their glyph and move to '+pal[0].name);
     del.setAttribute('aria-label',del.title);
+  }
+  /* The four originals are the only thing on the page that a returning visitor CANNOT get the
+     new defaults for: a paint colour is data, saved with the sprite, so changing the default
+     palette reaches new sprites and leaves every existing one exactly as it was drawn. That is
+     the right default and the wrong dead end, so here is the door: one click puts the four
+     back to what a new sprite would start with, and one undo takes it back.
+     Only the originals move. Paints the user added keep their colours - they were never a
+     default and there is nothing to return them to.
+     Because defaultPalette reads the theme, this also means "match this sprite to the theme I
+     am in now": the C and K plates follow the page, the other two do not move. */
+  function resetPalette(){
+    var pal=paletteOf(D()),def=defaultPalette(),moved=false;
+    def.forEach(function(dp){
+      for(var i=0;i<pal.length;i++)if(pal[i].k===dp.k){if(pal[i].color.toLowerCase()!==dp.color.toLowerCase())moved=true;break;}
+    });
+    if(!moved)return;
+    pushUndo();   /* snap() carries the palette, so undo really does put the colours back */
+    def.forEach(function(dp){
+      for(var i=0;i<pal.length;i++)if(pal[i].k===dp.k){pal[i].color=dp.color;break;}
+    });
+    renderPaints();build();updateOut();scheduleSave();
+  }
+  /* Quiet when there is nothing to do, the same way the trash goes quiet on an original. */
+  function refreshPaintReset(){
+    var b=$('resetpaints');if(!b)return;
+    var pal=paletteOf(D()),def=defaultPalette(),same=true;
+    def.forEach(function(dp){
+      for(var i=0;i<pal.length;i++)if(pal[i].k===dp.k){if(pal[i].color.toLowerCase()!==dp.color.toLowerCase())same=false;break;}
+    });
+    b.disabled=same;
+    b.title=same?'Main, Accent, Detail and Extra are already the default palette'
+                :'Reset Main, Accent, Detail and Extra to the default palette — added paints and every glyph stay';
+    b.setAttribute('aria-label',b.title);
   }
   /* A new paint needs a key, a name and a colour, and none of the three is asked of the user.
      The key is the lowest free character, so it is stable. The name is drawn from the bird list -
@@ -2431,6 +2471,11 @@ try{if(localStorage.getItem('blockmode:theme')==='dark')document.documentElement
   function applyTheme(t){
     document.documentElement.setAttribute('data-theme',t);
     paintGridLine();   /* the line is derived from the canvas colour, and that colour just changed */
+    /* The reset button's answer depends on the theme, because the defaults it compares against do:
+       a sprite holding the dark defaults is NOT holding the light ones. It is computed inside
+       renderPaints, which a theme switch never calls, so it has to be re-asked here - the same
+       trap the paint trash fell into by reading the selection and only being refreshed on rebuild. */
+    if(typeof refreshPaintReset==='function')refreshPaintReset();
     var b=$('themetog'),toLight=(t!=='light');
     b.innerHTML=toLight?SUN_ICON:MOON_ICON;
     /* the name states the ACTION, because that is what the icon is showing */
